@@ -6,6 +6,13 @@ data class Position(
     val row: Long
 )
 
+fun newPosition() =
+    Position(
+        index = 0,
+        column = 1,
+        row = 1
+    )
+
 data class Range(
     val start: Position,
     val end: Position
@@ -22,3 +29,5 @@ data class Token(
     val text: String,
     val range: Range
 )
+
+typealias Tokens = List<Token>
