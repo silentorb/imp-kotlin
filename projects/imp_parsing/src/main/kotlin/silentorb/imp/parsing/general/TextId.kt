@@ -7,5 +7,7 @@ enum class TextId {
   expectedIdentifier,
   expectedExpression,
   expectedNewline,
+  multipleGraphOutputs,
+  noGraphOutput,
   unexpectedCharacter,
 }

@@ -17,8 +17,7 @@ typealias ValueMap = NodeMap
 
 data class Dungeon(
     val graph: Graph,
-    val nodeMap: NodeMap,
-    val valueMap: ValueMap
+    val nodeMap: NodeMap
 )
 
 fun emptyDungeon() =
@@ -29,6 +28,5 @@ fun emptyDungeon() =
             functions = mapOf(),
             values = mapOf()
         ),
-        nodeMap = mapOf(),
-        valueMap = mapOf()
+        nodeMap = mapOf()
     )

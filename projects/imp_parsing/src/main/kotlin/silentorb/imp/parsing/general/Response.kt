@@ -24,15 +24,16 @@ fun <I> handleRoot(onFailure: (List<ParsingError>) -> Unit, response: Response<I
   }
 }
 
-fun <I> expectErrors(onSuccess: () -> Unit, response: Response<I>, onFailure: (List<ParsingError>) -> Unit) {
-  when (response) {
-    is Response.Success -> onSuccess()
-    is Response.Failure -> onFailure(response.errors)
-  }
-}
-
 fun <I, T> handle(response: Response<I>, onSuccess: (I) -> Response<T>): Response<T> =
     when (response) {
       is Response.Success -> onSuccess(response.value)
       is Response.Failure -> failure(response.errors)
     }
+
+fun <T>checkForErrors(check: (T)-> List<ParsingError>): (T) -> Response<T> = { subject ->
+  val errors = check(subject)
+  if (errors.any())
+    failure(errors)
+  else
+    success(subject)
+}

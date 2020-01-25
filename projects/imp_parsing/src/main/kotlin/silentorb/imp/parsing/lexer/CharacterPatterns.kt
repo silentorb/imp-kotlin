@@ -12,4 +12,7 @@ val singleLineWhitespace = patternFromRegex("[ \\t]")
 
 const val dot = '.'
 
+val newLineStart = patternFromRegex("[\\r\\n]")
+val newLineAfterStart = patternFromRegex("[\\t \\r\\n]")
+
 val floatingPointSuffix = 'f'

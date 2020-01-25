@@ -10,7 +10,7 @@ data class Range(
 data class Token(
     val rune: Rune,
     val range: Range,
-    val text: String
+    val value: String
 )
 
 typealias Tokens = List<Token>

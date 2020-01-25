@@ -37,7 +37,7 @@ fun tokenFromBundle(rune: Rune): (Bundle) -> Response<TokenStep> = { bundle ->
       token = Token(
           rune = rune,
           range = Range(bundle.start, bundle.end),
-          text = bundle.buffer
+          value = bundle.buffer
       ),
       position = bundle.end
   ))
@@ -49,6 +49,15 @@ tailrec fun consumeSingleLineWhitespace(bundle: Bundle): Position {
     bundle.end
   else
     consumeSingleLineWhitespace(incrementBundle(character, bundle))
+}
+
+// Multiple newlines in a row are grouped together as a single token
+tailrec fun consumeNewline(bundle: Bundle): Response<TokenStep> {
+  val character = consumeSingle(bundle, newLineAfterStart)
+  return if (character == null)
+    tokenFromBundle(Rune.newline)(bundle)
+  else
+    consumeNewline(incrementBundle(character, bundle))
 }
 
 tailrec fun consumeIdentifier(bundle: Bundle): Response<TokenStep> {
@@ -81,6 +90,7 @@ typealias BundleToToken = (Bundle) -> Response<TokenStep>
 
 fun branchTokenStart(character: Char): BundleToToken? =
     when {
+      newLineStart(character) -> ::consumeNewline
       identifierStart(character) -> ::consumeIdentifier
       integerStart(character) -> ::consumeInteger
       else -> null

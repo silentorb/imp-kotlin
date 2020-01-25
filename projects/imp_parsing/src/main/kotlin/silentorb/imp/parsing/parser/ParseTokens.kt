@@ -71,7 +71,10 @@ tailrec fun partitionDefinitions(
 }
 
 fun partitionDefinitions(tokens: Tokens): Response<List<TokenizedDefinition>> {
-  return partitionDefinitions(tokens, listOf(), listOf(), 0)
+  return if (tokens.none())
+    success(listOf())
+  else
+    partitionDefinitions(tokens, listOf(), listOf(), 0)
 }
 
 fun parseTokens(context: Context): (Tokens) -> Response<Dungeon> = { tokens ->

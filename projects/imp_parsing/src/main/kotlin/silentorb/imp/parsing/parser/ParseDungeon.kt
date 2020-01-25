@@ -10,7 +10,7 @@ data class TokenizedDefinition(
 
 fun checkDungeonTokens(): (List<TokenizedDefinition>) -> Response<List<TokenizedDefinition>> = { definitions ->
   val duplicateSymbols = definitions
-      .groupBy { it.symbol.text }
+      .groupBy { it.symbol.value }
       .filter { it.value.size > 1 }
 
   val duplicateSymbolErrors = duplicateSymbols.flatMap { (_, definitions) ->
@@ -27,6 +27,17 @@ fun checkDungeonTokens(): (List<TokenizedDefinition>) -> Response<List<Tokenized
     success(definitions)
 }
 
+fun checkForGraphErrors(nodeMap: NodeMap) = checkForErrors { graph: Graph ->
+  val graphOutputs = getGraphOutputNodes(graph)
+  listOfNotNull(
+      errorIf(graphOutputs.none(), TextId.noGraphOutput, Range(newPosition()))
+  )
+      .plus(graphOutputs.drop(1).map {
+        val token = nodeMap[it]!!
+        newParsingError(TextId.multipleGraphOutputs, token)
+      })
+}
+
 fun parseDungeon(context: Context): (List<TokenizedDefinition>) -> Response<Dungeon> = { definitions ->
   val passThroughNodes = definitions.mapIndexed { index, definition ->
     Pair(index.toLong(), definition)
@@ -39,28 +50,25 @@ fun parseDungeon(context: Context): (List<TokenizedDefinition>) -> Response<Dung
   )
 
   val expressionResults = definitions.mapIndexed { index, definition ->
-    Pair((index + passThroughNodes.size).toLong(), ExpressionInfo(definition.symbol.text, parseExpression(context, definition.expression)))
+    Pair((index + passThroughNodes.size).toLong(), ExpressionInfo(definition.symbol.value, parseExpression(context, definition.expression)))
   }
       .associate { it }
 
   val symbols = passThroughNodes.map { (id, definition) ->
-    Pair(definition.symbol.text, id)
+    Pair(definition.symbol.value, id)
   }
       .associate { it }
 
-//  val valueTokens = expressionResults.mapIndexed { index, definition ->
-//    Pair((index + passThroughNodes.size).toLong(), definition)
-//  }
-//      .associate { it }
-
-  val values = expressionResults.mapValues { (_, valueInfo) -> parseValueToken(valueInfo.token) }
-  val valueMap = expressionResults.mapValues { (_, valueInfo) -> valueInfo.token.range }
+  val values = expressionResults
+      .filterValues { parseTokenValue(it.token) != null }
+      .mapValues { (_, valueInfo) -> parseTokenValue(valueInfo.token)!! }
 
   val nodes: Set<Id> = passThroughNodes.keys
       .plus(values.keys)
 
   val nodeMap = passThroughNodes
       .mapValues { (_, definition) -> definition.symbol.range }
+      .plus(expressionResults.mapValues { (_, valueInfo) -> valueInfo.token.range })
 
   val connections = expressionResults.map { (expressionId, value) ->
     val targetNode = symbols[value.owner]!!
@@ -72,15 +80,18 @@ fun parseDungeon(context: Context): (List<TokenizedDefinition>) -> Response<Dung
   }
       .toSet()
 
-  val dungeon = Dungeon(
-      graph = Graph(
-          nodes = nodes,
-          connections = connections,
-          functions = mapOf(),
-          values = values
-      ),
-      nodeMap = nodeMap,
-      valueMap = valueMap
+  val graph = Graph(
+      nodes = nodes,
+      connections = connections,
+      functions = mapOf(),
+      values = values
   )
-  success(dungeon)
+
+  checkForGraphErrors(nodeMap)(graph)
+      .map { finalGraph ->
+        Dungeon(
+            graph = finalGraph,
+            nodeMap = nodeMap
+        )
+      }
 }
