@@ -71,9 +71,9 @@ class ParserTest {
 
     handleRoot(errored, parseText(context)(code)) { result ->
       val graph = result.graph
-      assertEquals(1, graph.nodes.size)
+      assertEquals(2, graph.nodes.size)
       assertEquals(1, graph.values.size)
-      assertEquals(0, graph.connections.size)
+      assertEquals(1, graph.connections.size)
     }
   }
 }

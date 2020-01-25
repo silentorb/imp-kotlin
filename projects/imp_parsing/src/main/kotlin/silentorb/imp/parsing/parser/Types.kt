@@ -1,15 +1,10 @@
 package silentorb.imp.parsing.parser
 
-import silentorb.imp.core.FunctionMap
+import silentorb.imp.core.Context
 import silentorb.imp.core.Graph
 import silentorb.imp.core.Id
+import silentorb.imp.core.Key
 import silentorb.imp.parsing.general.Range
-
-data class Context(
-    val functions: FunctionMap,
-    val namespaces: Map<Id, Context>,
-    val values: Map<Id, Any>
-)
 
 fun emptyContext() = Context(
     functions = mapOf(),
@@ -29,8 +24,9 @@ data class Dungeon(
 fun emptyDungeon() =
     Dungeon(
         graph = Graph(
-            nodes = mapOf(),
+            nodes = setOf(),
             connections = setOf(),
+            functions = mapOf(),
             values = mapOf()
         ),
         nodeMap = mapOf(),

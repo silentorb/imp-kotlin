@@ -25,7 +25,7 @@ fun singleCharacterTokenMatch(position: Position, character: Char): Response<Tok
   val rune = singleCharacterTokens(character)
   return if (rune != null)
     success(TokenStep(
-        token = Token(rune, Range(position, position)),
+        token = Token(rune, Range(position, position), character.toString()),
         position = nextPosition(character, position)
     ))
   else
