@@ -1,20 +1,19 @@
 import org.junit.Assert.*
-import org.junit.Ignore
 import org.junit.Test
 import silentorb.imp.parsing.lexer.tokenize
-import silentorb.imp.parsing.general.LexicalError
+import silentorb.imp.parsing.general.ParsingError
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.expectErrors
 import silentorb.imp.parsing.parser.emptyContext
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.parser.parseText
 
-val errored = { errors: List<LexicalError> ->
+val errored = { errors: List<ParsingError> ->
   // This line should not be hit
   assertEquals(0, errors.size)
 }
 
-val shouldHaveErrored = {  ->
+val shouldHaveErrored = { ->
   // This line should not be hit
   assertTrue(false)
 }
@@ -47,16 +46,25 @@ class ParserTest {
     }
   }
 
-  @Ignore
   @Test
-  fun canTokenize() {
+  fun canTokenizeWithInt() {
     handleRoot(errored, tokenize(code)) { tokens ->
       assertEquals(3, tokens.size)
       assertEquals("output", tokens.first().text)
     }
   }
 
-  @Ignore
+  @Test
+  fun canTokenizeWithFloat() {
+    val code = """
+      output = 10.3
+    """.trimIndent()
+    handleRoot(errored, tokenize(code)) { tokens ->
+      assertEquals(3, tokens.size)
+      assertEquals("output", tokens.first().text)
+    }
+  }
+
   @Test
   fun canParse() {
     val context = emptyContext()

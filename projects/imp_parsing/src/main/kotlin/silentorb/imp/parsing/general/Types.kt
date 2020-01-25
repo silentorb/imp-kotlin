@@ -7,7 +7,6 @@ data class Range(
     val end: Position = start
 )
 
-
 data class Token(
     val rune: Rune,
     val range: Range,

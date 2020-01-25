@@ -4,4 +4,6 @@ enum class Rune {
   assignment,
   identifier,
   literalFloat,
+  literalInteger,
+  newline
 }
