@@ -15,4 +15,6 @@ const val dot = '.'
 val newLineStart = patternFromRegex("[\\r\\n]")
 val newLineAfterStart = patternFromRegex("[\\t \\r\\n]")
 
+val operator = patternFromRegex("[*+\\-/<>%$&@#!=?]")
+
 val floatingPointSuffix = 'f'

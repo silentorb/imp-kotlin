@@ -5,7 +5,7 @@ import silentorb.imp.parsing.general.TextId
 
 val errored = { errors: List<ParsingError> ->
   // This line should not be hit
-  assertEquals(0, errors.size)
+  assertEquals(errors.firstOrNull()?.message?.toString() ?: "", 0, errors.size)
 }
 
 val shouldHaveErrored = { ->
@@ -22,5 +22,8 @@ fun <I> expectErrors(onSuccess: () -> Unit, response: Response<I>, onFailure: (L
 
 fun <I> expectError(textId: TextId, response: Response<I>) =
     expectErrors(shouldHaveErrored, response) { errors ->
-      assertTrue(errors.any { it.message == textId })
+      if (errors.any { it.message == textId })
+        assertTrue(true)
+      else
+        assertEquals(textId, errors.firstOrNull()?.message)
     }

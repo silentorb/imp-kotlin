@@ -35,3 +35,19 @@ fun incrementBundle(character: Char, bundle: Bundle): Bundle =
         end = nextPosition(character, bundle.end),
         buffer = appendToLexicalBuffer(bundle.buffer, character)
     )
+
+data class TokenStep(
+    val position: Position,
+    val token: Token? = null
+)
+
+fun tokenFromBundle(rune: Rune): (Bundle) -> Response<TokenStep> = { bundle ->
+  success(TokenStep(
+      token = Token(
+          rune = rune,
+          range = Range(bundle.start, bundle.end),
+          value = bundle.buffer
+      ),
+      position = bundle.end
+  ))
+}

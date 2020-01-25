@@ -5,11 +5,6 @@ import silentorb.imp.parsing.general.failure
 import silentorb.imp.parsing.general.success
 import silentorb.imp.parsing.general.*
 
-data class TokenStep(
-    val position: Position,
-    val token: Token? = null
-)
-
 fun nextCharacter(code: CodeBuffer, index: CodeInt): Char? {
   val size = getCodeBufferSize(code)
   return if (index > size - 1)
@@ -32,60 +27,6 @@ fun singleCharacterTokenMatch(position: Position, character: Char): Response<Tok
     null
 }
 
-fun tokenFromBundle(rune: Rune): (Bundle) -> Response<TokenStep> = { bundle ->
-  success(TokenStep(
-      token = Token(
-          rune = rune,
-          range = Range(bundle.start, bundle.end),
-          value = bundle.buffer
-      ),
-      position = bundle.end
-  ))
-}
-
-tailrec fun consumeSingleLineWhitespace(bundle: Bundle): Position {
-  val character = consumeSingle(bundle, singleLineWhitespace)
-  return if (character == null)
-    bundle.end
-  else
-    consumeSingleLineWhitespace(incrementBundle(character, bundle))
-}
-
-// Multiple newlines in a row are grouped together as a single token
-tailrec fun consumeNewline(bundle: Bundle): Response<TokenStep> {
-  val character = consumeSingle(bundle, newLineAfterStart)
-  return if (character == null)
-    tokenFromBundle(Rune.newline)(bundle)
-  else
-    consumeNewline(incrementBundle(character, bundle))
-}
-
-tailrec fun consumeIdentifier(bundle: Bundle): Response<TokenStep> {
-  val character = consumeSingle(bundle, identifierAfterStart)
-  return if (character == null)
-    tokenFromBundle(Rune.identifier)(bundle)
-  else
-    consumeIdentifier(incrementBundle(character, bundle))
-}
-
-tailrec fun consumeFloatAfterDot(bundle: Bundle): Response<TokenStep> {
-  val character = consumeSingle(bundle, floatAfterDot)
-  return if (character == null)
-    tokenFromBundle(Rune.literalFloat)(bundle)
-  else
-    consumeFloatAfterDot(incrementBundle(character, bundle))
-}
-
-tailrec fun consumeInteger(bundle: Bundle): Response<TokenStep> {
-  val character = nextCharacter(bundle)
-  return if (character == dot)
-    consumeFloatAfterDot(incrementBundle(character, bundle))
-  else if (character == null || !integerAfterStart(character))
-    tokenFromBundle(Rune.literalInteger)(bundle)
-  else
-    consumeInteger(incrementBundle(character, bundle))
-}
-
 typealias BundleToToken = (Bundle) -> Response<TokenStep>
 
 fun branchTokenStart(character: Char): BundleToToken? =
@@ -93,6 +34,7 @@ fun branchTokenStart(character: Char): BundleToToken? =
       newLineStart(character) -> ::consumeNewline
       identifierStart(character) -> ::consumeIdentifier
       integerStart(character) -> ::consumeInteger
+      operator(character) -> ::consumeOperator
       else -> null
     }
 

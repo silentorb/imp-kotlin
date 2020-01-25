@@ -31,7 +31,7 @@ tailrec fun partitionDefinitions(
 
     val newErrors = listOfNotNull(
         formatError(symbol?.rune == Rune.identifier, TextId.expectedIdentifier, symbol),
-        formatError(neighbor?.rune == Rune.newline || neighbor?.rune == null, TextId.expectedExpression, neighbor),
+        formatError(neighbor?.rune == Rune.newline || neighbor?.rune == null, TextId.expectedNewline, neighbor),
         formatError(firstExpressionToken?.rune != Rune.newline && firstExpressionToken?.rune != null, TextId.expectedExpression, firstExpressionToken)
     )
 
@@ -79,6 +79,6 @@ fun partitionDefinitions(tokens: Tokens): Response<List<TokenizedDefinition>> {
 
 fun parseTokens(context: Context): (Tokens) -> Response<Dungeon> = { tokens ->
   partitionDefinitions(tokens)
-      .then(checkDungeonTokens())
+      .then(checkDungeonTokens)
       .then(parseDungeon(context))
 }
