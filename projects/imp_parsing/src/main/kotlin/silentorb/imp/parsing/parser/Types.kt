@@ -1,11 +1,9 @@
-package silentorb.imp.parsing
+package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.FunctionMap
 import silentorb.imp.core.Graph
 import silentorb.imp.core.Id
-import silentorb.imp.parsing.lexing.Range
-import silentorb.imp.parsing.lexing.newPosition
-import silentorb.imp.parsing.lexing.tokenize
+import silentorb.imp.parsing.general.Range
 
 data class Context(
     val functions: FunctionMap,
@@ -38,9 +36,3 @@ fun emptyDungeon() =
         nodeMap = mapOf(),
         valueMap = mapOf()
     )
-
-fun parseText(context: Context): (String) -> Response<Dungeon> = { code ->
-  handle(tokenize(code, position = newPosition(), tokens = listOf())) { tokens ->
-    success(emptyDungeon())
-  }
-}
