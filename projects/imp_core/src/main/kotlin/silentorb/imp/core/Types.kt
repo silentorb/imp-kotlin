@@ -1,7 +1,6 @@
 package silentorb.imp.core
 
 typealias Key = String
-typealias AbsolutePath = Key
 typealias Id = Long
 
 typealias Type = Any
@@ -22,19 +21,22 @@ data class Connection(
     val parameter: Key
 )
 
-typealias FunctionMap = Map<Key, Function>
+typealias Path = List<String>
+
+typealias FunctionMap = Map<Key, Path>
 
 data class Graph(
     val nodes: Set<Id>,
     val connections: Set<Connection>,
-    val functions: Map<Id, AbsolutePath>,
+    val functions: Map<Id, Path>,
     val values: Map<Id, Any>
 )
 
-data class Context(
-    val functions: FunctionMap,
-    val namespaces: Map<Key, Context>,
-    val values: Map<Key, Any>
-)
-
 const val defaultParameter = ""
+
+typealias NextId = () -> Id
+
+fun newIdSource(initialValue: Id): NextId {
+  var nextId: Id = initialValue
+  return { nextId++ }
+}

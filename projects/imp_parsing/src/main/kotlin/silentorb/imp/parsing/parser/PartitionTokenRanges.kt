@@ -80,14 +80,15 @@ fun partitionDefinitions(tokens: Tokens): Response<List<DefinitionRange>> {
     )
 
     val expressionStart = step + 1
-    val terminatorMatchIndex = nextIndexOf(tokens, step + 1, isImportTerminator)
+    val terminatorMatchIndex = nextIndexOf(tokens, expressionStart + 1, isImportTerminator)
     val expressionEnd = if (terminatorMatchIndex != null)
-      terminatorMatchIndex - 1
+      terminatorMatchIndex
     else
       tokens.size
 
+    assert(expressionStart < expressionEnd)
     val newDefinition = DefinitionRange(
-        symbol = step,
+        symbol = step - 1,
         expressionStart = expressionStart,
         expressionEnd = expressionEnd
     )

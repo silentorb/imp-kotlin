@@ -1,16 +1,9 @@
 package silentorb.imp.parsing.parser
 
-import silentorb.imp.core.Context
-import silentorb.imp.core.Graph
-import silentorb.imp.core.Id
-import silentorb.imp.core.Key
+import silentorb.imp.core.*
 import silentorb.imp.parsing.general.Range
 
-val emptyContext = Context(
-    functions = mapOf(),
-    namespaces = mapOf(),
-    values = mapOf()
-)
+val emptyContext = listOf<Namespace>()
 
 typealias NodeMap = Map<Id, Range>
 

@@ -20,27 +20,58 @@ data class TokenizedGraph(
     val definitions: List<TokenizedDefinition>
 )
 
-fun parseDungeon(context: Context): (TokenizedGraph) -> Response<Dungeon> =
+fun parseDungeon(parentContext: Context): (TokenizedGraph) -> Response<Dungeon> =
     { (imports, definitions) ->
+      val nextId = newIdSource(1L)
       val passThroughNodes = definitions.mapIndexed { index, definition ->
-        Pair((index + 1).toLong(), definition)
+        Pair(nextId(), definition)
       }
           .associate { it }
 
       data class ExpressionInfo(
-          val expressionId: Int,
           val owner: String,
           val dungeon: Dungeon
       )
-
-      val expressionResults = definitions.mapIndexed { index, definition ->
-        ExpressionInfo(index, definition.symbol.value, parseExpression(context, definition.expression))
-      }
 
       val definitionSymbols = passThroughNodes.map { (id, definition) ->
         Pair(definition.symbol.value, id)
       }
           .associate { it }
+
+      val importedFunctions = imports.flatMap { import ->
+        val path = import.path
+            .filter { it.rune == Rune.identifier }
+            .map { it.value }
+
+        listOf(
+            Pair(import.path.last().value, path)
+        )
+      }
+          .associate { it }
+
+      val context = parentContext.plus(
+          Namespace(
+              nodes = definitionSymbols,
+              functions = importedFunctions
+          )
+      )
+
+      val expressionResults = passThroughNodes.map { (id, definition) ->
+        val initialDungeon = parseExpression(nextId, context, definition.expression)
+        val output = getGraphOutputNode(initialDungeon.graph)
+        val dungeon = initialDungeon.copy(
+            graph = initialDungeon.graph.copy(
+                connections = initialDungeon.graph.connections.plus(
+                    Connection(
+                        source = output,
+                        destination = id,
+                        parameter = defaultParameter
+                    )
+                )
+            )
+        )
+        ExpressionInfo(definition.symbol.value, dungeon)
+      }
 
       val nodeReferences = expressionResults
           .flatMap { expressionInfo ->
@@ -107,10 +138,10 @@ fun parseDungeon(context: Context): (TokenizedGraph) -> Response<Dungeon> =
           nodeMap = nodeMap
       )
 
-      val finalDungeon = expressionResults.fold(initialDungeon) { a, expressionInfo ->
-        flattenDungeon(a, expressionInfo.dungeon)
+      val dungeon = expressionResults.fold(initialDungeon) { a, expressionInfo ->
+        mergeDistinctDungeons(a, expressionInfo.dungeon)
       }
 
-      checkForGraphErrors(nodeMap)(finalDungeon.graph)
-          .map { finalDungeon }
+      checkForGraphErrors(dungeon.nodeMap)(dungeon.graph)
+          .map { dungeon }
     }

@@ -1,6 +1,7 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.flattenGraph
+import silentorb.imp.core.mergeDistinctGraphs
 import silentorb.imp.core.newChildMap
 
 //fun <T> filterIndicies(collection: Collection<T>, filter: (T) -> Boolean) =
@@ -34,5 +35,12 @@ fun flattenDungeon(parent: Dungeon, child: Dungeon): Dungeon {
   return Dungeon(
       graph = graph,
       nodeMap = parent.nodeMap.plus(newNodeMap)
+  )
+}
+
+fun mergeDistinctDungeons(parent: Dungeon, child: Dungeon): Dungeon {
+  return Dungeon(
+      graph = mergeDistinctGraphs(parent.graph, child.graph),
+      nodeMap = parent.nodeMap.plus(child.nodeMap)
   )
 }

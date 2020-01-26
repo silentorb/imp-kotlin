@@ -36,3 +36,12 @@ fun flattenGraph(parent: Graph, child: Graph, mapId: MapId): Graph {
       values = parent.values.plus(newValues)
   )
 }
+
+fun mergeDistinctGraphs(parent: Graph, child: Graph): Graph {
+  return Graph(
+      nodes = parent.nodes.plus(child.nodes),
+      connections = parent.connections.plus(child.connections),
+      functions = parent.functions.plus(child.functions),
+      values = parent.values.plus(child.values)
+  )  
+}
