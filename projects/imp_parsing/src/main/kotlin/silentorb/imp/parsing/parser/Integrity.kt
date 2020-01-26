@@ -4,7 +4,11 @@ import silentorb.imp.core.Graph
 import silentorb.imp.core.getGraphOutputNodes
 import silentorb.imp.parsing.general.*
 
-val checkDungeonTokens = checkForErrors { definitions: List<TokenizedDefinition> ->
+val checkImportTokens = checkForErrors { imports: List<TokenizedImport> ->
+  listOf()
+}
+
+val checkDefinitionTokens = checkForErrors { definitions: List<TokenizedDefinition> ->
   val duplicateSymbols = definitions
       .groupBy { it.symbol.value }
       .filter { it.value.size > 1 }
