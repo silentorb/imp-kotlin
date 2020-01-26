@@ -30,7 +30,7 @@ fun parseDungeon(context: Context): (TokenizedGraph) -> Response<Dungeon> =
       data class ExpressionInfo(
           val expressionId: Int,
           val owner: String,
-          val token: Token
+          val dungeon: Dungeon
       )
 
       val expressionResults = definitions.mapIndexed { index, definition ->
@@ -43,66 +43,74 @@ fun parseDungeon(context: Context): (TokenizedGraph) -> Response<Dungeon> =
           .associate { it }
 
       val nodeReferences = expressionResults
-          .filter { it.token.rune == Rune.identifier }
-          .mapNotNull { expressionInfo ->
-            val sourceNode = definitionSymbols[expressionInfo.token.value]
-            if (sourceNode != null)
-              Pair(sourceNode, expressionInfo.owner)
-            else
-              null
+          .flatMap { expressionInfo ->
+            expressionInfo.dungeon.graph.nodes
           }
-
-      val valueSources = expressionResults
-          .filter { parseTokenValue(it.token) != null }
-          .mapIndexed { index, expressionInfo ->
-            val expressionId = (index + passThroughNodes.size + 1).toLong()
-            Pair(expressionId, expressionInfo)
-          }
-          .associate { it }
-
-      val values = valueSources
-          .mapValues { (_, value) ->
-            parseTokenValue(value.token)!!
-          }
+//      val nodeReferences = expressionResults
+//          .filter { it.token.rune == Rune.identifier }
+//          .mapNotNull { expressionInfo ->
+//            val sourceNode = definitionSymbols[expressionInfo.token.value]
+//            if (sourceNode != null)
+//              Pair(sourceNode, expressionInfo.owner)
+//            else
+//              null
+//          }
+//
+//      val valueSources = expressionResults
+//          .filter { parseTokenValue(it.token) != null }
+//          .mapIndexed { index, expressionInfo ->
+//            val expressionId = (index + passThroughNodes.size + 1).toLong()
+//            Pair(expressionId, expressionInfo)
+//          }
+//          .associate { it }
+//
+//      val values = valueSources
+//          .mapValues { (_, value) ->
+//            parseTokenValue(value.token)!!
+//          }
 
       val nodes: Set<Id> = passThroughNodes.keys
-          .plus(values.keys)
+//          .plus(values.keys)
 
       val nodeMap = passThroughNodes
           .mapValues { (_, definition) -> definition.symbol.range }
-          .plus(valueSources.mapValues { (_, valueInfo) -> valueInfo.token.range })
+//          .plus(valueSources.mapValues { (_, valueInfo) -> valueInfo.token.range })
 
-      val connections = valueSources
-          .map { (expressionId, value) ->
-            val targetNode = definitionSymbols[value.owner]!!
-            Connection(
-                source = expressionId,
-                destination = targetNode,
-                parameter = defaultParameter
-            )
-          }
-          .plus(nodeReferences.map { (source, owner) ->
-            val destination = definitionSymbols[owner]!!
-            Connection(
-                source = source,
-                destination = destination,
-                parameter = defaultParameter
-            )
-          })
-          .toSet()
+//      val connections = valueSources
+//          .map { (expressionId, value) ->
+//            val targetNode = definitionSymbols[value.owner]!!
+//            Connection(
+//                source = expressionId,
+//                destination = targetNode,
+//                parameter = defaultParameter
+//            )
+//          }
+//          .plus(nodeReferences.map { (source, owner) ->
+//            val destination = definitionSymbols[owner]!!
+//            Connection(
+//                source = source,
+//                destination = destination,
+//                parameter = defaultParameter
+//            )
+//          })
+//          .toSet()
 
-      val graph = Graph(
+      val initialGraph = Graph(
           nodes = nodes,
-          connections = connections,
+          connections = setOf(),
           functions = mapOf(),
-          values = values
+          values = mapOf()
       )
 
-      checkForGraphErrors(nodeMap)(graph)
-          .map { finalGraph ->
-            Dungeon(
-                graph = finalGraph,
-                nodeMap = nodeMap
-            )
-          }
+      val initialDungeon = Dungeon(
+          graph = initialGraph,
+          nodeMap = nodeMap
+      )
+
+      val finalDungeon = expressionResults.fold(initialDungeon) { a, expressionInfo ->
+        flattenDungeon(a, expressionInfo.dungeon)
+      }
+
+      checkForGraphErrors(nodeMap)(finalDungeon.graph)
+          .map { finalDungeon }
     }

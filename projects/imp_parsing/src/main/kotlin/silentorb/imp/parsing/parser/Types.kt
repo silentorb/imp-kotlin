@@ -6,21 +6,20 @@ import silentorb.imp.core.Id
 import silentorb.imp.core.Key
 import silentorb.imp.parsing.general.Range
 
-fun emptyContext() = Context(
+val emptyContext = Context(
     functions = mapOf(),
     namespaces = mapOf(),
     values = mapOf()
 )
 
 typealias NodeMap = Map<Id, Range>
-typealias ValueMap = NodeMap
 
 data class Dungeon(
     val graph: Graph,
     val nodeMap: NodeMap
 )
 
-fun emptyDungeon() =
+val emptyDungeon =
     Dungeon(
         graph = Graph(
             nodes = setOf(),

@@ -12,9 +12,7 @@ class ParserTest {
   fun canParseSimple() {
     val code = "output = 10"
 
-    val context = emptyContext()
-
-    handleRoot(errored, parseText(context)(code)) { result ->
+    handleRoot(errored, parseText(emptyContext)(code)) { result ->
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
       assertEquals(1, graph.values.size)
@@ -30,7 +28,7 @@ class ParserTest {
       output = intermediate
     """.trimIndent()
 
-    handleRoot(errored, parseText(emptyContext())(code)) { result ->
+    handleRoot(errored, parseText(emptyContext)(code)) { result ->
       val graph = result.graph
       assertEquals(3, graph.nodes.size)
       assertEquals(1, graph.values.size)
@@ -43,7 +41,7 @@ class ParserTest {
   @Test
   fun requiresANewlineBetweenDefinitions() {
     val code = "intermediate = 10 output = intermediate"
-    expectError(TextId.expectedNewline, parseText(emptyContext())(code))
+    expectError(TextId.expectedNewline, parseText(emptyContext)(code))
   }
 
   @Test
@@ -52,7 +50,7 @@ class ParserTest {
       output = 10
       output = output
     """.trimIndent()
-    expectError(TextId.duplicateSymbol, parseText(emptyContext())(code))
+    expectError(TextId.duplicateSymbol, parseText(emptyContext)(code))
   }
 
   @Test
@@ -61,14 +59,14 @@ class ParserTest {
       first = 10
       second = 10
     """.trimIndent()
-    expectError(TextId.multipleGraphOutputs, parseText(emptyContext())(code))
+    expectError(TextId.multipleGraphOutputs, parseText(emptyContext)(code))
   }
 
   @Test
   fun requiresAGraphOutput() {
     val code = """
     """.trimIndent()
-    expectError(TextId.noGraphOutput, parseText(emptyContext())(code))
+    expectError(TextId.noGraphOutput, parseText(emptyContext)(code))
   }
 
   @Test
@@ -78,7 +76,7 @@ class ParserTest {
       
       output = simpleFunction
     """.trimIndent()
-    handleRoot(errored, parseText(emptyContext())(code)) { result ->
+    handleRoot(errored, parseText(emptyContext)(code)) { result ->
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
       assertEquals(1, graph.functions.size)
@@ -108,6 +106,6 @@ class ParserTest {
 //      first = 10
 //      second = 10
 //    """.trimIndent()
-//    expectError(TextId.noGraphOutput, parseText(emptyContext())(code))
+//    expectError(TextId.noGraphOutput, parseText(emptyContext)(code))
   }
 }

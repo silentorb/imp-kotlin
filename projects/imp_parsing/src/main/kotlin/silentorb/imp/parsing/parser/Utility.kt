@@ -1,6 +1,7 @@
 package silentorb.imp.parsing.parser
 
-import silentorb.imp.parsing.lexer.Rune
+import silentorb.imp.core.flattenGraph
+import silentorb.imp.core.newChildMap
 
 //fun <T> filterIndicies(collection: Collection<T>, filter: (T) -> Boolean) =
 //    collection
@@ -22,4 +23,16 @@ fun <T> nextIndexOf(list: List<T>, start: Int, filter: (T) -> Boolean): Int? {
     null
   else
     start + result
+}
+
+fun flattenDungeon(parent: Dungeon, child: Dungeon): Dungeon {
+  val mapId = newChildMap(parent.graph.nodes, child.graph.nodes)
+  val graph = flattenGraph(parent.graph, child.graph, mapId)
+  val newNodeMap = child.nodeMap
+      .mapKeys { (id, _) -> mapId(id) }
+
+  return Dungeon(
+      graph = graph,
+      nodeMap = parent.nodeMap.plus(newNodeMap)
+  )
 }

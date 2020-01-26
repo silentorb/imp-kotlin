@@ -5,3 +5,6 @@ fun getGraphOutputNodes(graph: Graph): List<Id> =
 
 fun getGraphOutputNode(graph: Graph): Id =
     getGraphOutputNodes(graph).first()
+
+fun getNextId(ids: Set<Id>): Id =
+    (ids.max() ?: 0L) + 1L

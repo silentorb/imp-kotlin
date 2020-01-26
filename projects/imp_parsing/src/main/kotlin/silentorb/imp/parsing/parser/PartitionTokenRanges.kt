@@ -136,7 +136,7 @@ fun parseTokens(context: Context, tokens: Tokens): Response<Dungeon> =
 
 fun parseTokens(context: Context): (Tokens) -> Response<Dungeon> = { tokens ->
   if (tokens.none())
-    success(emptyDungeon())
+    success(emptyDungeon)
   else
     parseTokens(context, tokens)
 }
