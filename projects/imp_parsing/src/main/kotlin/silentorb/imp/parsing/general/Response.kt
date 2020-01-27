@@ -14,6 +14,9 @@ sealed class Response<out T> {
 fun <T> failure(errors: List<ParsingError>): Response<T> =
     Response.Failure(errors)
 
+fun <T> failure(error: ParsingError): Response<T> =
+    Response.Failure(listOf(error))
+
 fun <T> success(value: T): Response<T> =
     Response.Success(value)
 
@@ -30,7 +33,17 @@ fun <I, T> handle(response: Response<I>, onSuccess: (I) -> Response<T>): Respons
       is Response.Failure -> failure(response.errors)
     }
 
-fun <T>checkForErrors(check: (T)-> List<ParsingError>): (T) -> Response<T> = { subject ->
+fun <I> flatten(responses: List<Response<I>>): Response<List<I>> {
+  val failed = responses
+      .filterIsInstance<Response.Failure<I>>()
+
+  return if (failed.any())
+    failure(failed.flatMap { it.errors })
+  else
+    success((responses as List<Response.Success<I>>).map { it.value })
+}
+
+fun <T> checkForErrors(check: (T) -> List<ParsingError>): (T) -> Response<T> = { subject ->
   val errors = check(subject)
   if (errors.any())
     failure(errors)

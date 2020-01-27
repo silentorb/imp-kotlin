@@ -3,7 +3,7 @@ package silentorb.imp.parsing.parser
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.Range
 
-val emptyContext = listOf<Namespace>()
+val emptyContext: Context = listOf(Namespace())
 
 typealias NodeMap = Map<Id, Range>
 

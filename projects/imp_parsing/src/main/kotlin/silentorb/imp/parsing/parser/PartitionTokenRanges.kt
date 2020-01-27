@@ -53,7 +53,7 @@ val isDefinitionTerminator: TokenFilter = { token ->
 fun partitionImports(tokens: Tokens): Response<List<ImportRange>> {
   val importTokenIndices = filterIndicies(tokens, isImportToken)
   val imports = importTokenIndices.map { importTokenIndex ->
-    val end = nextIndexOf(tokens, importTokenIndex, isImportTerminator) ?: tokens.size - 1
+    val end = nextIndexOf(tokens, importTokenIndex, isImportTerminator) ?: tokens.size
     ImportRange(
         start = importTokenIndex,
         end = end
@@ -122,7 +122,7 @@ fun toTokenizedGraph(
 }
 
 fun getDefinitionsRangeStart(tokens: Tokens, definitionRanges: List<DefinitionRange>): Int =
-    definitionRanges.minBy { it.symbol }?.symbol ?: tokens.size - 1
+    definitionRanges.minBy { it.symbol }?.symbol ?: tokens.size
 
 fun parseTokens(context: Context, tokens: Tokens): Response<Dungeon> =
     partitionDefinitions(tokens)
@@ -136,6 +136,7 @@ fun parseTokens(context: Context, tokens: Tokens): Response<Dungeon> =
         .then(parseDungeon(context))
 
 fun parseTokens(context: Context): (Tokens) -> Response<Dungeon> = { tokens ->
+  assert(context.any())
   if (tokens.none())
     success(emptyDungeon)
   else

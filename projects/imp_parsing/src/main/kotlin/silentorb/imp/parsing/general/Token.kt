@@ -2,11 +2,6 @@ package silentorb.imp.parsing.general
 
 import silentorb.imp.parsing.lexer.Rune
 
-data class Range(
-    val start: Position,
-    val end: Position = start
-)
-
 data class Token(
     val rune: Rune,
     val range: Range,
@@ -14,3 +9,7 @@ data class Token(
 )
 
 typealias Tokens = List<Token>
+
+// Assumes the tokens are in the same order as they appear in the source code
+fun tokensToRange(tokens: Tokens): Range =
+    Range(tokens.first().range.start, tokens.last().range.end)

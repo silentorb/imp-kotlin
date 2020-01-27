@@ -13,6 +13,14 @@ fun newParsingError(message: TextId, token: Token) =
         token = token
     )
 
+fun newParsingError(message: TextId): (Token) -> ParsingError = { token ->
+  ParsingError(
+      message = message,
+      range = token.range,
+      token = token
+  )
+}
+
 fun newParsingError(message: TextId, range: Range) =
     ParsingError(
         message = message,
@@ -27,6 +35,6 @@ fun errorIf(condition: Boolean, message: TextId, token: Token): ParsingError? =
 
 fun errorIf(condition: Boolean, message: TextId, range: Range): ParsingError? =
     if (condition)
-        ParsingError(message, range = range)
+      ParsingError(message, range = range)
     else
-        null
+      null

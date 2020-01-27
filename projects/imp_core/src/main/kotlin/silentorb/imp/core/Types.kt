@@ -21,7 +21,7 @@ data class Connection(
     val parameter: Key
 )
 
-typealias Path = List<String>
+typealias Path = String
 
 typealias FunctionMap = Map<Key, Path>
 

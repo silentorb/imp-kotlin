@@ -7,7 +7,10 @@ enum class TextId {
   expectedIdentifier,
   expectedExpression,
   expectedNewline,
+  importNotFound,
+  invalidToken,
   multipleGraphOutputs,
   noGraphOutput,
   unexpectedCharacter,
+  unknownFunction,
 }

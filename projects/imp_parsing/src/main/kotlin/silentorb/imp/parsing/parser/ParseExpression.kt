@@ -1,10 +1,13 @@
 package silentorb.imp.parsing.parser
 
-import silentorb.imp.core.*
-import silentorb.imp.parsing.general.Tokens
+import silentorb.imp.core.Context
+import silentorb.imp.core.NextId
+import silentorb.imp.core.resolveFunction
+import silentorb.imp.core.resolveNode
+import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 
-fun parseExpression(nextId: NextId, context: Context, tokens: Tokens): Dungeon {
+fun parseExpression(nextId: NextId, context: Context, tokens: Tokens): Response<Dungeon> {
   val token = tokens.first()
   val literalValue = parseTokenValue(token)
   val referencedNode = if (token.rune == Rune.identifier)
@@ -25,21 +28,23 @@ fun parseExpression(nextId: NextId, context: Context, tokens: Tokens): Dungeon {
   } else
     mapOf()
 
-  val nodeMap = mapOf(
-      id to token.range
-  )
-
   val function = if (token.rune == Rune.identifier)
     resolveFunction(context, token.value)
   else
     null
 
-  val functions = if (function != null)
-    mapOf(
-        id to function
+  return if (function == null && literalValue == null && referencedNode == null) {
+    failure(newParsingError(TextId.unknownFunction, token))
+  } else {
+    val nodeMap = mapOf(
+        id to token.range
     )
-  else
-    mapOf()
+    val functions = if (function != null)
+      mapOf(
+          id to function
+      )
+    else
+      mapOf()
 //  val connections = if (referencedNode != null)
 //    listOf(
 //        Connection(
@@ -50,14 +55,15 @@ fun parseExpression(nextId: NextId, context: Context, tokens: Tokens): Dungeon {
 //  else
 //    listOf()
 
-  val dungeon = emptyDungeon
-  return dungeon
-      .copy(
-          graph = dungeon.graph.copy(
-              nodes = nodes,
-              functions = functions,
-              values = values
-          ),
-          nodeMap = nodeMap
-      )
+    val dungeon = emptyDungeon
+    success(dungeon
+        .copy(
+            graph = dungeon.graph.copy(
+                nodes = nodes,
+                functions = functions,
+                values = values
+            ),
+            nodeMap = nodeMap
+        ))
+  }
 }

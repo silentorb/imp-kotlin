@@ -1,6 +1,7 @@
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import silentorb.imp.core.Namespace
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.parser.emptyContext
@@ -63,10 +64,59 @@ class ParserTest {
   }
 
   @Test
-  fun requiresAGraphOutput() {
+  fun preventsImportingMissingFunctions() {
     val code = """
+      import silentorb.imp.test.simpleFunction
     """.trimIndent()
-    expectError(TextId.noGraphOutput, parseText(emptyContext)(code))
+    expectError(TextId.importNotFound, parseText(emptyContext)(code))
+  }
+
+  @Test
+  fun preventsMisplacedWildcardsInImports() {
+    val code = """
+      import silentorb.imp.*.simpleFunction
+    """.trimIndent()
+    expectError(TextId.invalidToken, parseText(emptyContext)(code))
+  }
+
+  @Test
+  fun preventsInvalidTokensInImports() {
+    val code = """
+      import silentorb.imp.10.simpleFunction
+    """.trimIndent()
+    expectError(TextId.invalidToken, parseText(emptyContext)(code))
+  }
+
+  @Test
+  fun preventsImportsStartingWithADot() {
+    val code = """
+      import .silentorb.imp
+    """.trimIndent()
+    expectError(TextId.invalidToken, parseText(emptyContext)(code))
+  }
+
+  @Test
+  fun preventsImportsEndingWithADot() {
+    val code = """
+      import silentorb.imp.
+    """.trimIndent()
+    expectError(TextId.invalidToken, parseText(emptyContext)(code))
+  }
+
+  @Test
+  fun preventsImportsWithDoubleDots() {
+    val code = """
+      import silentorb..imp
+    """.trimIndent()
+    expectError(TextId.invalidToken, parseText(emptyContext)(code))
+  }
+
+  @Test
+  fun preventsUnknownFunctions() {
+    val code = """
+      output = simpleFunction
+    """.trimIndent()
+    expectError(TextId.unknownFunction, parseText(emptyContext)(code))
   }
 
   @Test
@@ -76,7 +126,10 @@ class ParserTest {
       
       output = simpleFunction
     """.trimIndent()
-    handleRoot(errored, parseText(emptyContext)(code)) { result ->
+    val context = addNamespaceFunctions(emptyContext, mapOf(
+        "silentorb.imp.test.simpleFunction" to "arbitrary"
+    ))
+    handleRoot(errored, parseText(context)(code)) { result ->
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
       assertEquals(1, graph.functions.size)
@@ -90,6 +143,15 @@ class ParserTest {
       
       output = simpleFunction
     """.trimIndent()
+    val context = addNamespaceFunctions(emptyContext, mapOf(
+        "silentorb.imp.test.simpleFunction" to "arbitrary",
+        "silentorb.imp.test.something" to "arbitrary"
+    ))
+    handleRoot(errored, parseText(context)(code)) { result ->
+      val graph = result.graph
+      assertEquals(2, graph.nodes.size)
+      assertEquals(1, graph.functions.size)
+    }
   }
 
   @Test
@@ -102,10 +164,6 @@ class ParserTest {
 
   @Test
   fun supportsFunctionCallsWithArguments() {
-//    val code = """
-//      first = 10
-//      second = 10
-//    """.trimIndent()
-//    expectError(TextId.noGraphOutput, parseText(emptyContext)(code))
+
   }
 }

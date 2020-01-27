@@ -15,3 +15,8 @@ fun newPosition() =
 
 fun formatPositionString(position: Position): String =
     "${position.row}:${position.column}"
+
+data class Range(
+    val start: Position,
+    val end: Position = start
+)
