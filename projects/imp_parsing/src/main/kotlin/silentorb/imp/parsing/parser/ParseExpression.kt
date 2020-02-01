@@ -63,13 +63,14 @@ fun parseExpression(nextId: NextId, context: Context, tokens: Tokens): Response<
         .map { dungeons ->
           // Assuming that at least for now the first token only translates to a single node
           val destination = firstDungeon.graph.nodes.first()
-
-          dungeons.fold(firstDungeon) { a, b ->
+          val signature = getTypeDetails(context, firstDungeon.graph.functions.values.first())!!
+          dungeons.foldIndexed(firstDungeon) { i, a, b ->
             val source = getGraphOutputNode(b.graph)
+            val parameter = signature.parameterNames[i]
             addConnection(mergeDistinctDungeons(a, b), Connection(
                 destination = destination,
                 source = source,
-                parameter = defaultParameter
+                parameter = parameter
             ))
           }
         }

@@ -3,7 +3,11 @@ package silentorb.imp.core
 typealias Key = String
 typealias Id = Long
 
-typealias Type = Any
+data class Type(
+    val path: PathKey,
+    val types: List<PathKey>,
+    val parameterNames: List<String>
+)
 
 data class Parameter(
     val name: String,
@@ -21,8 +25,6 @@ data class Connection(
     val parameter: Key
 )
 
-typealias Path = String
-
 data class Graph(
     val nodes: Set<Id>,
     val connections: Set<Connection> = setOf(),
@@ -38,3 +40,9 @@ fun newIdSource(initialValue: Id): NextId {
   var nextId: Id = initialValue
   return { nextId++ }
 }
+
+fun mapTypes(types: List<Type>) =
+    types.associate { Pair(it.path, it) }
+
+fun mapTypes(vararg types: Type) =
+    types.associate { Pair(it.path, it) }

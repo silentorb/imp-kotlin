@@ -1,8 +1,8 @@
 package silentorb.imp.parsing.parser
 
-import silentorb.imp.core.flattenGraph
-import silentorb.imp.core.mergeDistinctGraphs
-import silentorb.imp.core.newChildMap
+import silentorb.imp.core.*
+
+val emptyContext: Context = listOf(Namespace())
 
 //fun <T> filterIndicies(collection: Collection<T>, filter: (T) -> Boolean) =
 //    collection

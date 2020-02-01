@@ -20,7 +20,7 @@ fun parseImport(namespace: Namespace): (TokenizedImport) -> Response<List<Pair<K
     }
   } else {
     val function = toPathKey(path)
-    if (!namespace.functions.containsKey(function))
+    if (!namespace.types.containsKey(function))
       failure(ParsingError(TextId.importNotFound, range = tokensToRange(import.path)))
     else
       success(listOf(Pair(function.name, function)))

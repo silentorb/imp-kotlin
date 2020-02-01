@@ -2,8 +2,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Test
+import silentorb.imp.core.Connection
 import silentorb.imp.core.Namespace
-import silentorb.imp.core.PathKey
+import silentorb.imp.core.mapTypes
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.parser.emptyContext
@@ -128,10 +129,7 @@ class ParserTest {
       
       output = simpleFunction
     """.trimIndent()
-    val context = addNamespaceFunctions(emptyContext, mapOf(
-        PathKey("silentorb.imp.test", "simpleFunction") to "arbitrary"
-    ))
-    handleRoot(errored, parseText(context)(code)) { result ->
+    handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
       assertEquals(1, graph.functions.size)
@@ -145,11 +143,7 @@ class ParserTest {
       
       output = simpleFunction
     """.trimIndent()
-    val context = addNamespaceFunctions(emptyContext, mapOf(
-        PathKey("silentorb.imp.test", "simpleFunction") to "arbitrary",
-        PathKey("silentorb.imp.test", "something") to "arbitrary"
-    ))
-    handleRoot(errored, parseText(context)(code)) { result ->
+    handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
       assertEquals(1, graph.functions.size)
@@ -173,15 +167,13 @@ class ParserTest {
       
       output = simpleFunction 32 5
     """.trimIndent()
-    val context = addNamespaceFunctions(emptyContext, mapOf(
-        PathKey("silentorb.imp.test", "simpleFunction") to "arbitrary",
-        PathKey("silentorb.imp.test", "something") to "arbitrary"
-    ))
-    handleRoot(errored, parseText(context)(code)) { result ->
+    handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(3, graph.connections.size)
       assertEquals(1, graph.functions.size)
+      assertTrue(graph.connections.contains(Connection(destination = 2, source = 3, parameter = "first")))
+      assertTrue(graph.connections.contains(Connection(destination = 2, source = 4, parameter = "second")))
     }
   }
 }

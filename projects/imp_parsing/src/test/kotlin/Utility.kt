@@ -2,6 +2,7 @@ import org.junit.Assert.*
 import silentorb.imp.core.Context
 import silentorb.imp.core.Namespace
 import silentorb.imp.core.PathKey
+import silentorb.imp.core.Type
 import silentorb.imp.parsing.general.ParsingError
 import silentorb.imp.parsing.general.Response
 import silentorb.imp.parsing.general.TextId
@@ -31,21 +32,21 @@ fun <I> expectError(textId: TextId, response: Response<I>) =
         assertEquals(textId, errors.firstOrNull()?.message)
     }
 
-fun addNamespaceFunction(namespace: Namespace, pathKey: PathKey, type: Any): Namespace =
+fun addNamespaceFunction(namespace: Namespace, pathKey: PathKey, type: Type): Namespace =
     namespace.copy(
-        functions = namespace.functions.plus(
+        types = namespace.types.plus(
             Pair(pathKey, type)
         )
     )
 
-fun addNamespaceFunctions(namespace: Namespace, functions: Map<PathKey, Any>): Namespace =
+fun addNamespaceFunctions(namespace: Namespace, functions: Map<PathKey, Type>): Namespace =
     namespace.copy(
-        functions = namespace.functions.plus(
+        types = namespace.types.plus(
             functions
         )
     )
 
-fun addNamespaceFunctions(context: Context, functions: Map<PathKey, Any>): Context =
+fun addNamespaceFunctions(context: Context, functions: Map<PathKey, Type>): Context =
     listOf(
         addNamespaceFunctions(context.first(), functions)
     )

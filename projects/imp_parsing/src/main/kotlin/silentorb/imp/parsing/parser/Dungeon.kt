@@ -3,8 +3,6 @@ package silentorb.imp.parsing.parser
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.Range
 
-val emptyContext: Context = listOf(Namespace())
-
 typealias NodeMap = Map<Id, Range>
 
 data class Dungeon(
