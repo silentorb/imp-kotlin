@@ -71,16 +71,18 @@ fun parseArguments(nextId: NextId, context: Context, firstDungeon: Dungeon, toke
         }
         val functionOverloads = getTypeDetails(context, firstDungeon.graph.types.values.first())!!
         matchFunction(callingSignature, functionOverloads, tokensToRange(tokens))
-            .map { (_, parameterNames) ->
+            .map { (signature, parameterNames) ->
               dungeons.foldIndexed(firstDungeon) { i, a, b ->
                 val source = getGraphOutputNode(b.graph)
                 val parameter = parameterNames[i]
-                addConnection(mergeDistinctDungeons(a, b), Connection(
-                    destination = destination,
-                    source = source,
-                    parameter = parameter
-                ))
+                mergeDistinctDungeons(a, b)
+                    .addConnection(Connection(
+                        destination = destination,
+                        source = source,
+                        parameter = parameter
+                    ))
               }
+                  .addSignature(destination, signature)
             }
 
       }

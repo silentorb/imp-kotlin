@@ -25,6 +25,7 @@ data class Graph(
     val nodes: Set<Id>,
     val connections: Set<Connection> = setOf(),
     val types: Map<Id, PathKey>,
+    val signatures: Map<Id, Signature> = mapOf(),
     val values: Map<Id, Any>
 )
 

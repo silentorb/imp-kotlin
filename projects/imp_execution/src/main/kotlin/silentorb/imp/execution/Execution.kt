@@ -1,9 +1,6 @@
 package silentorb.imp.execution
 
-import silentorb.imp.core.Connection
-import silentorb.imp.core.Graph
-import silentorb.imp.core.Id
-import silentorb.imp.core.getGraphOutputNode
+import silentorb.imp.core.*
 
 typealias OutputValues = Map<Id, Any>
 
@@ -38,20 +35,21 @@ fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: Id):
 }
 
 fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: OutputValues, id: Id): Any {
-  val functionName = graph.types[id]
-  return if (functionName != null) {
-    val function = functions[functionName]!!
-    val arguments = prepareArguments(graph, values, id)
-    function(arguments)
-  }
-  else if (graph.values.containsKey(id))  {
+  return if (graph.values.containsKey(id)) {
     graph.values[id]!!
-  }
-  else {
-    // Pass through
-    val arguments = prepareArguments(graph, values, id)
-    assert(arguments.size == 1)
-    arguments.values.first()
+  } else {
+    val type = graph.types[id]
+    if (type != null) {
+      val signature = graph.signatures[id] ?: throw Error("Missing type signature for node $id")
+      val function = functions[FunctionKey(type, signature)]!!
+      val arguments = prepareArguments(graph, values, id)
+      function(arguments)
+    } else {
+      // Pass through
+      val arguments = prepareArguments(graph, values, id)
+      assert(arguments.size == 1)
+      arguments.values.first()
+    }
   }
 }
 

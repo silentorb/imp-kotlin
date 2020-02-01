@@ -8,7 +8,22 @@ typealias NodeMap = Map<Id, Range>
 data class Dungeon(
     val graph: Graph,
     val nodeMap: NodeMap
-)
+) {
+  fun addConnection(connection: Connection) =
+      modifyGraph(this) { graph ->
+        graph.copy(
+            connections = graph.connections.plus(connection)
+        )
+      }
+
+  fun addSignature(id: Id, signature: Signature) =
+      modifyGraph(this) { graph ->
+        graph.copy(
+            signatures = graph.signatures.plus(Pair(id, signature))
+        )
+      }
+
+}
 
 val emptyDungeon =
     Dungeon(
@@ -21,10 +36,10 @@ val emptyDungeon =
         nodeMap = mapOf()
     )
 
-fun modifyGraph(dungeon: Dungeon, transform: (Graph) -> Graph)=
-  dungeon.copy(
-      graph = transform(dungeon.graph)
-  )
+fun modifyGraph(dungeon: Dungeon, transform: (Graph) -> Graph) =
+    dungeon.copy(
+        graph = transform(dungeon.graph)
+    )
 
 fun addConnection(dungeon: Dungeon, connection: Connection) =
     modifyGraph(dungeon) { graph ->

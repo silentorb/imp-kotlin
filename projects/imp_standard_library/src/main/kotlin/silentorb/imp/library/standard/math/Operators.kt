@@ -6,11 +6,15 @@ const val mathPath = "$standardLibraryPath.math"
 
 val plusKey = PathKey(mathPath, "+")
 
+val intOperatorSignature = listOf(intKey, intKey, intKey)
+val floatOperatorSignature = listOf(floatKey, floatKey, floatKey)
+val doubleOperatorSignature = listOf(doubleKey, doubleKey, doubleKey)
+
 fun standardMathOperatorDefinition() =
     mapOf(
-        listOf(intKey, intKey, intKey) to listOf("first", "second"),
-        listOf(floatKey, floatKey, floatKey) to listOf("first", "second"),
-        listOf(doubleKey, doubleKey, doubleKey) to listOf("first", "second")
+        intOperatorSignature to listOf("first", "second"),
+        floatOperatorSignature to listOf("first", "second"),
+        doubleOperatorSignature to listOf("first", "second")
     )
 
 fun mathOperators(): OverloadsMap {

@@ -28,17 +28,17 @@ fun <T> nextIndexOf(list: List<T>, start: Int, filter: (T) -> Boolean): Int? {
     start + result
 }
 
-fun flattenDungeon(parent: Dungeon, child: Dungeon): Dungeon {
-  val mapId = newChildMap(parent.graph.nodes, child.graph.nodes)
-  val graph = flattenGraph(parent.graph, child.graph, mapId)
-  val newNodeMap = child.nodeMap
-      .mapKeys { (id, _) -> mapId(id) }
-
-  return Dungeon(
-      graph = graph,
-      nodeMap = parent.nodeMap.plus(newNodeMap)
-  )
-}
+//fun flattenDungeon(parent: Dungeon, child: Dungeon): Dungeon {
+//  val mapId = newChildMap(parent.graph.nodes, child.graph.nodes)
+//  val graph = flattenGraph(parent.graph, child.graph, mapId)
+//  val newNodeMap = child.nodeMap
+//      .mapKeys { (id, _) -> mapId(id) }
+//
+//  return Dungeon(
+//      graph = graph,
+//      nodeMap = parent.nodeMap.plus(newNodeMap)
+//  )
+//}
 
 fun mergeDistinctDungeons(parent: Dungeon, child: Dungeon): Dungeon {
   return Dungeon(
