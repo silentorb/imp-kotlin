@@ -66,7 +66,7 @@ fun parseDungeon(parentContext: Context): (TokenizedGraph) -> Response<Dungeon> 
                   val initialGraph = Graph(
                       nodes = nodes,
                       connections = setOf(),
-                      functions = mapOf(),
+                      types = mapOf(),
                       values = mapOf()
                   )
 

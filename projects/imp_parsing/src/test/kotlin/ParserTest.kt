@@ -132,7 +132,7 @@ class ParserTest {
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
-      assertEquals(1, graph.functions.size)
+      assertEquals(1, graph.types.size)
     }
   }
 
@@ -146,7 +146,7 @@ class ParserTest {
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
-      assertEquals(1, graph.functions.size)
+      assertEquals(1, graph.types.size)
     }
   }
 
@@ -171,7 +171,7 @@ class ParserTest {
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(3, graph.connections.size)
-      assertEquals(1, graph.functions.size)
+      assertEquals(3, graph.types.size)
       assertTrue(graph.connections.contains(Connection(destination = 2, source = 3, parameter = "first")))
       assertTrue(graph.connections.contains(Connection(destination = 2, source = 4, parameter = "second")))
     }

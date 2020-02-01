@@ -5,7 +5,7 @@ import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 
 fun parseExpressionToken(nextId: NextId, context: Context): (Token) -> Response<Dungeon> = { token ->
-  val literalValue = parseTokenValue(token)
+  val literalValuePair = parseTokenValue(token)
   val referencedNode = if (token.rune == Rune.identifier)
     resolveNode(context, token.value)
   else
@@ -17,19 +17,21 @@ fun parseExpressionToken(nextId: NextId, context: Context): (Token) -> Response<
     nextId()
 
   val nodes = setOf(id)
-  val values = if (literalValue != null) {
+  val values = if (literalValuePair != null) {
     mapOf(
-        id to literalValue
+        id to literalValuePair.second
     )
   } else
     mapOf()
 
-  val function = if (token.rune == Rune.identifier || token.rune == Rune.operator)
+  val function = if (literalValuePair != null)
+    literalValuePair.first
+  else if (token.rune == Rune.identifier || token.rune == Rune.operator)
     resolveFunction(context, token.value)
   else
     null
 
-  if (function == null && literalValue == null && referencedNode == null) {
+  if (function == null && literalValuePair == null && referencedNode == null) {
     failure(newParsingError(TextId.unknownFunction, token))
   } else {
     val nodeMap = mapOf(
@@ -45,7 +47,7 @@ fun parseExpressionToken(nextId: NextId, context: Context): (Token) -> Response<
     success(Dungeon(
         graph = Graph(
             nodes = nodes,
-            functions = functions,
+            types = functions,
             values = values
         ),
         nodeMap = nodeMap
@@ -59,19 +61,28 @@ fun parseArguments(nextId: NextId, context: Context, firstDungeon: Dungeon, toke
           .drop(1)
           .map(parseExpressionToken(nextId, context))
   )
-      .map { dungeons ->
+      .then { dungeons ->
         // Assuming that at least for now the first token only translates to a single node
         val destination = firstDungeon.graph.nodes.first()
-        val signature = getTypeDetails(context, firstDungeon.graph.functions.values.first())!!
-        dungeons.foldIndexed(firstDungeon) { i, a, b ->
-          val source = getGraphOutputNode(b.graph)
-          val parameter = signature.parameterNames[i]
-          addConnection(mergeDistinctDungeons(a, b), Connection(
-              destination = destination,
-              source = source,
-              parameter = parameter
-          ))
+        val callingSignature = dungeons.map { dungeon ->
+          val output = getGraphOutputNode(dungeon.graph)
+          dungeon.graph.types[output]
+              ?: throw Error("Graph is missing a type for node $output")
         }
+        val functionOverloads = getTypeDetails(context, firstDungeon.graph.types.values.first())!!
+        matchFunction(callingSignature, functionOverloads, tokensToRange(tokens))
+            .map { (_, parameterNames) ->
+              dungeons.foldIndexed(firstDungeon) { i, a, b ->
+                val source = getGraphOutputNode(b.graph)
+                val parameter = parameterNames[i]
+                addConnection(mergeDistinctDungeons(a, b), Connection(
+                    destination = destination,
+                    source = source,
+                    parameter = parameter
+                ))
+              }
+            }
+
       }
 }
 

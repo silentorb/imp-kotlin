@@ -38,7 +38,7 @@ fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: Id):
 }
 
 fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: OutputValues, id: Id): Any {
-  val functionName = graph.functions[id]
+  val functionName = graph.types[id]
   return if (functionName != null) {
     val function = functions[functionName]!!
     val arguments = prepareArguments(graph, values, id)

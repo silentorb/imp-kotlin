@@ -23,7 +23,7 @@ fun flattenGraph(parent: Graph, child: Graph, mapId: MapId): Graph {
         )
       }
 
-  val newFunctions = child.functions
+  val newFunctions = child.types
       .mapKeys { (id, _) -> mapId(id) }
 
   val newValues = child.values
@@ -32,7 +32,7 @@ fun flattenGraph(parent: Graph, child: Graph, mapId: MapId): Graph {
   return Graph(
       nodes = parent.nodes.plus(newNodes),
       connections = parent.connections.plus(newConnections),
-      functions = parent.functions.plus(newFunctions),
+      types = parent.types.plus(newFunctions),
       values = parent.values.plus(newValues)
   )
 }
@@ -41,7 +41,7 @@ fun mergeDistinctGraphs(parent: Graph, child: Graph): Graph {
   return Graph(
       nodes = parent.nodes.plus(child.nodes),
       connections = parent.connections.plus(child.connections),
-      functions = parent.functions.plus(child.functions),
+      types = parent.types.plus(child.types),
       values = parent.values.plus(child.values)
   )  
 }

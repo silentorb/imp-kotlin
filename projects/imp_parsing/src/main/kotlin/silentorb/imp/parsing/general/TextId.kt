@@ -3,6 +3,7 @@ package silentorb.imp.parsing.general
 enum class TextId {
 
   // Error messages
+  ambiguousOverload,
   duplicateSymbol,
   expectedIdentifier,
   expectedExpression,
@@ -11,6 +12,7 @@ enum class TextId {
   invalidToken,
   multipleGraphOutputs,
   noGraphOutput,
+  noMatchingSignature,
   unexpectedCharacter,
   unknownFunction,
 }

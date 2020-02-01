@@ -3,20 +3,16 @@ package silentorb.imp.core
 typealias Key = String
 typealias Id = Long
 
-data class Type(
+typealias Signature = List<PathKey>
+typealias ParameterNames = List<String>
+
+typealias Function = Map.Entry<Signature, ParameterNames>
+typealias Overloads = Map<Signature, ParameterNames>
+typealias OverloadsMap = Map<PathKey, Overloads>
+
+data class FunctionKey(
     val path: PathKey,
-    val types: List<PathKey>,
-    val parameterNames: List<String>
-)
-
-data class Parameter(
-    val name: String,
-    val type: Type
-)
-
-data class Function(
-    val inputs: List<Parameter>,
-    val output: Type
+    val signature: Signature
 )
 
 data class Connection(
@@ -28,7 +24,7 @@ data class Connection(
 data class Graph(
     val nodes: Set<Id>,
     val connections: Set<Connection> = setOf(),
-    val functions: Map<Id, PathKey>,
+    val types: Map<Id, PathKey>,
     val values: Map<Id, Any>
 )
 
@@ -41,8 +37,8 @@ fun newIdSource(initialValue: Id): NextId {
   return { nextId++ }
 }
 
-fun mapTypes(types: List<Type>) =
-    types.associate { Pair(it.path, it) }
+fun mapTypes(types: List<Function>) =
+    types.associate { Pair(it.key, it) }
 
-fun mapTypes(vararg types: Type) =
-    types.associate { Pair(it.path, it) }
+fun mapTypes(vararg types: Function) =
+    types.associate { Pair(it.key, it) }

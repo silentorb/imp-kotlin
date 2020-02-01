@@ -1,6 +1,8 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
+import silentorb.imp.parsing.general.*
+import kotlin.math.sign
 
 val emptyContext: Context = listOf(Namespace())
 
@@ -43,4 +45,14 @@ fun mergeDistinctDungeons(parent: Dungeon, child: Dungeon): Dungeon {
       graph = mergeDistinctGraphs(parent.graph, child.graph),
       nodeMap = parent.nodeMap.plus(child.nodeMap)
   )
+}
+
+fun matchFunction(signature: Signature, overloads: Overloads, range: Range): Response<Map.Entry<Signature, ParameterNames>> {
+  val matches = overloadMatches(signature, overloads)
+  return if (matches.size == 1)
+    success(matches.entries.first())
+  else if (matches.none())
+    failure(ParsingError(TextId.noMatchingSignature, range = range))
+  else
+    failure(ParsingError(TextId.ambiguousOverload, range = range))
 }

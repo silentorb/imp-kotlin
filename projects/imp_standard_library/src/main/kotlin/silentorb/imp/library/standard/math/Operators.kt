@@ -1,16 +1,20 @@
 package silentorb.imp.library.standard.math
 
-import silentorb.imp.library.standard.core.intKey
-import silentorb.imp.core.PathKey
-import silentorb.imp.core.Type
-import silentorb.imp.library.standard.standardLibraryPath
+import silentorb.imp.core.*
 
 const val mathPath = "$standardLibraryPath.math"
 
 val plusKey = PathKey(mathPath, "+")
 
-val plusType = Type(
-    path = plusKey,
-    types = listOf(intKey, intKey),
-    parameterNames = listOf("first", "second")
-)
+fun standardMathOperatorDefinition() =
+    mapOf(
+        listOf(intKey, intKey, intKey) to listOf("first", "second"),
+        listOf(floatKey, floatKey, floatKey) to listOf("first", "second"),
+        listOf(doubleKey, doubleKey, doubleKey) to listOf("first", "second")
+    )
+
+fun mathOperators(): OverloadsMap {
+  val definition = standardMathOperatorDefinition()
+  return setOf(plusKey)
+      .associateWith { definition }
+}

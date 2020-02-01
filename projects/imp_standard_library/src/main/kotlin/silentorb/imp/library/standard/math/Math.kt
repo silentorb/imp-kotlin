@@ -1,8 +1,6 @@
 package silentorb.imp.library.standard.math
 
-import silentorb.imp.core.Type
+import silentorb.imp.core.OverloadsMap
 
-fun mathTypes(): List<Type> =
-    listOf(
-        plusType
-    )
+fun mathFunctions(): OverloadsMap =
+    mathOperators()

@@ -1,13 +1,8 @@
 package silentorb.imp.library.standard
 
-import silentorb.imp.library.standard.math.mathTypes
 import silentorb.imp.core.Namespace
-import silentorb.imp.core.mapTypes
-
-const val standardLibraryPath = "imp"
+import silentorb.imp.library.standard.math.mathFunctions
 
 fun standardLibraryNamespace(): Namespace = Namespace(
-    types = mapTypes(
-        mathTypes()
-    )
+    functions = mathFunctions()
 )
