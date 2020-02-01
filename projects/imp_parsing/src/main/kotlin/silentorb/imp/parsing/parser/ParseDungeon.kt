@@ -42,7 +42,7 @@ fun parseDungeon(parentContext: Context): (TokenizedGraph) -> Response<Dungeon> 
             val context = parentContext.plus(
                 Namespace(
                     nodes = definitionSymbols,
-                    functions = importedFunctions
+                    functionAliases = importedFunctions
                 )
             )
 
@@ -50,17 +50,11 @@ fun parseDungeon(parentContext: Context): (TokenizedGraph) -> Response<Dungeon> 
               parseExpression(nextId, context, definition.expression)
                   .map { dungeon ->
                     val output = getGraphOutputNode(dungeon.graph)
-                    dungeon.copy(
-                        graph = dungeon.graph.copy(
-                            connections = dungeon.graph.connections.plus(
-                                Connection(
-                                    source = output,
-                                    destination = id,
-                                    parameter = defaultParameter
-                                )
-                            )
-                        )
-                    )
+                    addConnection(dungeon, Connection(
+                        source = output,
+                        destination = id,
+                        parameter = defaultParameter
+                    ))
                   }
             })
                 .then { expressionDungeons ->

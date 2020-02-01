@@ -1,7 +1,9 @@
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Ignore
 import org.junit.Test
 import silentorb.imp.core.Namespace
+import silentorb.imp.core.PathKey
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.parser.emptyContext
@@ -127,7 +129,7 @@ class ParserTest {
       output = simpleFunction
     """.trimIndent()
     val context = addNamespaceFunctions(emptyContext, mapOf(
-        "silentorb.imp.test.simpleFunction" to "arbitrary"
+        PathKey("silentorb.imp.test", "simpleFunction") to "arbitrary"
     ))
     handleRoot(errored, parseText(context)(code)) { result ->
       val graph = result.graph
@@ -144,8 +146,8 @@ class ParserTest {
       output = simpleFunction
     """.trimIndent()
     val context = addNamespaceFunctions(emptyContext, mapOf(
-        "silentorb.imp.test.simpleFunction" to "arbitrary",
-        "silentorb.imp.test.something" to "arbitrary"
+        PathKey("silentorb.imp.test", "simpleFunction") to "arbitrary",
+        PathKey("silentorb.imp.test", "something") to "arbitrary"
     ))
     handleRoot(errored, parseText(context)(code)) { result ->
       val graph = result.graph
@@ -154,16 +156,32 @@ class ParserTest {
     }
   }
 
+  @Ignore
   @Test
   fun preventsImportsAfterDefinitions() {
     val code = """ 
       output = 10
       import silentorb.imp.test.simpleFunction
     """.trimIndent()
+    expectError(TextId.invalidToken, parseText(emptyContext)(code))
   }
 
   @Test
   fun supportsFunctionCallsWithArguments() {
-
+    val code = """
+      import silentorb.imp.test.*
+      
+      output = simpleFunction 32 5
+    """.trimIndent()
+    val context = addNamespaceFunctions(emptyContext, mapOf(
+        PathKey("silentorb.imp.test", "simpleFunction") to "arbitrary",
+        PathKey("silentorb.imp.test", "something") to "arbitrary"
+    ))
+    handleRoot(errored, parseText(context)(code)) { result ->
+      val graph = result.graph
+      assertEquals(4, graph.nodes.size)
+      assertEquals(3, graph.connections.size)
+      assertEquals(1, graph.functions.size)
+    }
   }
 }

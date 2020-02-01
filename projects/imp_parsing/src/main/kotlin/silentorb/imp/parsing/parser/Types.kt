@@ -22,3 +22,15 @@ val emptyDungeon =
         ),
         nodeMap = mapOf()
     )
+
+fun modifyGraph(dungeon: Dungeon, transform: (Graph) -> Graph)=
+  dungeon.copy(
+      graph = transform(dungeon.graph)
+  )
+
+fun addConnection(dungeon: Dungeon, connection: Connection) =
+    modifyGraph(dungeon) { graph ->
+      graph.copy(
+          connections = graph.connections.plus(connection)
+      )
+    }

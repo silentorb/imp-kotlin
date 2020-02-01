@@ -1,14 +1,10 @@
 package silentorb.imp.parsing.parser
 
-import silentorb.imp.core.Context
-import silentorb.imp.core.NextId
-import silentorb.imp.core.resolveFunction
-import silentorb.imp.core.resolveNode
+import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 
-fun parseExpression(nextId: NextId, context: Context, tokens: Tokens): Response<Dungeon> {
-  val token = tokens.first()
+fun parseExpressionToken(nextId: NextId, context: Context): (Token) -> Response<Dungeon> = { token ->
   val literalValue = parseTokenValue(token)
   val referencedNode = if (token.rune == Rune.identifier)
     resolveNode(context, token.value)
@@ -33,7 +29,7 @@ fun parseExpression(nextId: NextId, context: Context, tokens: Tokens): Response<
   else
     null
 
-  return if (function == null && literalValue == null && referencedNode == null) {
+  if (function == null && literalValue == null && referencedNode == null) {
     failure(newParsingError(TextId.unknownFunction, token))
   } else {
     val nodeMap = mapOf(
@@ -45,25 +41,37 @@ fun parseExpression(nextId: NextId, context: Context, tokens: Tokens): Response<
       )
     else
       mapOf()
-//  val connections = if (referencedNode != null)
-//    listOf(
-//        Connection(
-//            source = referencedNode,
-//            destination =
-//        )
-//    )
-//  else
-//    listOf()
 
-    val dungeon = emptyDungeon
-    success(dungeon
-        .copy(
-            graph = dungeon.graph.copy(
-                nodes = nodes,
-                functions = functions,
-                values = values
-            ),
-            nodeMap = nodeMap
-        ))
+    success(Dungeon(
+        graph = Graph(
+            nodes = nodes,
+            functions = functions,
+            values = values
+        ),
+        nodeMap = nodeMap
+    ))
+  }
+}
+
+fun parseExpression(nextId: NextId, context: Context, tokens: Tokens): Response<Dungeon> {
+  return handle(parseExpressionToken(nextId, context)(tokens.first())) { firstDungeon ->
+    flatten(
+        tokens
+            .drop(1)
+            .map(parseExpressionToken(nextId, context))
+    )
+        .map { dungeons ->
+          // Assuming that at least for now the first token only translates to a single node
+          val destination = firstDungeon.graph.nodes.first()
+
+          dungeons.fold(firstDungeon) { a, b ->
+            val source = getGraphOutputNode(b.graph)
+            addConnection(mergeDistinctDungeons(a, b), Connection(
+                destination = destination,
+                source = source,
+                parameter = defaultParameter
+            ))
+          }
+        }
   }
 }

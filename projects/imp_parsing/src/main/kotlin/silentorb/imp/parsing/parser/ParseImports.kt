@@ -1,12 +1,10 @@
 package silentorb.imp.parsing.parser
 
-import silentorb.imp.core.Namespace
-import silentorb.imp.core.resolveNamespaceFunctionPath
-import silentorb.imp.core.resolveNamespacePath
+import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 
-fun parseImport(namespace: Namespace): (TokenizedImport) -> Response<List<Pair<String, String>>> = { import ->
+fun parseImport(namespace: Namespace): (TokenizedImport) -> Response<List<Pair<Key, PathKey>>> = { import ->
   val path = import.path
       .filter { it.rune == Rune.identifier }
       .map { it.value }
@@ -14,19 +12,17 @@ fun parseImport(namespace: Namespace): (TokenizedImport) -> Response<List<Pair<S
   val hasWildcard = import.path.last().rune == Rune.operator
 
   if (hasWildcard) {
-    val endNamespace = resolveNamespacePath(namespace, path)
-    if (endNamespace == null) {
+    val contents = getDirectoryContents(namespace, toPathString(path))
+    if (contents.none()) {
       failure(ParsingError(TextId.importNotFound, range = tokensToRange(import.path)))
     } else {
-      success(endNamespace.functions.map { Pair(it.key, it.value) })
+      success(contents.map { Pair(it.name, it) })
     }
   } else {
-    val function = resolveNamespaceFunctionPath(namespace, path)
-    if (function == null)
+    val function = toPathKey(path)
+    if (!namespace.functions.containsKey(function))
       failure(ParsingError(TextId.importNotFound, range = tokensToRange(import.path)))
     else
-      success(listOf(
-          Pair(import.path.last().value, function)
-      ))
+      success(listOf(Pair(function.name, function)))
   }
 }

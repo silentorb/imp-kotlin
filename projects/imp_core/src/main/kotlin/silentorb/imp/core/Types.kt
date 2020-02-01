@@ -23,12 +23,10 @@ data class Connection(
 
 typealias Path = String
 
-typealias FunctionMap = Map<Key, Path>
-
 data class Graph(
     val nodes: Set<Id>,
-    val connections: Set<Connection>,
-    val functions: Map<Id, Path>,
+    val connections: Set<Connection> = setOf(),
+    val functions: Map<Id, PathKey>,
     val values: Map<Id, Any>
 )
 

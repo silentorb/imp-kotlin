@@ -1,6 +1,7 @@
 import org.junit.Assert.*
 import silentorb.imp.core.Context
 import silentorb.imp.core.Namespace
+import silentorb.imp.core.PathKey
 import silentorb.imp.parsing.general.ParsingError
 import silentorb.imp.parsing.general.Response
 import silentorb.imp.parsing.general.TextId
@@ -30,26 +31,45 @@ fun <I> expectError(textId: TextId, response: Response<I>) =
         assertEquals(textId, errors.firstOrNull()?.message)
     }
 
-fun addNamespaceFunction(namespace: Namespace, path: List<String>, value: String): Namespace {
-  val name = path.first()
-  return if (path.size == 1)
+fun addNamespaceFunction(namespace: Namespace, pathKey: PathKey, type: Any): Namespace =
     namespace.copy(
-        functions = namespace.functions.plus(Pair(name, value))
+        functions = namespace.functions.plus(
+            Pair(pathKey, type)
+        )
     )
-  else {
-    val child = namespace.namespaces[name] ?: Namespace()
-    val newChild = addNamespaceFunction(child, path.drop(1), value)
-    namespace.copy(
-        namespaces = namespace.namespaces.plus(Pair(name, newChild))
-    )
-  }
-}
 
-fun addNamespaceFunctions(context: Context, entries: Map<String, String>): Context {
-  val root = context.first()
-  return listOf(
-      entries.entries.fold(root) { a, b -> addNamespaceFunction(a, b.key.split("."), b.value)}
-  )
-      .plus(context.drop(1))
-}
+fun addNamespaceFunctions(namespace: Namespace, functions: Map<PathKey, Any>): Namespace =
+    namespace.copy(
+        functions = namespace.functions.plus(
+            functions
+        )
+    )
+
+fun addNamespaceFunctions(context: Context, functions: Map<PathKey, Any>): Context =
+    listOf(
+        addNamespaceFunctions(context.first(), functions)
+    )
+        .plus(context.drop(1))
+
+//  val name = path.first()
+//  return if (path.size == 1)
+//    namespace.copy(
+//        functions = namespace.functions.plus(Pair(name, value))
+//    )
+//  else {
+//    val child = namespace.namespaces[name] ?: Namespace()
+//    val newChild = addNamespaceFunction(child, path.drop(1), value)
+//    namespace.copy(
+//        namespaces = namespace.namespaces.plus(Pair(name, newChild))
+//    )
+//  }
+//}
+
+//fun addNamespaceFunctions(context: Context, entries: Map<String, String>): Context {
+//  val root = context.first()
+//  return listOf(
+//      entries.entries.fold(root) { a, b -> addNamespaceFunction(a, b.key.split("."), b.value) }
+//  )
+//      .plus(context.drop(1))
+//}
 
