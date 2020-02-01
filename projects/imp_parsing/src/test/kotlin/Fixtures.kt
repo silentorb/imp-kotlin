@@ -1,4 +1,4 @@
-import imp.library.standard.intKey
+import silentorb.imp.library.standard.core.intKey
 import silentorb.imp.core.Namespace
 import silentorb.imp.core.PathKey
 import silentorb.imp.core.Type

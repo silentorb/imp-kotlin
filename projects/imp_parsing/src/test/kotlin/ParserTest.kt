@@ -3,12 +3,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Test
 import silentorb.imp.core.Connection
-import silentorb.imp.core.Namespace
-import silentorb.imp.core.mapTypes
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.parser.emptyContext
 import silentorb.imp.parsing.parser.parseText
+import silentorb.imp.testing.errored
+import silentorb.imp.testing.expectError
 
 class ParserTest {
 

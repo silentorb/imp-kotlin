@@ -27,32 +27,32 @@ fun arrangeGraphStages(graph: Graph): List<List<Id>> {
   return result
 }
 
-fun prepareArguments(graph: Graph, outputValues: OutputValues, nodeId: Id): Map<String, Any> {
-  throw Error("Not implemented")
-//  val values = graph.values
-//      .filter { it.node == nodeId }
-//      .map { Pair(it.port, it.value) }
-//
-//  return graph.connections
-//      .filter { it.output == nodeId }
-//      .map {
-//        val rawValue = outputValues[it.input]!!
-//        val value = if (it.outPort != null)
-//          (rawValue as Map<String, Any>)[it.outPort]!!
-//        else
-//          rawValue
-//
-//        Pair(it.port, value)
-//      }
-//      .plus(values)
-//      .associate { it }
+fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: Id): Map<String, Any> {
+  return graph.connections
+      .filter { it.destination == destination }
+      .associate {
+        val value = outputValues[it.source]!!
+
+        Pair(it.parameter, value)
+      }
 }
 
 fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: OutputValues, id: Id): Any {
   val functionName = graph.functions[id]
-  val function = functions[functionName]!!
-  val arguments = prepareArguments(graph, values, id)
-  return function(arguments)
+  return if (functionName != null) {
+    val function = functions[functionName]!!
+    val arguments = prepareArguments(graph, values, id)
+    function(arguments)
+  }
+  else if (graph.values.containsKey(id))  {
+    graph.values[id]!!
+  }
+  else {
+    // Pass through
+    val arguments = prepareArguments(graph, values, id)
+    assert(arguments.size == 1)
+    arguments.values.first()
+  }
 }
 
 fun executeStage(graph: Graph, functions: FunctionImplementationMap): (OutputValues, List<Id>) -> OutputValues = { values, stage ->
@@ -72,14 +72,21 @@ fun execute(functions: FunctionImplementationMap, graph: Graph): OutputValues {
   return execute(functions, graph, stages)
 }
 
-fun getGraphOutput(graph: Graph, values: OutputValues): Map<String, Any> {
-  val outputNode = getGraphOutputNode(graph)
-  return graph.connections
-      .filter { it.destination == outputNode }
-      .associate { Pair(it.parameter, values[it.source]!!) }
+fun executeToSingleValue(functions: FunctionImplementationMap, graph: Graph): Any {
+  val result = execute(functions, graph)
+  val output = getGraphOutputNode(graph)
+  return result[output]!!
 }
 
-fun executeAndFormat(functions: FunctionImplementationMap, graph: Graph): Map<String, Any> {
-  val values = execute(functions, graph)
-  return getGraphOutput(graph, values)
-}
+//fun getGraphOutput(graph: Graph, values: OutputValues): Map<Id, Any> {
+//  val outputNode = getGraphOutputNode(graph)
+//  return graph.connections
+//      .filter { it.destination == outputNode }
+//      .associate { Pair(it.parameter, values[it.source]!!) }
+//}
+
+//fun executeAndFormat(functions: FunctionImplementationMap, graph: Graph): Any {
+//  val values = execute(functions, graph)
+//
+//  return getGraphOutput(graph, values)
+//}

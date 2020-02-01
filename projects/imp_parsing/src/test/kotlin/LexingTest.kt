@@ -1,9 +1,9 @@
 import org.junit.Assert
 import org.junit.Test
-import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.lexer.tokenize
+import silentorb.imp.testing.errored
 
 class LexingTest {
 

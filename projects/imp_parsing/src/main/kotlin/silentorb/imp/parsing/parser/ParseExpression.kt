@@ -24,7 +24,7 @@ fun parseExpressionToken(nextId: NextId, context: Context): (Token) -> Response<
   } else
     mapOf()
 
-  val function = if (token.rune == Rune.identifier)
+  val function = if (token.rune == Rune.identifier || token.rune == Rune.operator)
     resolveFunction(context, token.value)
   else
     null
@@ -53,26 +53,33 @@ fun parseExpressionToken(nextId: NextId, context: Context): (Token) -> Response<
   }
 }
 
+fun parseArguments(nextId: NextId, context: Context, firstDungeon: Dungeon, tokens: Tokens): Response<Dungeon> {
+  return flatten(
+      tokens
+          .drop(1)
+          .map(parseExpressionToken(nextId, context))
+  )
+      .map { dungeons ->
+        // Assuming that at least for now the first token only translates to a single node
+        val destination = firstDungeon.graph.nodes.first()
+        val signature = getTypeDetails(context, firstDungeon.graph.functions.values.first())!!
+        dungeons.foldIndexed(firstDungeon) { i, a, b ->
+          val source = getGraphOutputNode(b.graph)
+          val parameter = signature.parameterNames[i]
+          addConnection(mergeDistinctDungeons(a, b), Connection(
+              destination = destination,
+              source = source,
+              parameter = parameter
+          ))
+        }
+      }
+}
+
 fun parseExpression(nextId: NextId, context: Context, tokens: Tokens): Response<Dungeon> {
   return handle(parseExpressionToken(nextId, context)(tokens.first())) { firstDungeon ->
-    flatten(
-        tokens
-            .drop(1)
-            .map(parseExpressionToken(nextId, context))
-    )
-        .map { dungeons ->
-          // Assuming that at least for now the first token only translates to a single node
-          val destination = firstDungeon.graph.nodes.first()
-          val signature = getTypeDetails(context, firstDungeon.graph.functions.values.first())!!
-          dungeons.foldIndexed(firstDungeon) { i, a, b ->
-            val source = getGraphOutputNode(b.graph)
-            val parameter = signature.parameterNames[i]
-            addConnection(mergeDistinctDungeons(a, b), Connection(
-                destination = destination,
-                source = source,
-                parameter = parameter
-            ))
-          }
-        }
+    if (tokens.size > 1) {
+      parseArguments(nextId, context, firstDungeon, tokens)
+    } else
+      success(firstDungeon)
   }
 }
