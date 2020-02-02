@@ -3,6 +3,7 @@ package silentorb.imp.execution
 import silentorb.imp.core.*
 
 typealias OutputValues = Map<Id, Any>
+typealias Arguments = Map<String, Any>
 
 fun nextStage(nodes: Set<Id>, connections: Collection<Connection>): List<Id> {
   return nodes.filter { node -> connections.none { it.destination == node } }
@@ -24,7 +25,7 @@ fun arrangeGraphStages(graph: Graph): List<List<Id>> {
   return result
 }
 
-fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: Id): Map<String, Any> {
+fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: Id): Arguments {
   return graph.connections
       .filter { it.destination == destination }
       .associate {

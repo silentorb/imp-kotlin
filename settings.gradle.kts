@@ -1,6 +1,6 @@
 import java.nio.file.Files
 
-rootProject.name = "imp"
+//rootProject.name = "imp"
 
 Files.list(file("projects").toPath())
     .forEach { path ->
