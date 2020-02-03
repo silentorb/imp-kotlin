@@ -11,7 +11,7 @@ class ExecutionTest {
     val code = """
       import imp.math.*
       
-      output = + 10 6
+      let output = + 10 6
     """.trimIndent()
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph

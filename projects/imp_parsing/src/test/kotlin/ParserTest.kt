@@ -15,7 +15,7 @@ class ParserTest {
 
   @Test
   fun canParseSimple() {
-    val code = "output = 10"
+    val code = "let output = 10"
 
     handleRoot(errored, parseText(emptyContext)(code)) { result ->
       val graph = result.graph
@@ -28,7 +28,7 @@ class ParserTest {
 
   @Test
   fun canParseDecimalNumbers() {
-    val code = "output = 10.3"
+    val code = "let output = 10.3"
 
     handleRoot(errored, parseText(emptyContext)(code)) { result ->
       val graph = result.graph
@@ -43,7 +43,7 @@ class ParserTest {
 
   @Test
   fun canParseParenthesis() {
-    val code = "output = (10)"
+    val code = "let output = (10)"
 
     handleRoot(errored, parseText(emptyContext)(code)) { result ->
       val graph = result.graph
@@ -57,8 +57,8 @@ class ParserTest {
   @Test
   fun canParseTwoDefinitions() {
     val code = """
-      intermediate = 10
-      output = intermediate
+      let intermediate = 10
+      let output = intermediate
     """.trimIndent()
 
     handleRoot(errored, parseText(emptyContext)(code)) { result ->
@@ -73,15 +73,15 @@ class ParserTest {
 
   @Test
   fun requiresANewlineBetweenDefinitions() {
-    val code = "intermediate = 10 output = intermediate"
+    val code = "let intermediate = 10 let output = intermediate"
     expectError(TextId.expectedNewline, parseText(emptyContext)(code))
   }
 
   @Test
   fun preventsDuplicateSymbols() {
     val code = """
-      output = 10
-      output = output
+      let output = 10
+      let output = output
     """.trimIndent()
     expectError(TextId.duplicateSymbol, parseText(emptyContext)(code))
   }
@@ -89,8 +89,8 @@ class ParserTest {
   @Test
   fun preventsMultipleGraphOutputs() {
     val code = """
-      first = 10
-      second = 10
+      let first = 10
+      let second = 10
     """.trimIndent()
     expectError(TextId.multipleGraphOutputs, parseText(emptyContext)(code))
   }
@@ -146,7 +146,7 @@ class ParserTest {
   @Test
   fun preventsUnknownFunctions() {
     val code = """
-      output = simpleFunction
+      let output = simpleFunction
     """.trimIndent()
     expectError(TextId.unknownFunction, parseText(emptyContext)(code))
   }
@@ -156,7 +156,7 @@ class ParserTest {
     val code = """
       import silentorb.imp.test.simpleFunction
       
-      output = simpleFunction
+      let output = simpleFunction
     """.trimIndent()
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
@@ -170,7 +170,7 @@ class ParserTest {
     val code = """
       import silentorb.imp.test.*
       
-      output = simpleFunction
+      let output = simpleFunction
     """.trimIndent()
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
@@ -183,7 +183,7 @@ class ParserTest {
   @Test
   fun preventsImportsAfterDefinitions() {
     val code = """ 
-      output = 10
+      let output = 10
       import silentorb.imp.test.simpleFunction
     """.trimIndent()
     expectError(TextId.invalidToken, parseText(emptyContext)(code))
@@ -194,7 +194,7 @@ class ParserTest {
     val code = """
       import silentorb.imp.test.*
       
-      output = simpleFunction 32 5
+      let output = simpleFunction 32 5
     """.trimIndent()
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
@@ -211,7 +211,7 @@ class ParserTest {
     val code = """
       import silentorb.imp.test.*
       
-      output = something (Vector2i 3 10)
+      let output = something (Vector2i 3 10)
     """.trimIndent()
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph

@@ -62,24 +62,42 @@ fun partitionImports(tokens: Tokens): Response<List<ImportRange>> {
   return success(imports)
 }
 
+fun definitionIndices(tokens: Tokens): List<Int> {
+  val letTokens = tokens.indices.filter { index ->
+    val token = tokens[index]
+    token.rune == Rune.identifier && token.value == "let"
+  }
+
+  return letTokens.filter { index ->
+    if (index < tokens.size - 2) {
+      val symbol = tokens[index + 1]
+      val equals = tokens[index + 2]
+      symbol.rune == Rune.identifier
+          && equals.rune == Rune.assignment
+    }
+    else
+      false
+  }
+}
+
 fun partitionDefinitions(tokens: Tokens): Response<List<DefinitionRange>> {
-  val assignmentTokenIndices = filterIndicies(tokens, isAssignmentToken)
+  val assignmentTokenIndices = definitionIndices(tokens)
   val entries = assignmentTokenIndices.map { step ->
     val token = tokens[step]
     val peek = peek(tokens, step)
-    val neighbor = peek(-2)
-    val symbol = peek(-1)
-    val firstExpressionToken = peek(1)
+    val neighbor = peek(-1)
+    val symbol = peek(1)
+    val firstExpressionToken = peek(3)
     fun formatError(condition: Boolean, textId: TextId, errorToken: Token?) =
         if (condition) null else newParsingError(textId, errorToken ?: token)
 
     val newErrors = listOfNotNull(
-        formatError(symbol?.rune == Rune.identifier, TextId.expectedIdentifier, symbol),
+//        formatError(symbol?.rune == Rune.identifier, TextId.expectedIdentifier, symbol),
         formatError(neighbor?.rune == Rune.newline || neighbor?.rune == null, TextId.expectedNewline, neighbor),
         formatError(firstExpressionToken?.rune != Rune.newline && firstExpressionToken?.rune != null, TextId.expectedExpression, firstExpressionToken)
     )
 
-    val expressionStart = step + 1
+    val expressionStart = step + 3
     val terminatorMatchIndex = nextIndexOf(tokens, expressionStart + 1, isImportTerminator)
     val expressionEnd = if (terminatorMatchIndex != null)
       terminatorMatchIndex
@@ -88,7 +106,7 @@ fun partitionDefinitions(tokens: Tokens): Response<List<DefinitionRange>> {
 
     assert(expressionStart < expressionEnd)
     val newDefinition = DefinitionRange(
-        symbol = step - 1,
+        symbol = step + 1,
         expressionStart = expressionStart,
         expressionEnd = expressionEnd
     )
@@ -122,7 +140,7 @@ fun toTokenizedGraph(
 }
 
 fun getDefinitionsRangeStart(tokens: Tokens, definitionRanges: List<DefinitionRange>): Int =
-    definitionRanges.minBy { it.symbol }?.symbol ?: tokens.size
+    definitionRanges.minBy { it.symbol }?.symbol?.minus(1) ?: tokens.size
 
 fun parseTokens(context: Context, tokens: Tokens): Response<Dungeon> =
     partitionDefinitions(tokens)
