@@ -10,6 +10,7 @@ enum class TextId {
   expectedNewline,
   importNotFound,
   invalidToken,
+  missingClosingParenthesis,
   multipleGraphOutputs,
   noGraphOutput,
   noMatchingSignature,

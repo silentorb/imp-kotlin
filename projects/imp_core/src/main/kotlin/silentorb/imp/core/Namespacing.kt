@@ -9,7 +9,9 @@ data class Namespace(
     val functionAliases: Map<Key, PathKey> = mapOf(),
     val functions: OverloadsMap = mapOf(),
     val nodes: Map<Key, Id> = mapOf(),
-    val values: Map<Key, Any> = mapOf()
+    val values: Map<Key, Any> = mapOf(),
+    val structures: Map<PathKey, Structure> = mapOf(),
+    val unions: Map<PathKey, List<Union>> = mapOf()
 )
 
 typealias Context = List<Namespace>

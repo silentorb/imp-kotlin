@@ -55,11 +55,10 @@ fun parseExpressionToken(nextId: NextId, context: Context): (Token) -> Response<
   }
 }
 
-fun parseArguments(nextId: NextId, context: Context, firstDungeon: Dungeon, tokens: Tokens): Response<Dungeon> {
+fun parseArguments(nextId: NextId, context: Context, firstDungeon: Dungeon, tokens: GroupedTokens): Response<Dungeon> {
   return flatten(
       tokens
-          .drop(1)
-          .map(parseExpressionToken(nextId, context))
+          .map(parseExpression(nextId, context))
   )
       .then { dungeons ->
         // Assuming that at least for now the first token only translates to a single node
@@ -70,7 +69,7 @@ fun parseArguments(nextId: NextId, context: Context, firstDungeon: Dungeon, toke
               ?: throw Error("Graph is missing a type for node $output")
         }
         val functionOverloads = getTypeDetails(context, firstDungeon.graph.types.values.first())!!
-        matchFunction(callingSignature, functionOverloads, tokensToRange(tokens))
+        matchFunction(callingSignature, functionOverloads, tokensToRange(tokens.map { getChildWithToken(it).token!! }))
             .map { (signature, parameterNames) ->
               dungeons.foldIndexed(firstDungeon) { i, a, b ->
                 val source = getGraphOutputNode(b.graph)
@@ -84,14 +83,18 @@ fun parseArguments(nextId: NextId, context: Context, firstDungeon: Dungeon, toke
               }
                   .addSignature(destination, signature)
             }
-
       }
 }
 
-fun parseExpression(nextId: NextId, context: Context, tokens: Tokens): Response<Dungeon> {
-  return handle(parseExpressionToken(nextId, context)(tokens.first())) { firstDungeon ->
-    if (tokens.size > 1) {
-      parseArguments(nextId, context, firstDungeon, tokens)
+fun parseExpression(nextId: NextId, context: Context): (TokenGroup) -> Response<Dungeon> = { group ->
+  val (token, children) = if (group.token != null)
+    Pair(group.token, listOf())
+  else
+    Pair(getChildWithToken(group).token!!, group.children.drop(1))
+
+  handle(parseExpressionToken(nextId, context)(token)) { firstDungeon ->
+    if (group.children.size > 1) {
+      parseArguments(nextId, context, firstDungeon, children)
     } else
       success(firstDungeon)
   }

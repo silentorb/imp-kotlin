@@ -3,6 +3,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Test
 import silentorb.imp.core.Connection
+import silentorb.imp.core.floatKey
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.parser.emptyContext
@@ -15,6 +16,34 @@ class ParserTest {
   @Test
   fun canParseSimple() {
     val code = "output = 10"
+
+    handleRoot(errored, parseText(emptyContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(2, graph.nodes.size)
+      assertEquals(1, graph.values.size)
+      assertEquals(1, graph.connections.size)
+      assertEquals(10, graph.values.values.first())
+    }
+  }
+
+  @Test
+  fun canParseDecimalNumbers() {
+    val code = "output = 10.3"
+
+    handleRoot(errored, parseText(emptyContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(2, graph.nodes.size)
+      assertEquals(1, graph.values.size)
+      assertEquals(1, graph.types.size)
+      assertEquals(1, graph.connections.size)
+      assertEquals(10.3f, graph.values.values.first())
+      assertEquals(floatKey, graph.types.values.first())
+    }
+  }
+
+  @Test
+  fun canParseParenthesis() {
+    val code = "output = (10)"
 
     handleRoot(errored, parseText(emptyContext)(code)) { result ->
       val graph = result.graph
@@ -174,6 +203,21 @@ class ParserTest {
       assertEquals(3, graph.types.size)
       assertTrue(graph.connections.contains(Connection(destination = 2, source = 3, parameter = "first")))
       assertTrue(graph.connections.contains(Connection(destination = 2, source = 4, parameter = "second")))
+    }
+  }
+
+  @Test
+  fun supportsDataStructures() {
+    val code = """
+      import silentorb.imp.test.*
+      
+      output = something (Vector2i 3 10)
+    """.trimIndent()
+    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(5, graph.nodes.size)
+      assertEquals(4, graph.connections.size)
+      assertEquals(4, graph.types.size)
     }
   }
 }

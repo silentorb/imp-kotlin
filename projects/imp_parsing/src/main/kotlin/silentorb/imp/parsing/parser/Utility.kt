@@ -28,6 +28,17 @@ fun <T> nextIndexOf(list: List<T>, start: Int, filter: (T) -> Boolean): Int? {
     start + result
 }
 
+fun <T> untilIndex(list: List<T>, filter: (T) -> Boolean): Int {
+  val result = list.indexOfFirst(filter)
+  return if (result == -1)
+    list.size
+  else
+    result
+}
+
+fun <T> until(list: List<T>, filter: (T) -> Boolean): List<T> =
+    list.take(untilIndex(list, filter))
+
 //fun flattenDungeon(parent: Dungeon, child: Dungeon): Dungeon {
 //  val mapId = newChildMap(parent.graph.nodes, child.graph.nodes)
 //  val graph = flattenGraph(parent.graph, child.graph, mapId)

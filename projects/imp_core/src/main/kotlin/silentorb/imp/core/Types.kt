@@ -29,6 +29,13 @@ data class Graph(
     val values: Map<Id, Any>
 )
 
+data class Structure(
+    val signature: Signature,
+    val parameters: List<Key>
+)
+
+typealias Union = List<PathKey>
+
 const val defaultParameter = ""
 
 typealias NextId = () -> Id

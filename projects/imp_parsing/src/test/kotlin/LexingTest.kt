@@ -42,6 +42,15 @@ class LexingTest {
   }
 
   @Test
+  fun canTokenizeWithParenthesis() {
+    val code = "output = (10)"
+
+    handleRoot(errored, tokenize(code)) { tokens ->
+      Assert.assertEquals(5, tokens.size)
+    }
+  }
+
+  @Test
   fun supportsImportingSyntax() {
     val code = """
       import silentorb.imp.test.simpleFunction

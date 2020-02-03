@@ -47,7 +47,14 @@ fun parseDungeon(parentContext: Context): (TokenizedGraph) -> Response<Dungeon> 
             )
 
             flatten(passThroughNodes.map { (id, definition) ->
-              parseExpression(nextId, context, definition.expression)
+              groupTokens(definition.expression)
+                  .map {
+                    if (it.size == 1)
+                      it.first()
+                    else
+                      newTokenGroup(it)
+                  }
+                  .then(parseExpression(nextId, context))
                   .map { dungeon ->
                     val output = getGraphOutputNode(dungeon.graph)
                     addConnection(dungeon, Connection(
