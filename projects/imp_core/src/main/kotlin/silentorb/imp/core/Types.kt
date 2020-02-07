@@ -22,11 +22,11 @@ data class Connection(
 )
 
 data class Graph(
-    val nodes: Set<Id>,
+    val nodes: Set<Id> = setOf(),
     val connections: Set<Connection> = setOf(),
-    val types: Map<Id, PathKey>,
+    val types: Map<Id, PathKey> = mapOf(),
     val signatures: Map<Id, Signature> = mapOf(),
-    val values: Map<Id, Any>
+    val values: Map<Id, Any> = mapOf()
 )
 
 data class Structure(
