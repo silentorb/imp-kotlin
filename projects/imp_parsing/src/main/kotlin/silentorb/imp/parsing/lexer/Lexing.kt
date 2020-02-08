@@ -43,7 +43,12 @@ fun tokenStart(code: CodeBuffer, position: Position, character: Char): Response<
   return if (branch == null)
     failure(listOf(ParsingError(TextId.unexpectedCharacter, Range(position))))
   else
-    branch(Bundle(code, nextPosition(character, position), buffer = newLexicalBuffer(character)))
+    branch(Bundle(
+        code = code,
+        start = position,
+        end = nextPosition(character, position),
+        buffer = newLexicalBuffer(character)
+    ))
 }
 
 fun tokenStart(code: CodeBuffer): (Position) -> Response<TokenStep> = { position ->
@@ -56,7 +61,7 @@ fun tokenStart(code: CodeBuffer): (Position) -> Response<TokenStep> = { position
 }
 
 fun nextToken(code: CodeBuffer, position: Position): Response<TokenStep> {
-  return tokenStart(code)(consumeSingleLineWhitespace(Bundle(code, position)))
+  return tokenStart(code)(consumeSingleLineWhitespace(Bundle(code, position, position)))
 }
 
 tailrec fun tokenize(code: CodeBuffer, position: Position, tokens: Tokens): Response<Tokens> {

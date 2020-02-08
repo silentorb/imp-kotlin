@@ -22,6 +22,15 @@ class LexingTest {
   }
 
   @Test
+  fun returnsProperRanges() {
+    handleRoot(errored, tokenize("let")) { tokens ->
+      val range = tokens.first().range
+      Assert.assertEquals(0, range.start.index)
+      Assert.assertEquals(3, range.end.index)
+    }
+  }
+
+  @Test
   fun canTokenizeWithInt() {
     val code = "output = 10"
 

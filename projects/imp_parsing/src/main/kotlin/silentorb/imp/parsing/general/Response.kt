@@ -9,6 +9,10 @@ sealed class Response<out T> {
 
   fun <O> then(transform: (T) -> Response<O>): Response<O> =
       handle(this) { transform(it) }
+
+  fun done(onFailure: (List<ParsingError>) -> Unit, onSuccess: (T) -> Unit) {
+    handleRoot(onFailure, this, onSuccess)
+  }
 }
 
 fun <T> failure(errors: List<ParsingError>): Response<T> =

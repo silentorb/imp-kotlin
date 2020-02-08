@@ -23,7 +23,7 @@ fun consumeSingle(pattern: CharPattern, code: CodeBuffer, end: Position): Char? 
 data class Bundle(
     val code: CodeBuffer,
     val start: Position,
-    val end: Position = start,
+    val end: Position,
     val buffer: LexicalBuffer = newLexicalBuffer()
 )
 
