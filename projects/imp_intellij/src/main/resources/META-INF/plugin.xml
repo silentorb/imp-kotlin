@@ -8,10 +8,12 @@
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <fileType name="Imp file" implementationClass="silentorb.imp.intellij.ImpFileTypeFactory" fieldName="INSTANCE"
+        <fileType name="Imp file" implementationClass="silentorb.imp.intellij.ImpFileType" fieldName="INSTANCE"
                   language="Imp" extensions="imp"/>
+        <lang.parserDefinition language="Imp" implementationClass="silentorb.imp.intellij.language.ImpParserDefinition"/>
     </extensions>
 
     <actions>

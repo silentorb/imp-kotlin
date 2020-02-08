@@ -4,7 +4,7 @@ package silentorb.imp.parsing.general
 // Initially String is being used but this file could easily be changed to use raw memory for increased maximum code size
 
 // Could be later changed to a raw memory buffer
-typealias CodeBuffer = String
+typealias CodeBuffer = CharSequence
 
 // Could be later changed to Long
 typealias CodeInt = Int

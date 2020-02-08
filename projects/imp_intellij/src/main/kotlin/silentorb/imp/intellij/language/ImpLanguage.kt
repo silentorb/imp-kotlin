@@ -1,4 +1,4 @@
-package silentorb.imp.intellij
+package silentorb.imp.intellij.language
 
 import com.intellij.lang.Language
 

@@ -31,3 +31,7 @@ tasks.getByName<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXml
       Add change notes here.<br>
       <em>most HTML tags may be used</em>""")
 }
+
+//project.dependencies.add("api", project.project(":imp_execution"))
+//project.dependencies.add("api", project.project(":imp_libraries_standard"))
+//project.dependencies.add("api", project.project(":imp_libraries_standard_implementation"))

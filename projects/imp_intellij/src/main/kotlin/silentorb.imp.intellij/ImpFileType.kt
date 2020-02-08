@@ -1,6 +1,7 @@
 package silentorb.imp.intellij
 
 import com.intellij.openapi.fileTypes.LanguageFileType
+import silentorb.imp.intellij.language.ImpLanguage
 import javax.swing.Icon
 
 class ImpFileType private constructor() : LanguageFileType(ImpLanguage.INSTANCE) {
