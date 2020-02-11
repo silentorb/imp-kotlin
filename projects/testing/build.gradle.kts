@@ -4,7 +4,7 @@ plugins {
 
 dependencies {
   implementation(kotlin("stdlib"))
-  implementation("junit:junit:4.13")
+  testImplementation("junit:junit:4.13")
 }
 
 requires(project, "parsing")
