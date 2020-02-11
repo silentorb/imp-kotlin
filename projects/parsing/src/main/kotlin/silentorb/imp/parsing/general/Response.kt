@@ -13,6 +13,13 @@ sealed class Response<out T> {
   fun done(onFailure: (List<ParsingError>) -> Unit, onSuccess: (T) -> Unit) {
     handleRoot(onFailure, this, onSuccess)
   }
+
+  fun throwOnFailure(onFailure: (List<ParsingError>) -> Error): T {
+    return when (this) {
+      is Success -> this.value
+      is Failure -> throw onFailure(this.errors)
+    }
+  }
 }
 
 fun <T> failure(errors: List<ParsingError>): Response<T> =
