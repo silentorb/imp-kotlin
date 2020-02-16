@@ -12,6 +12,9 @@ fun patternFromRegex(regex: Regex): CharPattern =
 fun patternFromRegex(string: String): CharPattern =
     patternFromRegex(Regex(string))
 
+fun patternFromChar(value: Char): CharPattern =
+    { it == value }
+
 fun consumeSingle(pattern: CharPattern, code: CodeBuffer, end: Position): Char? {
   val character = nextCharacter(code, end.index)
   return if (character != null && pattern(character))

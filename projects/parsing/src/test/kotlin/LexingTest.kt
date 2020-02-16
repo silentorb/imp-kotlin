@@ -1,9 +1,11 @@
 import org.junit.Assert
 import org.junit.Test
+import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.lexer.tokenize
 import silentorb.imp.testing.errored
+import silentorb.imp.testing.expectError
 
 class LexingTest {
 
@@ -38,6 +40,23 @@ class LexingTest {
       Assert.assertEquals(3, tokens.size)
       Assert.assertEquals("output", tokens.first().value)
     }
+  }
+
+  @Test
+  fun canTokenizeLiteralZero() {
+    val code = "0"
+
+    handleRoot(errored, tokenize(code)) { tokens ->
+      Assert.assertEquals(1, tokens.size)
+      Assert.assertEquals(Rune.literalInteger, tokens.first().rune)
+    }
+  }
+
+  @Test
+  fun preventsTokenizingZeroLeadingInteger() {
+    val code = "01"
+
+    expectError(TextId.unexpectedCharacter, tokenize(code))
   }
 
   @Test

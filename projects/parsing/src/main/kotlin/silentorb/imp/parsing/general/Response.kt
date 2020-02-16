@@ -1,6 +1,6 @@
 package silentorb.imp.parsing.general
 
-sealed class Response<out T> {
+sealed class Response<T> {
   data class Success<T>(val value: T) : Response<T>()
   data class Failure<T>(val errors: List<ParsingError>) : Response<T>()
 
@@ -12,6 +12,13 @@ sealed class Response<out T> {
 
   fun done(onFailure: (List<ParsingError>) -> Unit, onSuccess: (T) -> Unit) {
     handleRoot(onFailure, this, onSuccess)
+  }
+
+  fun onError(onFailure: (List<ParsingError>) -> T): T {
+      return when (this) {
+          is Success -> this.value
+          is Failure -> onFailure(this.errors)
+      }
   }
 
   fun throwOnFailure(onFailure: (List<ParsingError>) -> Error): T {

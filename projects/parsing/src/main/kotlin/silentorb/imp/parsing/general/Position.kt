@@ -13,10 +13,16 @@ fun newPosition() =
         row = 1
     )
 
-fun formatPositionString(position: Position): String =
-    "${position.row}:${position.column}"
-
 data class Range(
     val start: Position,
     val end: Position = start
 )
+
+fun positionString(position: Position): String =
+    "${position.row}:${position.column}"
+
+fun rangeString(range: Range): String =
+    if (range.start == range.end)
+        positionString(range.start)
+    else
+      "${positionString(range.start)} - ${positionString(range.end)}"

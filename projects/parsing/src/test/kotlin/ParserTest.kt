@@ -220,4 +220,20 @@ class ParserTest {
       assertEquals(4, graph.types.size)
     }
   }
+
+  @Test
+  fun usesNodeTypeToDeduceOverloadSelection() {
+    val code = """
+      import silentorb.imp.test.*
+      
+      let value = 32
+      let output = simpleFunction value 5
+    """.trimIndent()
+    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(5, graph.nodes.size)
+      assertEquals(4, graph.connections.size)
+      assertEquals(5, graph.types.size)
+    }
+  }
 }

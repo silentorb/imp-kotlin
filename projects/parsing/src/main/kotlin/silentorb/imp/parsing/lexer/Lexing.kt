@@ -31,6 +31,7 @@ typealias BundleToToken = (Bundle) -> Response<TokenStep>
 
 fun branchTokenStart(character: Char): BundleToToken? =
     when {
+      literalZero(character) -> ::consumeLiteralZero
       newLineStart(character) -> ::consumeNewline
       identifierStart(character) -> ::consumeIdentifier
       integerStart(character) -> ::consumeInteger

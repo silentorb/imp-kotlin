@@ -11,47 +11,57 @@ fun parseExpressionToken(nextId: NextId, context: Context): (Token) -> Response<
   else
     null
 
-  val id = if (referencedNode != null)
-    referencedNode
-  else
-    nextId()
-
-  val nodes = setOf(id)
-  val values = if (literalValuePair != null) {
-    mapOf(
-        id to literalValuePair.second
-    )
-  } else
-    mapOf()
-
-  val function = if (literalValuePair != null)
-    literalValuePair.first
-  else if (token.rune == Rune.identifier || token.rune == Rune.operator)
-    resolveFunction(context, token.value)
-  else
-    null
-
-  if (function == null && literalValuePair == null && referencedNode == null) {
-    failure(newParsingError(TextId.unknownFunction, token))
-  } else {
-    val nodeMap = mapOf(
-        id to token.range
-    )
-    val functions = if (function != null)
-      mapOf(
-          id to function
-      )
-    else
-      mapOf()
-
+  if (referencedNode != null) {
+    val (id, type) = referencedNode
     success(Dungeon(
         graph = Graph(
-            nodes = nodes,
-            types = functions,
-            values = values
+            nodes = setOf(id),
+            types = mapOf(id to type)
         ),
-        nodeMap = nodeMap
+        nodeMap = mapOf(
+            id to token.range
+        )
     ))
+  } else {
+    val id = nextId()
+
+    val nodes = setOf(id)
+    val values = if (literalValuePair != null) {
+      mapOf(
+          id to literalValuePair.second
+      )
+    } else
+      mapOf()
+
+    val function = if (literalValuePair != null)
+      literalValuePair.first
+    else if (token.rune == Rune.identifier || token.rune == Rune.operator)
+      resolveFunction(context, token.value)
+    else
+      null
+
+    if (function == null && literalValuePair == null) {
+      failure(newParsingError(TextId.unknownFunction, token))
+    } else {
+      val nodeMap = mapOf(
+          id to token.range
+      )
+      val functions = if (function != null)
+        mapOf(
+            id to function
+        )
+      else
+        mapOf()
+
+      success(Dungeon(
+          graph = Graph(
+              nodes = nodes,
+              types = functions,
+              values = values
+          ),
+          nodeMap = nodeMap
+      ))
+    }
   }
 }
 

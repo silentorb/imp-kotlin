@@ -6,6 +6,10 @@ val identifierAfterStart = patternFromRegex("[a-zA-Z_0-9]")
 val integerStart = patternFromRegex("[1-9]")
 val integerAfterStart = patternFromRegex("[0-9]")
 
+val invalidAfterZero = identifierAfterStart
+
+val literalZero = patternFromChar('0')
+
 val floatAfterDot = integerAfterStart
 
 val singleLineWhitespace = patternFromRegex("[ \\t]")

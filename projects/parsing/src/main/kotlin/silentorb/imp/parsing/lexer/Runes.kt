@@ -2,6 +2,7 @@ package silentorb.imp.parsing.lexer
 
 enum class Rune {
   assignment,
+  comment,
   dot,
   identifier,
   literalFloat,

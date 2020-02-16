@@ -1,7 +1,6 @@
 package silentorb.imp.parsing.lexer
 
-import silentorb.imp.parsing.general.Position
-import silentorb.imp.parsing.general.Response
+import silentorb.imp.parsing.general.*
 
 tailrec fun consumeSingleLineWhitespace(bundle: Bundle): Position {
   val character = consumeSingle(bundle, singleLineWhitespace)
@@ -52,4 +51,14 @@ tailrec fun consumeInteger(bundle: Bundle): Response<TokenStep> {
     tokenFromBundle(Rune.literalInteger)(bundle)
   else
     consumeInteger(incrementBundle(character, bundle))
+}
+
+fun consumeLiteralZero(bundle: Bundle): Response<TokenStep> {
+  val character = nextCharacter(bundle)
+  return if (character == dot)
+    consumeFloatAfterDot(incrementBundle(character, bundle))
+  else if (character != null && integerAfterStart(character))
+    failure(newParsingError(TextId.unexpectedCharacter, Range(bundle.start)))
+  else
+    tokenFromBundle(Rune.literalInteger)(bundle)
 }

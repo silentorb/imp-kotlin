@@ -38,3 +38,6 @@ fun errorIf(condition: Boolean, message: TextId, range: Range): ParsingError? =
       ParsingError(message, range = range)
     else
       null
+
+fun formatError(textLibrary: (TextId)-> String, error: ParsingError): String =
+    englishText(error.message) + " at ${rangeString(error.range)}"

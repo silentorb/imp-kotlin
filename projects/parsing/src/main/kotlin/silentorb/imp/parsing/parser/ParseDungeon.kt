@@ -20,74 +20,114 @@ data class TokenizedGraph(
     val definitions: List<TokenizedDefinition>
 )
 
-fun parseDungeon(parentContext: Context): (TokenizedGraph) -> Response<Dungeon> =
-    { (imports, definitions) ->
-      val nextId = newIdSource(1L)
-      val passThroughNodes = definitions.mapIndexed { index, definition ->
-        Pair(nextId(), definition)
-      }
-          .associate { it }
-
-      val definitionSymbols = passThroughNodes.map { (id, definition) ->
-        Pair(definition.symbol.value, id)
-      }
-          .associate { it }
-
-      flatten(imports.map(parseImport(parentContext.first())))
-          .then { rawImportedFunctions ->
-            val importedFunctions = rawImportedFunctions
-                .flatten()
-                .associate { it }
-
-            val context = parentContext.plus(
-                Namespace(
-                    nodes = definitionSymbols,
-                    functionAliases = importedFunctions
+fun parseDefinition(nextId: NextId, context: Context): (Map.Entry<Id, TokenizedDefinition>) -> Response<Dungeon> =
+    { (id, definition) ->
+      groupTokens(definition.expression)
+          .map {
+            if (it.size == 1)
+              it.first()
+            else
+              newTokenGroup(it)
+          }
+          .then(parseExpression(nextId, context))
+          .map { dungeon ->
+            val output = getGraphOutputNode(dungeon.graph)
+            val nextDungeon = addConnection(dungeon, Connection(
+                source = output,
+                destination = id,
+                parameter = defaultParameter
+            ))
+            nextDungeon.copy(
+                graph = nextDungeon.graph.copy(
+                    types = nextDungeon.graph.types
+                        .plus(id to nextDungeon.graph.types[output]!!)
                 )
             )
+          }
+    }
 
-            flatten(passThroughNodes.map { (id, definition) ->
-              groupTokens(definition.expression)
-                  .map {
-                    if (it.size == 1)
-                      it.first()
-                    else
-                      newTokenGroup(it)
-                  }
-                  .then(parseExpression(nextId, context))
-                  .map { dungeon ->
-                    val output = getGraphOutputNode(dungeon.graph)
-                    addConnection(dungeon, Connection(
-                        source = output,
-                        destination = id,
-                        parameter = defaultParameter
-                    ))
-                  }
-            })
-                .then { expressionDungeons ->
-                  val nodes: Set<Id> = passThroughNodes.keys
+fun finalizeDungeons(nodeRanges: Map<Id, TokenizedDefinition>): (List<Dungeon>) -> Response<Dungeon> =
+    { expressionDungeons ->
+      val nodeMap = nodeRanges
+          .mapValues { (_, definition) -> definition.symbol.range }
 
-                  val nodeMap = passThroughNodes
-                      .mapValues { (_, definition) -> definition.symbol.range }
+      val initialGraph = Graph(
+          nodes = nodeRanges.keys,
+          connections = setOf(),
+          types = mapOf(),
+          values = mapOf()
+      )
 
-                  val initialGraph = Graph(
-                      nodes = nodes,
-                      connections = setOf(),
-                      types = mapOf(),
-                      values = mapOf()
-                  )
+      val initialDungeon = Dungeon(
+          graph = initialGraph,
+          nodeMap = nodeMap
+      )
 
-                  val initialDungeon = Dungeon(
-                      graph = initialGraph,
-                      nodeMap = nodeMap
-                  )
+      val dungeon = expressionDungeons.fold(initialDungeon) { a, expressionDungeon ->
+        mergeDistinctDungeons(a, expressionDungeon)
+      }
 
-                  val dungeon = expressionDungeons.fold(initialDungeon) { a, expressionDungeon ->
-                    mergeDistinctDungeons(a, expressionDungeon)
-                  }
+      checkForGraphErrors(dungeon.nodeMap)(dungeon.graph)
+          .map { dungeon }
+    }
 
-                  checkForGraphErrors(dungeon.nodeMap)(dungeon.graph)
-                      .map { dungeon }
-                }
+fun newDefinitionContext(
+    nodeRanges: Map<Id, TokenizedDefinition>,
+    rawImportedFunctions: List<List<Pair<Key, PathKey>>>,
+    parentContext: Context): Context {
+  val definitionSymbols = nodeRanges.map { (id, definition) ->
+    Pair(definition.symbol.value, id)
+  }
+      .associate { it }
+
+  val importedFunctions = rawImportedFunctions
+      .flatten()
+      .associate { it }
+
+  return parentContext.plus(
+      Namespace(
+          nodes = definitionSymbols,
+          functionAliases = importedFunctions
+      )
+  )
+}
+
+fun addTypesToContext(types: Map<Id, PathKey>, context: Context): Context =
+    context
+        .dropLast(1)
+        .plus(context.last().copy(
+            types = context.last().types
+                .plus(types)
+        ))
+
+fun parseDefinitions(nextId: NextId, nodeRanges: Map<Id, TokenizedDefinition>, initialContext: Context): Response<List<Dungeon>> {
+  val (dungeonResponses) = nodeRanges.entries
+      .fold<Map.Entry<Id, TokenizedDefinition>, Pair<List<Response<Dungeon>>, Context>>(Pair(listOf(), initialContext)) { a, b ->
+        val (responses, context) = a
+        val response = parseDefinition(nextId, context)(b)
+        val nextContext = if (response is Response.Success)
+          addTypesToContext(response.value.graph.types, context)
+        else
+          context
+
+        Pair(responses.plus(response), nextContext)
+      }
+
+  return flatten(dungeonResponses)
+}
+
+fun parseDungeon(parentContext: Context): (TokenizedGraph) -> Response<Dungeon> =
+    { (imports, definitions) ->
+      flatten(imports.map(parseImport(parentContext.first())))
+          .then { rawImportedFunctions ->
+            val nextId = newIdSource(1L)
+            val nodeRanges = definitions.mapIndexed { index, definition ->
+              Pair(nextId(), definition)
+            }
+                .associate { it }
+
+            val context = newDefinitionContext(nodeRanges, rawImportedFunctions, parentContext)
+            parseDefinitions(nextId, nodeRanges, context)
+                .then(finalizeDungeons(nodeRanges))
           }
     }

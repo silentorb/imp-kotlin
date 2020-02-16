@@ -9,6 +9,7 @@ data class Namespace(
     val functionAliases: Map<Key, PathKey> = mapOf(),
     val functions: OverloadsMap = mapOf(),
     val nodes: Map<Key, Id> = mapOf(),
+    val types: Map<Id, PathKey> = mapOf(),
     val values: Map<Key, Any> = mapOf(),
     val structures: Map<PathKey, Structure> = mapOf(),
     val unions: Map<PathKey, List<Union>> = mapOf()
@@ -37,14 +38,19 @@ tailrec fun resolveFunction(context: Context, name: String, index: Int): PathKey
 fun resolveFunction(context: Context, name: String): PathKey? =
     resolveFunction(context, name, context.size - 1)
 
-tailrec fun resolveNode(context: Context, name: String, index: Int): Id? =
+tailrec fun resolveNode(context: Context, name: String, index: Int): Pair<Id, PathKey>? =
     if (index < 0)
       null
-    else
-      context[index].nodes[name]
-          ?: resolveNode(context, name, index - 1)
+    else {
+      val id = context[index].nodes[name]
 
-fun resolveNode(context: Context, name: String): Id? =
+      if (id != null)
+        Pair(id, context[index].types[id]!!)
+      else
+        resolveNode(context, name, index - 1)
+    }
+
+fun resolveNode(context: Context, name: String): Pair<Id, PathKey>? =
     resolveNode(context, name, context.size - 1)
 
 tailrec fun getTypeDetails(context: Context, path: PathKey, index: Int): Overloads? =
