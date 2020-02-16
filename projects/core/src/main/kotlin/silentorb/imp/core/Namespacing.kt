@@ -15,6 +15,22 @@ data class Namespace(
     val unions: Map<PathKey, List<Union>> = mapOf()
 )
 
+fun combineNamespaces(namespaces: Collection<Namespace>): Namespace =
+    namespaces.reduce { accumulator, namespace ->
+      accumulator.copy(
+          functionAliases = accumulator.functionAliases.plus(namespace.functionAliases),
+          functions = accumulator.functions.plus(namespace.functions),
+          nodes = accumulator.nodes.plus(namespace.nodes),
+          types = accumulator.types.plus(namespace.types),
+          values = accumulator.values.plus(namespace.values),
+          structures = accumulator.structures.plus(namespace.structures),
+          unions = accumulator.unions.plus(namespace.unions)
+      )
+    }
+
+fun combineNamespaces(vararg namespaces: Namespace): Namespace =
+    combineNamespaces(namespaces.toList())
+
 typealias Context = List<Namespace>
 
 fun toPathString(list: List<String>) =

@@ -1,9 +1,6 @@
 package silentorb.imp.execution
 
-import silentorb.imp.core.FunctionKey
-import silentorb.imp.core.Key
-import silentorb.imp.core.PathKey
-import silentorb.imp.core.Signature
+import silentorb.imp.core.*
 
 typealias FunctionImplementation = (Map<Key, Any>) -> Any
 
@@ -14,4 +11,9 @@ data class CompleteFunction(
     val signature: Signature,
     val parameters: List<String>,
     val implementation: FunctionImplementation
+)
+
+data class Library(
+    val namespace: Namespace,
+    val implementation: FunctionImplementationMap
 )

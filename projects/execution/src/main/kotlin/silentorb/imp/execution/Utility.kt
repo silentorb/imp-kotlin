@@ -1,28 +1,33 @@
 package silentorb.imp.execution
 
 import silentorb.imp.core.FunctionKey
+import silentorb.imp.core.Namespace
 import silentorb.imp.core.OverloadsMap
+import silentorb.imp.core.combineNamespaces
 
-data class FunctionBundle(
-    val interfaces: OverloadsMap,
-    val implementation: FunctionImplementationMap
-)
-
-fun partitionFunctions(functions: List<CompleteFunction>): FunctionBundle {
-    val interfaces = functions
-        .associate {
-            Pair(
-                it.path, mapOf(
-                    it.signature to it.parameters
-                )
-            )
-        }
-    val implementation = functions
-        .associate {
-            Pair(FunctionKey(it.path, it.signature), it.implementation)
-        }
-    return FunctionBundle(
-        interfaces = interfaces,
-        implementation = implementation
-    )
+fun partitionFunctions(functions: List<CompleteFunction>): Library {
+  val interfaces = functions
+      .associate {
+        Pair(
+            it.path, mapOf(
+            it.signature to it.parameters
+        )
+        )
+      }
+  val implementation = functions
+      .associate {
+        Pair(FunctionKey(it.path, it.signature), it.implementation)
+      }
+  return Library(
+      namespace = Namespace(
+          functions = interfaces
+      ),
+      implementation = implementation
+  )
 }
+
+fun combineLibraries(vararg libraries: Library): Library =
+    Library(
+        namespace = combineNamespaces(libraries.map { it.namespace }),
+        implementation = libraries.map { it.implementation }.reduce { a, b -> a.plus(b) }
+    )

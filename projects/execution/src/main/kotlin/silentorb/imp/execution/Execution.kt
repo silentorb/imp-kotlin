@@ -40,8 +40,8 @@ fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: Outp
     graph.values[id]!!
   } else {
     val type = graph.types[id]
-    if (type != null) {
-      val signature = graph.signatures[id] ?: throw Error("Missing type signature for node $id")
+    val signature = graph.signatures[id]
+    if (type != null && signature != null) {
       val function = functions[FunctionKey(type, signature)]!!
       val arguments = prepareArguments(graph, values, id)
       function(arguments)
