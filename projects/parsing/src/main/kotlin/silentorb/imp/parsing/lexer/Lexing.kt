@@ -35,7 +35,8 @@ fun branchTokenStart(character: Char): BundleToToken? =
       newLineStart(character) -> ::consumeNewline
       identifierStart(character) -> ::consumeIdentifier
       integerStart(character) -> ::consumeInteger
-      operator(character) -> ::consumeOperator
+      operatorStart(character) -> ::consumeOperator
+      commentStartOrDivisionOperator(character) -> ::consumeCommentOrDivisionOperator
       else -> null
     }
 

@@ -28,11 +28,27 @@ tailrec fun consumeIdentifier(bundle: Bundle): Response<TokenStep> {
 }
 
 tailrec fun consumeOperator(bundle: Bundle): Response<TokenStep> {
-  val character = consumeSingle(bundle, operator)
+  val character = consumeSingle(bundle, operatorAfterStart)
   return if (character == null)
     tokenFromBundle(Rune.operator)(bundle)
   else
     consumeOperator(incrementBundle(character, bundle))
+}
+
+tailrec fun consumeComment(bundle: Bundle): Response<TokenStep> {
+  val character = nextCharacter(bundle)
+  return if (character == null || newLineStart(character))
+    tokenFromBundle(Rune.comment)(bundle)
+  else
+    consumeComment(incrementBundle(character, bundle))
+}
+
+fun consumeCommentOrDivisionOperator(bundle: Bundle): Response<TokenStep> {
+  val character = nextCharacter(bundle)
+  return if (character == '/')
+    consumeComment(incrementBundle(character, bundle))
+  else
+    consumeOperator(bundle)
 }
 
 tailrec fun consumeFloatAfterDot(bundle: Bundle): Response<TokenStep> {

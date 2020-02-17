@@ -34,7 +34,7 @@ class ParserTest {
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
       assertEquals(1, graph.values.size)
-      assertEquals(1, graph.types.size)
+      assertEquals(2, graph.types.size)
       assertEquals(1, graph.connections.size)
       assertEquals(10.3f, graph.values.values.first())
       assertEquals(floatKey, graph.types.values.first())
@@ -161,7 +161,7 @@ class ParserTest {
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
-      assertEquals(1, graph.types.size)
+      assertEquals(2, graph.types.size)
     }
   }
 
@@ -175,7 +175,7 @@ class ParserTest {
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
-      assertEquals(1, graph.types.size)
+      assertEquals(2, graph.types.size)
     }
   }
 
@@ -200,7 +200,7 @@ class ParserTest {
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(3, graph.connections.size)
-      assertEquals(3, graph.types.size)
+      assertEquals(4, graph.types.size)
       assertTrue(graph.connections.contains(Connection(destination = 2, source = 3, parameter = "first")))
       assertTrue(graph.connections.contains(Connection(destination = 2, source = 4, parameter = "second")))
     }
@@ -217,7 +217,7 @@ class ParserTest {
       val graph = result.graph
       assertEquals(5, graph.nodes.size)
       assertEquals(4, graph.connections.size)
-      assertEquals(4, graph.types.size)
+      assertEquals(5, graph.types.size)
     }
   }
 
@@ -234,6 +234,24 @@ class ParserTest {
       assertEquals(5, graph.nodes.size)
       assertEquals(4, graph.connections.size)
       assertEquals(5, graph.types.size)
+    }
+  }
+
+  @Test
+  fun canParseComments() {
+    val code = """
+let value = 10
+
+// This is a comment
+let output = value
+"""
+
+    handleRoot(errored, parseText(emptyContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(3, graph.nodes.size)
+      assertEquals(1, graph.values.size)
+      assertEquals(2, graph.connections.size)
+      assertEquals(10, graph.values.values.first())
     }
   }
 }

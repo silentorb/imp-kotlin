@@ -74,8 +74,7 @@ fun definitionIndices(tokens: Tokens): List<Int> {
       val equals = tokens[index + 2]
       symbol.rune == Rune.identifier
           && equals.rune == Rune.assignment
-    }
-    else
+    } else
       false
   }
 }
@@ -142,6 +141,9 @@ fun toTokenizedGraph(
 fun getDefinitionsRangeStart(tokens: Tokens, definitionRanges: List<DefinitionRange>): Int =
     definitionRanges.minBy { it.symbol }?.symbol?.minus(1) ?: tokens.size
 
+fun withoutComments(tokens: Tokens): Tokens =
+    tokens.filter { it.rune != Rune.comment }
+
 fun parseTokens(context: Context, tokens: Tokens): Response<Dungeon> =
     partitionDefinitions(tokens)
         .then { definitionRanges ->
@@ -158,5 +160,5 @@ fun parseTokens(context: Context): (Tokens) -> Response<Dungeon> = { tokens ->
   if (tokens.none())
     success(emptyDungeon)
   else
-    parseTokens(context, tokens)
+    parseTokens(context, withoutComments(tokens))
 }
