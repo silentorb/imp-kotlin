@@ -11,5 +11,6 @@ enum class Rune {
   operator,
   parenthesisClose,
   parenthesisOpen,
+  whitespace,
   wildcard,
 }

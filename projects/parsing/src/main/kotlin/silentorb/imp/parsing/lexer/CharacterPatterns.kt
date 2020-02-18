@@ -19,8 +19,8 @@ const val dot = '.'
 val newLineStart = patternFromRegex("[\\r\\n]")
 val newLineAfterStart = patternFromRegex("[\\t \\r\\n]")
 
-val commentStartOrDivisionOperator = patternFromChar('/')
-val operatorStart = patternFromRegex("[*+\\-<>%$&@#!=?]")
+val commentStartOrHyphen = patternFromChar('-')
+val operatorStart = patternFromRegex("[*+\\/<>%$&@#!=?]")
 val operatorAfterStart = patternFromRegex("[*+\\-/<>%$&@#!=?]")
 
 val floatingPointSuffix = 'f'

@@ -53,6 +53,17 @@ class LexingTest {
   }
 
   @Test
+  fun canTokenizeComments() {
+    val code = "-- This is a comment"
+
+    handleRoot(errored, tokenize(code)) { tokens ->
+      Assert.assertEquals(1, tokens.size)
+      Assert.assertEquals(Rune.comment, tokens.first().rune)
+      Assert.assertEquals("-- This is a comment", tokens.first().value)
+    }
+  }
+
+  @Test
   fun preventsTokenizingZeroLeadingInteger() {
     val code = "01"
 

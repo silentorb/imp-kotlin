@@ -43,9 +43,9 @@ tailrec fun consumeComment(bundle: Bundle): Response<TokenStep> {
     consumeComment(incrementBundle(character, bundle))
 }
 
-fun consumeCommentOrDivisionOperator(bundle: Bundle): Response<TokenStep> {
+fun consumeCommentOrHyphen(bundle: Bundle): Response<TokenStep> {
   val character = nextCharacter(bundle)
-  return if (character == '/')
+  return if (character == '-')
     consumeComment(incrementBundle(character, bundle))
   else
     consumeOperator(bundle)

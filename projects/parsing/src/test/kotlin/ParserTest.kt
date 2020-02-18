@@ -242,7 +242,7 @@ class ParserTest {
     val code = """
 let value = 10
 
-// This is a comment
+-- This is a comment
 let output = value
 """
 
