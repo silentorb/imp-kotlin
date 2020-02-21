@@ -11,63 +11,58 @@ class LexingTest {
 
   @Test
   fun canParseAnEmptyString() {
-    handleRoot(errored, tokenize("")) { tokens ->
-      Assert.assertEquals(0, tokens.size)
-    }
+    val tokens = tokenize("")
+    Assert.assertEquals(0, tokens.size)
   }
 
   @Test
   fun canParseEmptyWhitespace() {
-    handleRoot(errored, tokenize("   ")) { tokens ->
-      Assert.assertEquals(0, tokens.size)
-    }
+    val tokens = tokenize("   ")
+    Assert.assertEquals(0, tokens.size)
   }
 
   @Test
   fun returnsProperRanges() {
-    handleRoot(errored, tokenize("let")) { tokens ->
-      val range = tokens.first().range
-      Assert.assertEquals(0, range.start.index)
-      Assert.assertEquals(3, range.end.index)
-    }
+    val tokens = tokenize("let")
+    val range = tokens.first().range
+    Assert.assertEquals(0, range.start.index)
+    Assert.assertEquals(3, range.end.index)
   }
 
   @Test
   fun canTokenizeWithInt() {
     val code = "output = 10"
 
-    handleRoot(errored, tokenize(code)) { tokens ->
-      Assert.assertEquals(3, tokens.size)
-      Assert.assertEquals("output", tokens.first().value)
-    }
+    val tokens = tokenize(code)
+    Assert.assertEquals(3, tokens.size)
+    Assert.assertEquals("output", tokens.first().value)
   }
 
   @Test
   fun canTokenizeLiteralZero() {
     val code = "0"
 
-    handleRoot(errored, tokenize(code)) { tokens ->
-      Assert.assertEquals(1, tokens.size)
-      Assert.assertEquals(Rune.literalInteger, tokens.first().rune)
-    }
+    val tokens = tokenize(code)
+    Assert.assertEquals(1, tokens.size)
+    Assert.assertEquals(Rune.literalInteger, tokens.first().rune)
   }
 
   @Test
   fun canTokenizeComments() {
     val code = "-- This is a comment"
 
-    handleRoot(errored, tokenize(code)) { tokens ->
-      Assert.assertEquals(1, tokens.size)
-      Assert.assertEquals(Rune.comment, tokens.first().rune)
-      Assert.assertEquals("-- This is a comment", tokens.first().value)
-    }
+    val tokens = tokenize(code)
+    Assert.assertEquals(1, tokens.size)
+    Assert.assertEquals(Rune.comment, tokens.first().rune)
+    Assert.assertEquals("-- This is a comment", tokens.first().value)
   }
 
   @Test
   fun preventsTokenizingZeroLeadingInteger() {
     val code = "01"
 
-    expectError(TextId.unexpectedCharacter, tokenize(code))
+    val tokens = tokenize(code)
+    Assert.assertTrue(tokens.any { it.rune == Rune.bad })
   }
 
   @Test

@@ -1,14 +1,19 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.Context
-import silentorb.imp.parsing.general.CodeBuffer
-import silentorb.imp.parsing.general.Response
-import silentorb.imp.parsing.general.TextId
+import silentorb.imp.parsing.general.*
+import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.lexer.tokenize
 
 fun parseText(context: Context): (CodeBuffer) -> Response<Dungeon> = { code ->
-  tokenize(code)
-      .then(parseTokens(context))
+  val tokens = tokenize(code)
+  val errors = tokens.filter { it.rune == Rune.bad }
+      .map { newParsingError(TextId.unexpectedCharacter, it) }
+
+  if (errors.any())
+    failure(errors)
+  else
+    parseTokens(context)(tokens)
 }
 
 fun parseTextOrThrow(context: Context, code: CodeBuffer, textLibrary: (TextId) -> String): Dungeon =
