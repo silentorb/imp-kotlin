@@ -22,7 +22,6 @@ data class Dungeon(
             signatures = graph.signatures.plus(Pair(id, signature))
         )
       }
-
 }
 
 val emptyDungeon =

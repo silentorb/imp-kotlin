@@ -65,26 +65,63 @@ fun parseExpressionToken(nextId: NextId, context: Context): (Token) -> Response<
   }
 }
 
+fun parseNamedArgument(nextId: NextId, context: Context, tokens: GroupedTokens): Response<Pair<Token?, Dungeon>> {
+  return if (tokens.size == 1) {
+    failure(newParsingError(TextId.missingArgumentName, tokens[0].token!!))
+  } else if (tokens.size == 2) {
+    failure(newParsingError(TextId.missingArgumentExpression, tokens[1].token!!))
+  } else {
+    val symbolToken = getChildWithToken(tokens[1]).token!!
+    if (symbolToken.rune != Rune.identifier)
+      failure(newParsingError(TextId.expectedIdentifier, symbolToken))
+    else {
+      val first = parseExpression(nextId, context)(tokens[2])
+          .map { Pair<Token?, Dungeon>(symbolToken, it) }
+      if (tokens.size > 3) {
+        flatten(listOf(
+            first,
+            parseNamedArgumentOrExpression(nextId, context, tokens.drop(3))
+        ))
+      }
+      else
+        first
+    }
+  }
+}
+
+fun parseNamedArgumentOrExpression(nextId: NextId, context: Context, tokens: GroupedTokens): Response<List<Pair<Token?, Dungeon>>> {
+  val token = getChildWithToken(tokens.first()).token!!
+  return if (token.rune == Rune.operator && token.value == "<=")
+    parseNamedArgument(nextId, context, tokens)
+        .map { listOf(it) }
+  else
+    flatten(tokens.map {
+      parseExpression(nextId, context)(it)
+          .map { Pair<Token?, Dungeon>(null, it) }
+    })
+}
+
 fun parseArguments(nextId: NextId, context: Context, firstDungeon: Dungeon, tokens: GroupedTokens): Response<Dungeon> {
-  return flatten(
-      tokens
-          .map(parseExpression(nextId, context))
-  )
-      .then { dungeons ->
+  return parseNamedArgumentOrExpression(nextId, context, tokens)
+      .then { dungeonPairs ->
         // Assuming that at least for now the first token only translates to a single node
         val destination = firstDungeon.graph.nodes.first()
-        val callingSignature = dungeons.map { dungeon ->
+        val arguments = dungeonPairs.map { (symbol, dungeon) ->
           val output = getGraphOutputNode(dungeon.graph)
-          dungeon.graph.types[output]
+          val type = dungeon.graph.types[output]
               ?: throw Error("Graph is missing a type for node $output")
+          Argument(
+              name = symbol?.value,
+              type = type
+          )
         }
         val functionOverloads = getTypeDetails(context, firstDungeon.graph.types.values.first())!!
-        matchFunction(callingSignature, functionOverloads, tokensToRange(tokens.map { getChildWithToken(it).token!! }))
-            .map { (signature, parameterNames) ->
-              dungeons.foldIndexed(firstDungeon) { i, a, b ->
-                val source = getGraphOutputNode(b.graph)
-                val parameter = parameterNames[i]
-                mergeDistinctDungeons(a, b)
+        matchFunction(arguments, functionOverloads, tokensToRange(tokens.map { getChildWithToken(it).token!! }))
+            .map { signature ->
+              dungeonPairs.foldIndexed(firstDungeon) { i, a, (symbol, dungeon) ->
+                val source = getGraphOutputNode(dungeon.graph)
+                val parameter = symbol?.value ?: signature.parameters[i].name
+                mergeDistinctDungeons(a, dungeon)
                     .addConnection(Connection(
                         destination = destination,
                         source = source,

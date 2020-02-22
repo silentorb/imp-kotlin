@@ -3,12 +3,18 @@ package silentorb.imp.core
 typealias Key = String
 typealias Id = Long
 
-typealias Signature = List<PathKey>
-typealias ParameterNames = List<String>
+data class Parameter(
+    val name: String,
+    val type: PathKey
+)
 
-typealias Function = Map.Entry<Signature, ParameterNames>
-typealias Overloads = Map<Signature, ParameterNames>
-typealias OverloadsMap = Map<PathKey, Overloads>
+data class Signature(
+    val parameters: List<Parameter>,
+    val output: PathKey
+)
+
+typealias Signatures = List<Signature>
+typealias OverloadsMap = Map<PathKey, Signatures>
 
 data class FunctionKey(
     val path: PathKey,
@@ -45,8 +51,13 @@ fun newIdSource(initialValue: Id): NextId {
   return { nextId++ }
 }
 
-fun mapTypes(types: List<Function>) =
-    types.associate { Pair(it.key, it) }
+//fun mapTypes(types: List<Function>) =
+//    types.associate { Pair(it.key, it) }
+//
+//fun mapTypes(vararg types: Function) =
+//    types.associate { Pair(it.key, it) }
 
-fun mapTypes(vararg types: Function) =
-    types.associate { Pair(it.key, it) }
+data class Argument(
+    val name: String?,
+    val type: PathKey
+)

@@ -1,20 +1,35 @@
-import silentorb.imp.core.intKey
-import silentorb.imp.core.Namespace
-import silentorb.imp.core.PathKey
+import silentorb.imp.core.*
 
 val vector2iKey = PathKey("silentorb.imp.test", "Vector2i")
 
 val simpleContext = listOf(
     Namespace(
         functions = mapOf(
-            PathKey("silentorb.imp.test", "simpleFunction") to mapOf(
-                listOf(intKey, intKey, intKey) to listOf("first", "second")
+            PathKey("silentorb.imp.test", "simpleFunction") to listOf(
+                Signature(
+                    parameters = listOf(
+                        Parameter("first", intKey),
+                        Parameter("second", intKey)
+                    ),
+                    output = intKey
+                )
             ),
-            PathKey("silentorb.imp.test", "something") to mapOf(
-                listOf(vector2iKey, vector2iKey) to listOf("first")
+            PathKey("silentorb.imp.test", "something") to listOf(
+                Signature(
+                    parameters = listOf(
+                        Parameter("first", vector2iKey)
+                    ),
+                    output = vector2iKey
+                )
             ),
-            vector2iKey to mapOf(
-                listOf(intKey, intKey, vector2iKey) to listOf("x", "y")
+            vector2iKey to listOf(
+                Signature(
+                    parameters = listOf(
+                        Parameter("x", intKey),
+                        Parameter("y", intKey)
+                    ),
+                    output = vector2iKey
+                )
             )
         )
     )

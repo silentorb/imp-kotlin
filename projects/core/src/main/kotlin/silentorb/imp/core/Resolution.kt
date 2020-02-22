@@ -1,8 +1,8 @@
 package silentorb.imp.core
 
-fun overloadMatches(signature: Signature, overloads: Overloads): Map<Signature, ParameterNames> {
+fun overloadMatches(arguments: List<Argument>, overloads: Signatures): Signatures {
   return overloads
       .filter { overload ->
-        signature.zip(overload.key).all { (a, b) -> a == b }
+        arguments.zip(overload.parameters).all { (a, b) -> a.type == b.type }
       }
 }

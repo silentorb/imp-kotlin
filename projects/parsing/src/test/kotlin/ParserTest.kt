@@ -254,4 +254,18 @@ let output = value
       assertEquals(10, graph.values.values.first())
     }
   }
+
+  @Test
+  fun parsesNamedArguments() {
+    val code = """
+      import silentorb.imp.test.*
+      
+      let output = simpleFunction <= second 1 <= first 2
+    """.trimIndent()
+    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(4, graph.nodes.size)
+      assertEquals(3, graph.connections.size)
+    }
+  }
 }

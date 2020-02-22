@@ -58,10 +58,10 @@ fun mergeDistinctDungeons(parent: Dungeon, child: Dungeon): Dungeon {
   )
 }
 
-fun matchFunction(signature: Signature, overloads: Overloads, range: Range): Response<Map.Entry<Signature, ParameterNames>> {
-  val matches = overloadMatches(signature, overloads)
+fun matchFunction(arguments: List<Argument>, overloads: Signatures, range: Range): Response<Signature> {
+  val matches = overloadMatches(arguments, overloads)
   return if (matches.size == 1)
-    success(matches.entries.first())
+    success(matches.first())
   else if (matches.none())
     failure(ParsingError(TextId.noMatchingSignature, range = range))
   else
