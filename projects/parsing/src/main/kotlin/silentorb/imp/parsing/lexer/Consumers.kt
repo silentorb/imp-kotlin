@@ -11,7 +11,7 @@ tailrec fun consumeSingleLineWhitespace(bundle: Bundle): Position {
 }
 
 // Multiple newlines in a row are grouped together as a single token
-tailrec fun consumeNewline(bundle: Bundle): Response<TokenStep> {
+tailrec fun consumeNewline(bundle: Bundle): TokenStep {
   val character = consumeSingle(bundle, newLineAfterStart)
   return if (character == null)
     tokenFromBundle(Rune.newline)(bundle)
@@ -19,7 +19,7 @@ tailrec fun consumeNewline(bundle: Bundle): Response<TokenStep> {
     consumeNewline(incrementBundle(character, bundle))
 }
 
-tailrec fun consumeIdentifier(bundle: Bundle): Response<TokenStep> {
+tailrec fun consumeIdentifier(bundle: Bundle): TokenStep {
   val character = consumeSingle(bundle, identifierAfterStart)
   return if (character == null)
     tokenFromBundle(Rune.identifier)(bundle)
@@ -27,7 +27,7 @@ tailrec fun consumeIdentifier(bundle: Bundle): Response<TokenStep> {
     consumeIdentifier(incrementBundle(character, bundle))
 }
 
-tailrec fun consumeOperator(bundle: Bundle): Response<TokenStep> {
+tailrec fun consumeOperator(bundle: Bundle): TokenStep {
   val character = consumeSingle(bundle, operatorAfterStart)
   return if (character == null)
     tokenFromBundle(Rune.operator)(bundle)
@@ -35,7 +35,7 @@ tailrec fun consumeOperator(bundle: Bundle): Response<TokenStep> {
     consumeOperator(incrementBundle(character, bundle))
 }
 
-tailrec fun consumeComment(bundle: Bundle): Response<TokenStep> {
+tailrec fun consumeComment(bundle: Bundle): TokenStep {
   val character = nextCharacter(bundle)
   return if (character == null || newLineStart(character))
     tokenFromBundle(Rune.comment)(bundle)
@@ -43,7 +43,7 @@ tailrec fun consumeComment(bundle: Bundle): Response<TokenStep> {
     consumeComment(incrementBundle(character, bundle))
 }
 
-fun consumeCommentOrHyphen(bundle: Bundle): Response<TokenStep> {
+fun consumeCommentOrHyphen(bundle: Bundle): TokenStep {
   val character = nextCharacter(bundle)
   return if (character == '-')
     consumeComment(incrementBundle(character, bundle))
@@ -51,7 +51,7 @@ fun consumeCommentOrHyphen(bundle: Bundle): Response<TokenStep> {
     consumeOperator(bundle)
 }
 
-tailrec fun consumeFloatAfterDot(bundle: Bundle): Response<TokenStep> {
+tailrec fun consumeFloatAfterDot(bundle: Bundle): TokenStep {
   val character = consumeSingle(bundle, floatAfterDot)
   return if (character == null)
     tokenFromBundle(Rune.literalFloat)(bundle)
@@ -59,7 +59,7 @@ tailrec fun consumeFloatAfterDot(bundle: Bundle): Response<TokenStep> {
     consumeFloatAfterDot(incrementBundle(character, bundle))
 }
 
-tailrec fun consumeInteger(bundle: Bundle): Response<TokenStep> {
+tailrec fun consumeInteger(bundle: Bundle): TokenStep {
   val character = nextCharacter(bundle)
   return if (character == dot)
     consumeFloatAfterDot(incrementBundle(character, bundle))
@@ -69,12 +69,12 @@ tailrec fun consumeInteger(bundle: Bundle): Response<TokenStep> {
     consumeInteger(incrementBundle(character, bundle))
 }
 
-fun consumeLiteralZero(bundle: Bundle): Response<TokenStep> {
+fun consumeLiteralZero(bundle: Bundle): TokenStep {
   val character = nextCharacter(bundle)
   return if (character == dot)
     consumeFloatAfterDot(incrementBundle(character, bundle))
   else if (character != null && integerAfterStart(character))
-    failure(newParsingError(TextId.unexpectedCharacter, Range(bundle.start)))
+    badCharacter(bundle)
   else
     tokenFromBundle(Rune.literalInteger)(bundle)
 }

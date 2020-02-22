@@ -1,6 +1,9 @@
 package silentorb.imp.parsing.lexer
 
-import silentorb.imp.parsing.general.*
+import silentorb.imp.parsing.general.CodeBuffer
+import silentorb.imp.parsing.general.Position
+import silentorb.imp.parsing.general.Range
+import silentorb.imp.parsing.general.Token
 
 typealias CharPattern = (Char) -> Boolean
 
@@ -44,13 +47,33 @@ data class TokenStep(
     val token: Token? = null
 )
 
-fun tokenFromBundle(rune: Rune): (Bundle) -> Response<TokenStep> = { bundle ->
-  success(TokenStep(
+fun tokenFromBundle(rune: Rune): (Bundle) -> TokenStep = { bundle ->
+  TokenStep(
       token = Token(
           rune = rune,
           range = Range(bundle.start, bundle.end),
           value = bundle.buffer
       ),
       position = bundle.end
-  ))
+  )
 }
+
+fun badCharacter(bundle: Bundle): TokenStep =
+    TokenStep(
+        position = bundle.end,
+        token = Token(
+            rune = Rune.bad,
+            range = Range(bundle.start, bundle.end),
+            value = ""
+        )
+    )
+
+fun badCharacter(range: Range): TokenStep =
+    TokenStep(
+        position = range.end,
+        token = Token(
+            rune = Rune.bad,
+            range = range,
+            value = ""
+        )
+    )
