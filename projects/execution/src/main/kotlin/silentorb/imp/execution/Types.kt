@@ -9,7 +9,6 @@ typealias FunctionImplementationMap = Map<FunctionKey, FunctionImplementation>
 data class CompleteFunction(
     val path: PathKey,
     val signature: Signature,
-    val parameters: List<String>,
     val implementation: FunctionImplementation
 )
 

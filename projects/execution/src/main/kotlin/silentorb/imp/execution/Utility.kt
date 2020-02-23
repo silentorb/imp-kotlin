@@ -2,17 +2,12 @@ package silentorb.imp.execution
 
 import silentorb.imp.core.FunctionKey
 import silentorb.imp.core.Namespace
-import silentorb.imp.core.OverloadsMap
 import silentorb.imp.core.combineNamespaces
 
 fun partitionFunctions(functions: List<CompleteFunction>): Library {
   val interfaces = functions
       .associate {
-        Pair(
-            it.path, mapOf(
-            it.signature to it.parameters
-        )
-        )
+        Pair(it.path, listOf(it.signature))
       }
   val implementation = functions
       .associate {

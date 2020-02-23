@@ -11,6 +11,8 @@ enum class TextId {
   importNotFound,
   invalidToken,
   missingClosingParenthesis,
+  missingArgumentName,
+  missingArgumentExpression,
   multipleGraphOutputs,
   noGraphOutput,
   noMatchingSignature,

@@ -69,12 +69,12 @@ tailrec fun resolveNode(context: Context, name: String, index: Int): Pair<Id, Pa
 fun resolveNode(context: Context, name: String): Pair<Id, PathKey>? =
     resolveNode(context, name, context.size - 1)
 
-tailrec fun getTypeDetails(context: Context, path: PathKey, index: Int): Overloads? =
+tailrec fun getTypeDetails(context: Context, path: PathKey, index: Int): Signatures? =
     if (index < 0)
       null
     else
       context[index].functions[path]
           ?: getTypeDetails(context, path, index - 1)
 
-fun getTypeDetails(context: Context, path: PathKey): Overloads? =
+fun getTypeDetails(context: Context, path: PathKey): Signatures? =
     getTypeDetails(context, path, context.size - 1)
