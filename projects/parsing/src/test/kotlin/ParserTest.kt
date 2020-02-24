@@ -260,7 +260,7 @@ let output = value
     val code = """
       import silentorb.imp.test.*
       
-      let output = simpleFunction <= second 1 <= first 2
+      let output = simpleFunction second = 1 first = 2
     """.trimIndent()
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph

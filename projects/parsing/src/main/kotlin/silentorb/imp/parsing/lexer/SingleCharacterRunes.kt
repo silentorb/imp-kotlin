@@ -4,7 +4,7 @@ fun singleCharacterTokens(character: Char): Rune? =
     when (character) {
       '=' -> Rune.assignment
       '.' -> Rune.dot
-      '(' -> Rune.parenthesisOpen
-      ')' -> Rune.parenthesisClose
+      '(' -> Rune.parenthesesOpen
+      ')' -> Rune.parenthesesClose
       else -> null
     }

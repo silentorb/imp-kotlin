@@ -22,15 +22,18 @@ data class TokenizedGraph(
 
 fun parseDefinition(nextId: NextId, context: Context): (Map.Entry<Id, TokenizedDefinition>) -> Response<Dungeon> =
     { (id, definition) ->
-      groupTokens(definition.expression)
+      val tokens = definition.expression
+      checkMatchingParentheses(tokens)
           .map {
-            if (it.size == 1)
-              it.first()
-            else
-              newTokenGroup(it)
-          }
-          .then(parseExpression(nextId, context))
-          .map { dungeon ->
+            val groups = newExpressionGraph(groupTokens(newIdSource(1L), definition.expression))
+//                .map {
+//                  if (it.size == 1)
+//                    it.first()
+//                  else
+//                    newTokenGroup(it)
+//                }
+
+            val dungeon = parseExpression(nextId, context)(groups)
             val output = getGraphOutputNode(dungeon.graph)
             val nextDungeon = addConnection(dungeon, Connection(
                 source = output,

@@ -44,3 +44,15 @@ fun checkForGraphErrors(nodeMap: NodeMap) = checkForErrors { graph: Graph ->
         newParsingError(TextId.multipleGraphOutputs, token)
       })
 }
+
+val checkMatchingParentheses = checkForErrors { tokens: Tokens ->
+  val openCount = tokens.count { it.rune == Rune.parenthesesOpen }
+  val closeCount = tokens.count { it.rune == Rune.parenthesesClose }
+  if (openCount > closeCount)
+    listOf(newParsingError(TextId.missingClosingParenthesis, range = Range(tokens.last().range.end)))
+  else if (closeCount > openCount) {
+    val range = Range(tokens.last { it.rune == Rune.parenthesesClose }.range.end)
+    listOf(newParsingError(TextId.unexpectedCharacter, range = range))
+  } else
+    listOf()
+}

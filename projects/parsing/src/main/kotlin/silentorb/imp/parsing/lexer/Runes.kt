@@ -10,8 +10,8 @@ enum class Rune {
   literalInteger,
   newline,
   operator,
-  parenthesisClose,
-  parenthesisOpen,
+  parenthesesClose,
+  parenthesesOpen,
   whitespace,
   wildcard,
 }

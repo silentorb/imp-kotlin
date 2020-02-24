@@ -133,16 +133,17 @@ fun parseArguments(nextId: NextId, context: Context, firstDungeon: Dungeon, toke
       }
 }
 
-fun parseExpression(nextId: NextId, context: Context): (TokenGroup) -> Response<Dungeon> = { group ->
-  val (token, children) = if (group.token != null)
-    Pair(group.token, listOf())
-  else
-    Pair(getChildWithToken(group).token!!, group.children.drop(1))
+fun parseExpression(nextId: NextId, context: Context): (ExpressionGraph) -> Dungeon = { graph ->
 
-  handle(parseExpressionToken(nextId, context)(token)) { firstDungeon ->
-    if (group.children.size > 1) {
-      parseArguments(nextId, context, firstDungeon, children)
-    } else
-      success(firstDungeon)
-  }
+//  val (token, children) = if (group.token != null)
+//    Pair(group.token, listOf())
+//  else
+//    Pair(getChildWithToken(group).token!!, group.children.drop(1))
+//
+//  handle(parseExpressionToken(nextId, context)(token)) { firstDungeon ->
+//    if (group.children.size > 1) {
+//      parseArguments(nextId, context, firstDungeon, children)
+//    } else
+//      success(firstDungeon)
+//  }
 }

@@ -1,52 +1,68 @@
 package silentorb.imp.parsing.parser
 
+import silentorb.imp.core.Id
+import silentorb.imp.core.NextId
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 
-
-data class TokenGroup(
+data class TokenOrGroup(
     val token: Token? = null,
-    val children: List<TokenGroup> = listOf()
+    val group: Id? = null
 )
 
-fun newTokenGroup(token: Token) =
-    TokenGroup(token = token)
+data class TokenGroup(
+    val depth: Int,
+    val children: List<TokenOrGroup>
+)
 
-fun newTokenGroup(children: List<TokenGroup>): TokenGroup {
-  assert(children.any())
-  return TokenGroup(children = children)
-}
+typealias TokenGroups = Map<Id, TokenGroup>
 
-typealias GroupedTokens = List<TokenGroup>
+data class ExpressionGraph(
+    val groups: TokenGroups,
+    val stages: List<List<Id>>
+)
 
-tailrec fun groupTokens(tokens: Tokens, groupStack: List<List<TokenGroup>>): Response<List<TokenGroup>> {
+tailrec fun groupTokens(
+    nextId: NextId,
+    tokens: Tokens,
+    groups: TokenGroups,
+    groupStack: List<List<TokenOrGroup>>,
+    depth: Int): TokenGroups {
   val token = tokens.first()
   val nextTokens = tokens.drop(1)
-  val nextStack = when (token.rune) {
-    Rune.parenthesisOpen -> groupStack.plusElement(listOf())
-    Rune.parenthesisClose -> {
+  val (nextStack, nextGroups, nextDepth) = when (token.rune) {
+    Rune.parenthesesOpen -> Triple(groupStack.plusElement(listOf()), groups, depth + 1)
+    Rune.parenthesesClose -> {
       val lastTwo = groupStack.takeLast(2)
-      groupStack.dropLast(2).plusElement(lastTwo.first().plus(newTokenGroup(lastTwo.last())))
+      val id = nextId()
+      val children = lastTwo.last()
+      val nextGroups = groups.plus(id to TokenGroup(depth, children))
+      val flattenedLayer = lastTwo.first().plus(TokenOrGroup(group = id))
+      Triple(groupStack.dropLast(2).plusElement(flattenedLayer), nextGroups, depth - 1)
     }
-    else -> groupStack.dropLast(1).plusElement(groupStack.last().plus(newTokenGroup(token)))
+    else -> {
+      val appendedLayer = groupStack.last().plus(TokenOrGroup(token = token))
+      Triple(groupStack.dropLast(1).plusElement(appendedLayer), groups, depth)
+    }
   }
-  return if (nextTokens.none()) {
-    if (nextStack.size > 1)
-      failure(ParsingError(TextId.missingClosingParenthesis, range = Range(token.range.end)))
-    else
-      success(nextStack.first())
-  } else {
+  return if (nextTokens.none())
+    groups
+  else {
     assert(nextStack.any())
     assert(nextTokens.any())
-    groupTokens(nextTokens, nextStack)
+    groupTokens(nextId, nextTokens, groups, nextStack, nextDepth)
   }
 }
 
-fun groupTokens(tokens: Tokens) =
-    groupTokens(tokens, listOf(listOf()))
+fun groupTokens(nextId: NextId, tokens: Tokens) =
+    groupTokens(nextId, tokens, mapOf(), listOf(listOf()), 1)
 
-tailrec fun getChildWithToken(group: TokenGroup): TokenGroup =
-    if (group.token != null)
-      group
-    else
-      getChildWithToken(group.children.first())
+fun newExpressionGraph(groups: TokenGroups): ExpressionGraph =
+    ExpressionGraph(
+        groups = groups,
+        stages = groups.entries
+            .groupBy { it.value.depth }
+            .toList()
+            .sortedByDescending { it.first }
+            .map { it.second.map { it.key } }
+    )
