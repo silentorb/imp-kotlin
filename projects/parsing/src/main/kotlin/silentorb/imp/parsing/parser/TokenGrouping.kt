@@ -6,7 +6,7 @@ import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 
 data class TokenOrGroup(
-    val token: Token? = null,
+    val token: Int? = null,
     val group: Id? = null
 )
 
@@ -15,7 +15,9 @@ data class TokenGroup(
     val children: List<TokenOrGroup>
 )
 
-typealias TokenGroups = Map<Id, TokenGroup>
+typealias TokenGroupsWithDepth = Map<Id, TokenGroup>
+
+typealias TokenGroups = Map<Id, List<TokenOrGroup>>
 
 data class ExpressionGraph(
     val groups: TokenGroups,
@@ -24,10 +26,11 @@ data class ExpressionGraph(
 
 tailrec fun groupTokens(
     nextId: NextId,
+    tokenIndex: Int,
     tokens: Tokens,
-    groups: TokenGroups,
+    groups: TokenGroupsWithDepth,
     groupStack: List<List<TokenOrGroup>>,
-    depth: Int): TokenGroups {
+    depth: Int): TokenGroupsWithDepth {
   val token = tokens.first()
   val nextTokens = tokens.drop(1)
   val (nextStack, nextGroups, nextDepth) = when (token.rune) {
@@ -37,29 +40,35 @@ tailrec fun groupTokens(
       val id = nextId()
       val children = lastTwo.last()
       val nextGroups = groups.plus(id to TokenGroup(depth, children))
-      val flattenedLayer = lastTwo.first().plus(TokenOrGroup(group = id))
+      val flattenedLayer = if (children.size > 1)
+        lastTwo.first().plus(TokenOrGroup(group = id))
+      else
+        lastTwo.first()
       Triple(groupStack.dropLast(2).plusElement(flattenedLayer), nextGroups, depth - 1)
     }
     else -> {
-      val appendedLayer = groupStack.last().plus(TokenOrGroup(token = token))
+      val appendedLayer = groupStack.last().plus(TokenOrGroup(token = tokenIndex))
       Triple(groupStack.dropLast(1).plusElement(appendedLayer), groups, depth)
     }
   }
   return if (nextTokens.none())
-    groups
+    if (nextStack.any() && nextStack.last().any())
+      nextGroups.plus(nextId() to TokenGroup(depth, nextStack.last()))
+    else
+      nextGroups
   else {
     assert(nextStack.any())
     assert(nextTokens.any())
-    groupTokens(nextId, nextTokens, groups, nextStack, nextDepth)
+    groupTokens(nextId, tokenIndex + 1, nextTokens, nextGroups, nextStack, nextDepth)
   }
 }
 
 fun groupTokens(nextId: NextId, tokens: Tokens) =
-    groupTokens(nextId, tokens, mapOf(), listOf(listOf()), 1)
+    groupTokens(nextId, 0, tokens, mapOf(), listOf(listOf()), 1)
 
-fun newExpressionGraph(groups: TokenGroups): ExpressionGraph =
+fun newExpressionGraph(groups: TokenGroupsWithDepth): ExpressionGraph =
     ExpressionGraph(
-        groups = groups,
+        groups = groups.mapValues { it.value.children },
         stages = groups.entries
             .groupBy { it.value.depth }
             .toList()

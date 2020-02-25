@@ -6,12 +6,17 @@ import silentorb.imp.core.intKey
 import silentorb.imp.parsing.general.Token
 import silentorb.imp.parsing.lexer.Rune
 
-fun parseValue(rune: Rune, value: String): Pair<PathKey, Any>? =
+data class ResolvedLiteral(
+    val type: PathKey,
+    val value: Any
+)
+
+fun parseTokenLiteral(rune: Rune, value: String): ResolvedLiteral? =
     when (rune) {
-      Rune.literalFloat -> Pair(floatKey, value.toFloat())
-      Rune.literalInteger -> Pair(intKey, value.toInt())
+      Rune.literalFloat -> ResolvedLiteral(floatKey, value.toFloat())
+      Rune.literalInteger -> ResolvedLiteral(intKey, value.toInt())
       else -> null
     }
 
-fun parseTokenValue(token: Token) =
-    parseValue(token.rune, token.value)
+fun parseTokenLiteral(token: Token) =
+    parseTokenLiteral(token.rune, token.value)

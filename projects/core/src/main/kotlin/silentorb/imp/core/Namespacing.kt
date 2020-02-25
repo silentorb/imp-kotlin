@@ -54,7 +54,9 @@ tailrec fun resolveFunction(context: Context, name: String, index: Int): PathKey
 fun resolveFunction(context: Context, name: String): PathKey? =
     resolveFunction(context, name, context.size - 1)
 
-tailrec fun resolveNode(context: Context, name: String, index: Int): Pair<Id, PathKey>? =
+typealias NodeReference = Pair<Id, PathKey>
+
+tailrec fun resolveNode(context: Context, name: String, index: Int): NodeReference? =
     if (index < 0)
       null
     else {
@@ -66,7 +68,7 @@ tailrec fun resolveNode(context: Context, name: String, index: Int): Pair<Id, Pa
         resolveNode(context, name, index - 1)
     }
 
-fun resolveNode(context: Context, name: String): Pair<Id, PathKey>? =
+fun resolveNode(context: Context, name: String): NodeReference? =
     resolveNode(context, name, context.size - 1)
 
 tailrec fun getTypeDetails(context: Context, path: PathKey, index: Int): Signatures? =
