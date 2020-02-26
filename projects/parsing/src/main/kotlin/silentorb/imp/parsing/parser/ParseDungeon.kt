@@ -5,6 +5,7 @@ import silentorb.imp.parsing.general.Response
 import silentorb.imp.parsing.general.Token
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.general.flatten
+import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.expressions.*
 
 data class TokenizedImport(
@@ -23,7 +24,7 @@ data class TokenizedGraph(
 
 fun parseDefinition(nextId: NextId, context: Context): (Map.Entry<Id, TokenizedDefinition>) -> Response<Dungeon> =
     { (id, definition) ->
-      checkMatchingParentheses(definition.expression)
+      checkMatchingParentheses(definition.expression.filter {it.rune != Rune.newline})
           .then(parseExpression(nextId, context))
           .map { dungeon ->
             val output = getGraphOutputNode(dungeon.graph)

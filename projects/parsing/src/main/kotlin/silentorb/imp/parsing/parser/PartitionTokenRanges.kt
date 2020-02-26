@@ -97,7 +97,7 @@ fun partitionDefinitions(tokens: Tokens): Response<List<DefinitionRange>> {
     )
 
     val expressionStart = step + 3
-    val terminatorMatchIndex = nextIndexOf(tokens, expressionStart + 1, isImportTerminator)
+    val terminatorMatchIndex = nextIndexOf(tokens, expressionStart + 1) { it.rune == Rune.identifier && it.value == "let" }
     val expressionEnd = if (terminatorMatchIndex != null)
       terminatorMatchIndex
     else
