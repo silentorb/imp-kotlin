@@ -11,10 +11,17 @@ data class ResolvedLiteral(
     val value: Any
 )
 
-fun parseTokenLiteral(rune: Rune, value: String): ResolvedLiteral? =
+fun parseTokenLiteral(type: PathKey, value: String): Any? =
+    when (type) {
+      floatKey -> value.toFloat()
+      intKey -> value.toInt()
+      else -> null
+    }
+
+fun parseTokenLiteral(rune: Rune, value: String): Any? =
     when (rune) {
-      Rune.literalFloat -> ResolvedLiteral(floatKey, value.toFloat())
-      Rune.literalInteger -> ResolvedLiteral(intKey, value.toInt())
+      Rune.literalFloat -> value.toFloat()
+      Rune.literalInteger -> value.toInt()
       else -> null
     }
 

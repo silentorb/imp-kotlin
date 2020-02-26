@@ -14,6 +14,15 @@ val simpleContext = listOf(
                     output = intKey
                 )
             ),
+            PathKey("silentorb.imp.test", "simpleFunction2") to listOf(
+                Signature(
+                    parameters = listOf(
+                        Parameter("first", floatKey),
+                        Parameter("second", intKey)
+                    ),
+                    output = intKey
+                )
+            ),
             PathKey("silentorb.imp.test", "something") to listOf(
                 Signature(
                     parameters = listOf(

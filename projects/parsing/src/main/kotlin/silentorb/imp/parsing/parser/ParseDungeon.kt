@@ -5,6 +5,7 @@ import silentorb.imp.parsing.general.Response
 import silentorb.imp.parsing.general.Token
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.general.flatten
+import silentorb.imp.parsing.parser.expressions.*
 
 data class TokenizedImport(
     val path: Tokens
@@ -23,15 +24,8 @@ data class TokenizedGraph(
 fun parseDefinition(nextId: NextId, context: Context): (Map.Entry<Id, TokenizedDefinition>) -> Response<Dungeon> =
     { (id, definition) ->
       checkMatchingParentheses(definition.expression)
-          .then { tokens ->
-            val expressionGraph = newExpressionGraph(groupTokens(newIdSource(1L), tokens))
-            val expressionResolution = resolveExpressionTokens(context, expressionGraph, tokens)
-            val dungeons = expressionToDungeons(nextId, tokens, expressionResolution)
-            validateExpressionDungeons(expressionGraph, tokens)(dungeons)
-                .map { Triple(tokens, expressionGraph, dungeons) }
-          }
-          .map { (tokens, expressionGraph, dungeons) ->
-            val dungeon = expressionToDungeon(expressionGraph, dungeons)
+          .then(parseExpression(nextId, context))
+          .map { dungeon ->
             val output = getGraphOutputNode(dungeon.graph)
             val nextDungeon = addConnection(dungeon, Connection(
                 source = output,

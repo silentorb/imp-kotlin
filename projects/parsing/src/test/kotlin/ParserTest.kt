@@ -256,16 +256,18 @@ let output = value
   }
 
   @Test
-  fun parsesNamedArguments() {
+  fun supportsNamedArguments() {
     val code = """
       import silentorb.imp.test.*
       
-      let output = simpleFunction second = 1 first = 2
+      let output = simpleFunction2 second = 1 first = 2.1
     """.trimIndent()
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(3, graph.connections.size)
+      assertEquals(1, graph.values[graph.connections.first { it.parameter == "second" }.source])
+      assertEquals(2.1f, graph.values[graph.connections.first { it.parameter == "first" }.source])
     }
   }
 }

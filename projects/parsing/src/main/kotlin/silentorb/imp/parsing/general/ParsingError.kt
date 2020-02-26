@@ -6,6 +6,8 @@ data class ParsingError(
     val token: Token? = null
 )
 
+typealias ParsingErrors = List<ParsingError>
+
 fun newParsingError(message: TextId, token: Token) =
     ParsingError(
         message = message,

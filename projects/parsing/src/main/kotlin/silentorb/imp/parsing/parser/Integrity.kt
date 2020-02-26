@@ -1,10 +1,10 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.Graph
-import silentorb.imp.core.Id
 import silentorb.imp.core.getGraphOutputNodes
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
+import silentorb.imp.parsing.parser.expressions.TokenGraph
 
 val getImportErrors = { import: TokenizedImport ->
   val path = import.path
@@ -58,11 +58,11 @@ val checkMatchingParentheses = checkForErrors { tokens: Tokens ->
     listOf()
 }
 
-fun validateExpressionDungeons(expressionGraph: ExpressionGraph, tokens: Tokens) = checkForErrors { dungeons: Map<Int, Dungeon> ->
-  expressionGraph.groups.flatMap { it.value.children }
-      .filter { it.token != null && !dungeons.containsKey(it.token)}
-      .map {(tokenIndex, _) ->
-        val token =  tokens[tokenIndex!!]
+fun validateExpressionDungeons(groupingGraph: TokenGraph, tokens: Tokens) = checkForErrors { dungeons: Map<Int, Dungeon> ->
+  groupingGraph.parents.flatMap { it.value }
+      .filter { !dungeons.containsKey(it) }
+      .map { tokenIndex ->
+        val token = tokens[tokenIndex]
         newParsingError(TextId.unknownFunction, token)
       }
 }

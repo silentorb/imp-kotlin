@@ -14,6 +14,7 @@ data class Signature(
 )
 
 typealias Signatures = List<Signature>
+typealias SignatureMap = Map<Id, Signature>
 typealias OverloadsMap = Map<PathKey, Signatures>
 
 data class FunctionKey(
@@ -25,14 +26,6 @@ data class Connection(
     val destination: Id,
     val source: Id,
     val parameter: Key
-)
-
-data class Graph(
-    val nodes: Set<Id> = setOf(),
-    val connections: Set<Connection> = setOf(),
-    val types: Map<Id, PathKey> = mapOf(),
-    val signatures: Map<Id, Signature> = mapOf(),
-    val values: Map<Id, Any> = mapOf()
 )
 
 data class Structure(
