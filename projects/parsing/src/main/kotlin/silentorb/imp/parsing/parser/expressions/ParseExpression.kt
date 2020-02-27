@@ -6,7 +6,9 @@ import silentorb.imp.parsing.parser.Dungeon
 
 fun parseExpression(nextId: NextId, context: Context): (Tokens) -> Response<Dungeon> = { tokens ->
   val groupingGraph = newGroupingGraph(groupTokens(tokens))
-  val namedArguments = getNamedArguments(tokens)
+  val namedArguments = groupingGraph.parents
+      .map { (_, children) -> getNamedArguments(tokens, children) }
+      .reduce { a, b -> a.plus(b) }
   val parents = collapseNamedArgumentClauses(namedArguments.keys, groupingGraph.parents)
   val indexedTokens = parents.keys.plus(parents.values.flatten()).toList()
   val nodeReferences = resolveNodeReferences(context, tokens, indexedTokens)

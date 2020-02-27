@@ -3,12 +3,12 @@ package silentorb.imp.parsing.parser.expressions
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.lexer.Rune
 
-fun getNamedArguments(tokens: Tokens): Map<Int, String> {
-  return (2 until tokens.size).mapNotNull { index ->
-    val parameterName = tokens[index - 2]
-    val equals = tokens[index - 1]
+fun getNamedArguments(tokens: Tokens, indices: List<TokenIndex>): Map<Int, String> {
+  return (2 until indices.size).mapNotNull { index ->
+    val parameterName = tokens[indices[index - 2]]
+    val equals = tokens[indices[index - 1]]
     if (equals.rune == Rune.assignment && parameterName.rune == Rune.identifier)
-      Pair(index, parameterName.value)
+      Pair(indices[index], parameterName.value)
     else
       null
   }

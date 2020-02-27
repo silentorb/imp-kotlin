@@ -275,10 +275,10 @@ let output = value
   fun supportsMultiLineExpressions() {
     val code = """
 import silentorb.imp.test.*
-      
+
 let output = simpleFunction2 
   second = 1
-  first = 2.1
+  first = (2.1)
 """.trimIndent()
 
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
