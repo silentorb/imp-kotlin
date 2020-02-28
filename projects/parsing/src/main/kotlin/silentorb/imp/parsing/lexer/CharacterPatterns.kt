@@ -18,9 +18,13 @@ const val dot = '.'
 
 val newLineStart = patternFromRegex("[\\r\\n]")
 val newLineAfterStart = patternFromRegex("[\\t \\r\\n]")
-
+val whitespace = patternFromChars(listOf(' ', '\t', '\r', '\n'))
+val parentheses = patternFromChars(listOf('(', ')'))
 val commentStartOrHyphen = patternFromChar('-')
 val operatorStart = patternFromRegex("[*+\\/<>%$&@#!=?]")
 val operatorAfterStart = patternFromRegex("[*+\\-/<>%$&@#!=?]")
 
 val floatingPointSuffix = 'f'
+
+fun isValidCharacterAfterIdentifierOrLiteral(character: Char?): Boolean =
+    character == null || !identifierAfterStart(character)

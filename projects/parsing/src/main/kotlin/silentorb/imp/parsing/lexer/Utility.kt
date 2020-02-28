@@ -18,6 +18,9 @@ fun patternFromRegex(string: String): CharPattern =
 fun patternFromChar(value: Char): CharPattern =
     { it == value }
 
+fun patternFromChars(values: List<Char>): CharPattern =
+    { values.contains(it) }
+
 fun consumeSingle(pattern: CharPattern, code: CodeBuffer, end: Position): Char? {
   val character = nextCharacter(code, end.index)
   return if (character != null && pattern(character))
@@ -64,7 +67,7 @@ fun badCharacter(bundle: Bundle): TokenStep =
         token = Token(
             rune = Rune.bad,
             range = Range(bundle.start, bundle.end),
-            value = ""
+            value = bundle.buffer
         )
     )
 

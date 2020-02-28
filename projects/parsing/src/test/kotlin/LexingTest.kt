@@ -87,4 +87,13 @@ class LexingTest {
     val tokens = tokenize(code)
       Assert.assertEquals(1, tokens.count { it.rune == Rune.operator })
   }
+
+  @Test
+  fun preventsNumbersBleedingIntoIdentifiers() {
+    val code = "1c"
+
+    val tokens = tokenize(code)
+    Assert.assertEquals(1, tokens.size)
+    Assert.assertTrue(tokens.any { it.rune == Rune.bad })
+  }
 }

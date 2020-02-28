@@ -18,7 +18,9 @@ fun resolveInvocationArguments(
     namedArguments: Map<Int, String>
 ): Map<Id, FunctionInvocation> {
   return parents.entries
-      .filter { it.value.any() }
+      .filter { (_, children) ->
+        children.any() && children.all { childIndex -> types.containsKey(tokenNodes[childIndex]!!)}
+      }
       .associate { (tokenIndex, children) ->
         val id = tokenNodes[tokenIndex]!!
         val functionType = types[id]!!

@@ -2,6 +2,16 @@ package silentorb.imp.parsing.lexer
 
 import silentorb.imp.parsing.general.*
 
+tailrec fun consumeBadIdentifier(bundle: Bundle): TokenStep {
+  val character = nextCharacter(bundle)
+  return if (isValidCharacterAfterIdentifierOrLiteral(character))
+    badCharacter(bundle)
+  else if (identifierAfterStart(character!!))
+    consumeBadIdentifier(incrementBundle(character, bundle))
+  else
+    badCharacter(bundle)
+}
+
 tailrec fun consumeSingleLineWhitespace(bundle: Bundle): Position {
   val character = consumeSingle(bundle, singleLineWhitespace)
   return if (character == null)
@@ -20,11 +30,13 @@ tailrec fun consumeNewline(bundle: Bundle): TokenStep {
 }
 
 tailrec fun consumeIdentifier(bundle: Bundle): TokenStep {
-  val character = consumeSingle(bundle, identifierAfterStart)
-  return if (character == null)
+  val character = nextCharacter(bundle)
+  return if (isValidCharacterAfterIdentifierOrLiteral(character))
     tokenFromBundle(Rune.identifier)(bundle)
-  else
+  else if (identifierAfterStart(character!!))
     consumeIdentifier(incrementBundle(character, bundle))
+  else
+    consumeBadIdentifier(bundle)
 }
 
 tailrec fun consumeOperator(bundle: Bundle): TokenStep {
@@ -52,29 +64,33 @@ fun consumeCommentOrHyphen(bundle: Bundle): TokenStep {
 }
 
 tailrec fun consumeFloatAfterDot(bundle: Bundle): TokenStep {
-  val character = consumeSingle(bundle, floatAfterDot)
-  return if (character == null)
+  val character = nextCharacter(bundle)
+  return if (isValidCharacterAfterIdentifierOrLiteral(character))
     tokenFromBundle(Rune.literalFloat)(bundle)
-  else
+  else if (floatAfterDot(character!!))
     consumeFloatAfterDot(incrementBundle(character, bundle))
+  else
+    consumeBadIdentifier(bundle)
 }
 
 tailrec fun consumeInteger(bundle: Bundle): TokenStep {
   val character = nextCharacter(bundle)
   return if (character == dot)
     consumeFloatAfterDot(incrementBundle(character, bundle))
-  else if (character == null || !integerAfterStart(character))
+  else if (isValidCharacterAfterIdentifierOrLiteral(character))
     tokenFromBundle(Rune.literalInteger)(bundle)
-  else
+  else if (integerAfterStart(character!!))
     consumeInteger(incrementBundle(character, bundle))
+  else
+    consumeBadIdentifier(bundle)
 }
 
 fun consumeLiteralZero(bundle: Bundle): TokenStep {
   val character = nextCharacter(bundle)
   return if (character == dot)
     consumeFloatAfterDot(incrementBundle(character, bundle))
-  else if (character != null && integerAfterStart(character))
-    badCharacter(bundle)
-  else
+  else if (isValidCharacterAfterIdentifierOrLiteral(character))
     tokenFromBundle(Rune.literalInteger)(bundle)
+  else
+    consumeBadIdentifier(bundle)
 }

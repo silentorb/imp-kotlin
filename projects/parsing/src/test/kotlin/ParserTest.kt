@@ -116,7 +116,7 @@ class ParserTest {
     val code = """
       import silentorb.imp.10.simpleFunction
     """.trimIndent()
-    expectError(TextId.invalidToken, parseText(emptyContext)(code))
+    expectError(TextId.unexpectedCharacter, parseText(emptyContext)(code))
   }
 
   @Test
@@ -288,5 +288,11 @@ let output = simpleFunction2
       assertEquals(1, graph.values[graph.connections.first { it.parameter == "second" }.source])
       assertEquals(2.1f, graph.values[graph.connections.first { it.parameter == "first" }.source])
     }
+  }
+
+  @Test
+  fun properlyHandlesInvalidArgumentTokens() {
+    val code = "let output = 10 c"
+    expectError(TextId.unknownFunction, parseText(emptyContext)(code))
   }
 }
