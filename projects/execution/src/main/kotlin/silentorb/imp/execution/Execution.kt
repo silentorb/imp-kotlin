@@ -39,7 +39,7 @@ fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: Outp
   return if (graph.values.containsKey(id)) {
     graph.values[id]!!
   } else {
-    val type = graph.types[id]
+    val type = graph.functionTypes[id]
     val signature = graph.signatures[id]
     if (type != null && signature != null) {
       val function = functions[FunctionKey(type, signature)]!!
