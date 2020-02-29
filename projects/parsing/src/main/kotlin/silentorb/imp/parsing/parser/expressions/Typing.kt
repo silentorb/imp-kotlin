@@ -11,20 +11,32 @@ fun getRuneType(rune: Rune): PathKey? =
       else -> null
     }
 
-fun resolveTypes(context: Context, tokens: Tokens, indexes: List<TokenIndex>,
-                 tokenNodes: Map<TokenIndex, Id>): PartitionedResponse<Map<Id, PathKey>> {
-  return partitionMap(
-      indexes
-          .associate { tokenIndex ->
-            val token = tokens[tokenIndex]
-            val type = getRuneType(token.rune) ?: getFunctionReference(context)(token)
-            val id = tokenNodes[tokenIndex]!!
-            val value = if (type != null)
-              success(type)
-            else
-              failure(newParsingError(TextId.unknownFunction, token))
+fun resolveFunctionTypes(context: Context, tokens: Tokens, indexes: List<TokenIndex>,
+                         tokenNodes: Map<TokenIndex, Id>): Map<Id, PathKey> {
+  return indexes
+      .mapNotNull { tokenIndex ->
+        val token = tokens[tokenIndex]
+        val type = getFunctionReference(context)(token)
+        if (type != null) {
+          val id = tokenNodes[tokenIndex]!!
+          Pair(id, type)
+        } else
+          null
+      }
+      .associate { it }
+}
 
-            Pair(id, value)
-          }
-  )
+fun resolveLiteralTypes(tokens: Tokens, indexes: List<TokenIndex>,
+                         tokenNodes: Map<TokenIndex, Id>): Map<Id, PathKey> {
+  return indexes
+      .mapNotNull { tokenIndex ->
+        val token = tokens[tokenIndex]
+        val type = getRuneType(token.rune)
+        if (type != null) {
+          val id = tokenNodes[tokenIndex]!!
+          Pair(id, type)
+        } else
+          null
+      }
+      .associate { it }
 }

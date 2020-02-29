@@ -1,10 +1,10 @@
 package silentorb.imp.parsing.parser
 
-import silentorb.imp.core.Graph
-import silentorb.imp.core.getGraphOutputNodes
+import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.expressions.TokenGraph
+import silentorb.imp.parsing.parser.expressions.TokenIndex
 
 val getImportErrors = { import: TokenizedImport ->
   val path = import.path
@@ -58,11 +58,23 @@ val checkMatchingParentheses = checkForErrors { tokens: Tokens ->
     listOf()
 }
 
-fun validateExpressionDungeons(groupingGraph: TokenGraph, tokens: Tokens) = checkForErrors { dungeons: Map<Int, Dungeon> ->
-  groupingGraph.parents.flatMap { it.value }
-      .filter { !dungeons.containsKey(it) }
-      .map { tokenIndex ->
-        val token = tokens[tokenIndex]
-        newParsingError(TextId.unknownFunction, token)
+fun validateFunctionTypes(nodes: Set<Id>, types: Map<Id, PathKey>, nodeMap: NodeMap): ParsingErrors {
+  return nodes
+      .filter { !types.containsKey(it) }
+      .map { node ->
+        val range = nodeMap[node]!!
+        newParsingError(TextId.unknownFunction, range)
+      }
+}
+
+fun validateSignatures(signatureOptions: Map<Id, List<Signature>>, nodeMap: NodeMap): ParsingErrors {
+  return signatureOptions
+      .mapNotNull { (id, options) ->
+        if (options.size == 1)
+          null
+        else if (options.none())
+          ParsingError(TextId.noMatchingSignature, range = nodeMap[id]!!)
+        else
+          ParsingError(TextId.ambiguousOverload, range = nodeMap[id]!!)
       }
 }

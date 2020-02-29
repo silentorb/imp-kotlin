@@ -62,9 +62,13 @@ tailrec fun resolveNode(context: Context, name: String, index: Int): NodeReferen
     else {
       val id = context[index].nodes[name]
 
-      if (id != null)
-        Pair(id, context[index].types[id]!!)
-      else
+      if (id != null) {
+        val type = context[index].types[id]
+        if (type != null)
+          Pair(id, type)
+        else
+          null
+      } else
         resolveNode(context, name, index - 1)
     }
 

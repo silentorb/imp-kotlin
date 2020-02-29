@@ -156,12 +156,11 @@ class ParserTest {
     val code = """
       import silentorb.imp.test.simpleFunction
       
-      let output = simpleFunction
+      let output = simpleFunction 1 1
     """.trimIndent()
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
-      assertEquals(2, graph.nodes.size)
-      assertEquals(2, graph.types.size)
+      assertEquals(4, graph.nodes.size)
     }
   }
 
@@ -170,12 +169,11 @@ class ParserTest {
     val code = """
       import silentorb.imp.test.*
       
-      let output = simpleFunction
+      let output = simpleFunction 1 1
     """.trimIndent()
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
-      assertEquals(2, graph.nodes.size)
-      assertEquals(2, graph.types.size)
+      assertEquals(4, graph.nodes.size)
     }
   }
 
@@ -295,4 +293,28 @@ let output = simpleFunction2
     val code = "let output = 10 c"
     expectError(TextId.unknownFunction, parseText(emptyContext)(code))
   }
+
+  @Test
+  fun handlesCascadingEffectsOfInvalidFunctionSignatures() {
+    val code = """
+import silentorb.imp.test.*
+let a = simpleFunction2 1 2.1
+let output = simpleFunction a (simpleFunction 3 3)
+""".trimIndent()
+    expectError(TextId.noMatchingSignature, parseText(simpleContext)(code))
+  }
+
+  @Test
+  fun tracksFunctionReturnTypes() {
+    val code = """
+import silentorb.imp.test.*
+let a = simpleFunction2 2.1 1
+let output = simpleFunction a (simpleFunction 3 3)
+""".trimIndent()
+
+    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+      val graph = result.graph
+    }
+  }
+
 }

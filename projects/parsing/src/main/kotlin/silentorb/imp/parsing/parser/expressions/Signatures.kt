@@ -2,7 +2,6 @@ package silentorb.imp.parsing.parser.expressions
 
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
-import silentorb.imp.parsing.parser.matchFunction
 
 data class FunctionInvocation(
     val type: PathKey,
@@ -12,23 +11,26 @@ data class FunctionInvocation(
 
 fun resolveInvocationArguments(
     parents: TokenParents,
-    types: Map<Id, PathKey>,
+    functionTypes: Map<Id, PathKey>,
+    argumentTypes: Map<Id, PathKey>,
     tokenNodes: Map<TokenIndex, Id>,
     tokens: Tokens,
     namedArguments: Map<Int, String>
 ): Map<Id, FunctionInvocation> {
   return parents.entries
-      .filter { (_, children) ->
-        children.any() && children.all { childIndex -> types.containsKey(tokenNodes[childIndex]!!)}
+      .filter { (tokenIndex, children) ->
+        val id = tokenNodes[tokenIndex]!!
+        children.any() && children.all { childIndex -> argumentTypes.containsKey(tokenNodes[childIndex]!!) }
+            && functionTypes.containsKey(id)
       }
       .associate { (tokenIndex, children) ->
         val id = tokenNodes[tokenIndex]!!
-        val functionType = types[id]!!
+        val functionType = functionTypes[id]!!
         val arguments = children.mapIndexed { index, childIndex ->
           val childNode = tokenNodes[childIndex]!!
           Argument(
               name = namedArguments[childIndex],
-              type = types[childNode]!!
+              type = argumentTypes[childNode]!!
           )
         }
         val invocation = FunctionInvocation(
@@ -40,11 +42,42 @@ fun resolveInvocationArguments(
       }
 }
 
-fun resolveSignatures(context: Context, invocations: Map<Id, FunctionInvocation>): PartitionedResponse<SignatureMap> {
-  return partitionMap(invocations
+typealias SignatureOptions = Map<Id, List<Signature>>
+
+fun getSignatureOptions(context: Context, invocations: Map<Id, FunctionInvocation>): SignatureOptions {
+  return invocations
       .mapValues { (_, invocation) ->
         val functionOverloads = getTypeDetails(context, invocation.type)!!
-        matchFunction(invocation.arguments, functionOverloads, invocation.range)
+        overloadMatches(invocation.arguments, functionOverloads)
       }
-  )
+}
+
+data class SignatureOptionsAndTypes(
+    val signatureOptions: SignatureOptions = mapOf(),
+    val types: Map<Id, PathKey> = mapOf()
+)
+
+fun resolveFunctionSignatures(
+    context: Context,
+    tokenGraph: TokenGraph,
+    parents: TokenParents,
+    functionTypes: Map<Id, PathKey>,
+    types: Map<Id, PathKey>,
+    tokenNodes: Map<TokenIndex, Id>,
+    tokens: Tokens,
+    namedArguments: Map<Int, String>
+): SignatureOptionsAndTypes {
+  return tokenGraph.stages.fold(SignatureOptionsAndTypes()) { accumulator, stage ->
+    val stageParents = stage.associateWith { parents[it]!! }
+    val argumentTypes = types.plus(accumulator.types)
+    val invocations = resolveInvocationArguments(stageParents, functionTypes, argumentTypes, tokenNodes, tokens, namedArguments)
+    val signatureOptions = getSignatureOptions(context, invocations)
+    val returnTypes = signatureOptions
+        .filter { it.value.size == 1 }
+        .mapValues { it.value.first().output }
+    accumulator.copy(
+        signatureOptions = accumulator.signatureOptions.plus(signatureOptions),
+        types = accumulator.types.plus(returnTypes)
+    )
+  }
 }

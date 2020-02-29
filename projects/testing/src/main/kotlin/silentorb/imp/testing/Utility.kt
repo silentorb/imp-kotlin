@@ -5,10 +5,15 @@ import org.junit.Assert.assertTrue
 import silentorb.imp.parsing.general.ParsingError
 import silentorb.imp.parsing.general.Response
 import silentorb.imp.parsing.general.TextId
+import silentorb.imp.parsing.general.rangeString
 
 val errored = { errors: List<ParsingError> ->
-  // This line should not be hit
-  assertEquals(errors.firstOrNull()?.message?.toString() ?: "", 0, errors.size)
+  val error = errors.firstOrNull()
+  val message = if (error != null) {
+    "${error.message} at (${rangeString(error.range)})"
+  } else
+    ""
+  assertEquals(message, 0, errors.size)
 }
 
 val shouldHaveErrored = { ->

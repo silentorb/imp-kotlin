@@ -89,3 +89,11 @@ fun <T> checkForErrors(check: (T) -> List<ParsingError>): (T) -> Response<T> = {
   else
     success(subject)
 }
+
+fun checkForErrors(check: () -> List<ParsingError>): () -> Response<Any> = {
+  val errors = check()
+  if (errors.any())
+    failure(errors)
+  else
+    Response.Success(0)
+}
