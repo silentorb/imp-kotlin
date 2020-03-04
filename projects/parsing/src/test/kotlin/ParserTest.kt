@@ -205,6 +205,19 @@ class ParserTest {
   }
 
   @Test
+  fun supportsUsingTheSameNodeAsMultipleArguments() {
+    val code = """
+      import silentorb.imp.test.*
+      let value = 32
+      let output = simpleFunction value value
+    """.trimIndent()
+    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(4, graph.nodes.size)
+    }
+  }
+
+  @Test
   fun supportsDataStructures() {
     val code = """
       import silentorb.imp.test.*

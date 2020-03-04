@@ -15,11 +15,13 @@ fun nextCharacter(bundle: Bundle): Char? =
 
 fun singleCharacterTokenMatch(position: Position, character: Char): TokenStep? {
   val rune = singleCharacterTokens(character)
-  return if (rune != null)
+  return if (rune != null) {
+    val end = nextPosition(character, position)
     TokenStep(
-        token = Token(rune, Range(position, position), character.toString()),
-        position = nextPosition(character, position)
+        token = Token(rune, Range(position, end), character.toString()),
+        position = end
     )
+  }
   else
     null
 }

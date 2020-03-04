@@ -19,9 +19,9 @@ fun parseExpression(nextId: NextId, context: Context): (Tokens) -> Response<Dung
   val parents = collapseNamedArgumentClauses(namedArguments.keys, tokenGraph.parents)
   val indexedTokens = parents.keys.plus(parents.values.flatten()).toList()
   val nodeReferences = resolveNodeReferences(context, tokens, indexedTokens)
-  val nodeTokens = tokensToNodes(nextId, nodeReferences, indexedTokens)
-  val tokenNodes = nodeTokens.entries.associate { Pair(it.value, it.key) }
-  val nodes = nodeTokens.keys
+  val tokenNodes = tokensToNodes(nextId, nodeReferences, indexedTokens)
+//  val tokenNodes = nodeTokens.entries.associate { Pair(it.value, it.key) }
+  val nodes = tokenNodes.values.toSet()
   val nonNodeReferenceTokens = indexedTokens.minus(nodeReferences.keys)
   val literalTypes = resolveLiteralTypes(tokens, nonNodeReferenceTokens, tokenNodes)
   val functionTypes = resolveFunctionTypes(context, tokens, nonNodeReferenceTokens, tokenNodes)
@@ -43,7 +43,12 @@ fun parseExpression(nextId: NextId, context: Context): (Tokens) -> Response<Dung
       .mapValues { it.value.first() }
   val connections = arrangeConnections(parents, tokenNodes, signatures, namedArguments)
   val values = resolveLiterals(tokens, indexedTokens, tokenNodes)
-  val nodeMap = nodeTokens.mapValues { tokens[it.value].range }
+  val nodeMap = nodes
+      .minus(nodeReferences.values.map { it.first })
+      .associateWith { id ->
+        val index = tokenNodes.entries.first { it.value == id }.key
+        tokens[index].range
+      }
   val typeResolutionErrors = validateFunctionTypes(nodes, types, nodeMap)
   val signatureErrors = validateSignatures(signatureOptions, nodeMap)
   val errors = signatureErrors.plus(typeResolutionErrors)

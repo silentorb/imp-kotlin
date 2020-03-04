@@ -34,6 +34,7 @@ class LexingTest {
     val tokens = tokenize(code)
     Assert.assertEquals(3, tokens.size)
     Assert.assertEquals("output", tokens.first().value)
+    Assert.assertEquals(tokens[1].range.start.index + 1, tokens[1].range.end.index)
   }
 
   @Test
