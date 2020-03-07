@@ -9,10 +9,12 @@ import silentorb.imp.parsing.general.failure
 import silentorb.imp.parsing.general.success
 import silentorb.imp.parsing.parser.Dungeon
 import silentorb.imp.parsing.parser.validateFunctionTypes
+import silentorb.imp.parsing.parser.validatePiping
 import silentorb.imp.parsing.parser.validateSignatures
 
 fun parseExpression(nextId: NextId, context: Context): (Tokens) -> Response<Dungeon> = { tokens ->
-  val tokenGraph = arrangePiping(tokens, newGroupingGraph(groupTokens(tokens)))
+  val groupGraph = newGroupingGraph(groupTokens(tokens))
+  val tokenGraph = arrangePiping(tokens, groupGraph)
   val namedArguments = tokenGraph.parents
       .map { (_, children) -> getNamedArguments(tokens, children) }
       .reduce { a, b -> a.plus(b) }
@@ -41,17 +43,18 @@ fun parseExpression(nextId: NextId, context: Context): (Tokens) -> Response<Dung
   val signatures = signatureOptions
       .filter { it.value.size == 1 }
       .mapValues { it.value.first() }
-  val connections = arrangeConnections(parents, tokenNodes, signatures, namedArguments)
+  val connections = arrangeConnections(parents, tokenNodes, signatures, namedArguments, types)
   val values = resolveLiterals(tokens, indexedTokens, tokenNodes)
-  val nodeMap = nodes
-      .minus(nodeReferences.values.map { it.first })
+  val newNodes = nodes.minus(nodeReferences.values.map { it.first })
+  val nodeMap = newNodes
       .associateWith { id ->
         val index = tokenNodes.entries.first { it.value == id }.key
         tokens[index].range
       }
-  val typeResolutionErrors = validateFunctionTypes(nodes, functionTypes.plus(types), nodeMap)
+  val typeResolutionErrors = validateFunctionTypes(newNodes, functionTypes.plus(types), nodeMap)
   val signatureErrors = validateSignatures(signatureOptions, nodeMap)
-  val errors = signatureErrors.plus(typeResolutionErrors)
+  val pipingErrors = validatePiping(tokens, groupGraph)
+  val errors = signatureErrors.plus(typeResolutionErrors).plus(pipingErrors)
   if (errors.any())
     failure(errors)
   else {

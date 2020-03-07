@@ -4,7 +4,8 @@ import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.expressions.TokenGraph
-import silentorb.imp.parsing.parser.expressions.TokenIndex
+import silentorb.imp.parsing.parser.expressions.TokenParents
+import silentorb.imp.parsing.parser.expressions.getPipingParents
 
 val getImportErrors = { import: TokenizedImport ->
   val path = import.path
@@ -77,4 +78,29 @@ fun validateSignatures(signatureOptions: Map<Id, List<Signature>>, nodeMap: Node
         else
           ParsingError(TextId.ambiguousOverload, range = nodeMap[id]!!)
       }
+}
+
+fun validatePiping(tokens: Tokens, tokenGraph: TokenGraph): ParsingErrors {
+  val pipingParents = getPipingParents(tokens, tokenGraph)
+  val pipeTokens = filterIndices(tokens) { it.rune == Rune.dot }
+  val flattenedPipeParentChildren = pipingParents.flatMap { it.value }
+  val prematurePipeErrors = pipeTokens
+      .filter { !flattenedPipeParentChildren.contains(it) }
+      .map {
+        newParsingError(TextId.missingExpression, tokens[it])
+      }
+  val danglingErrors = pipingParents.flatMap { (_, children) ->
+    val dividers = filterIndices(children) { tokens[it].rune == Rune.dot }
+    val groups = split(children, dividers)
+    groups
+        .mapIndexedNotNull { index, group ->
+          if (group.none()) {
+            val divider = dividers.getOrElse(index - 1) { dividers.last() }
+            newParsingError(TextId.missingExpression, tokens[divider])
+          } else
+            null
+        }
+  }
+
+  return prematurePipeErrors.plus(danglingErrors)
 }

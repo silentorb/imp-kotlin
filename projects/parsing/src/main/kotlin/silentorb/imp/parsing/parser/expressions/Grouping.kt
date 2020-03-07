@@ -14,6 +14,9 @@ fun accumulate(top: List<TokenIndex>, depth: Int, accumulator: TokenGroups): Tok
   return accumulator.plus(top.first() to TokenGroup(depth, top.drop(1)))
 }
 
+fun appendToStack(tokenIndex: TokenIndex, stack: List<List<TokenIndex>>) =
+    stack.dropLast(1).plusElement(stack.last().plus(tokenIndex))
+
 fun updateStack(rune: Rune, tokenIndex: TokenIndex, stack: List<List<TokenIndex>>) =
     when (rune) {
       Rune.parenthesesOpen -> stack.plusElement(listOf())
@@ -22,9 +25,14 @@ fun updateStack(rune: Rune, tokenIndex: TokenIndex, stack: List<List<TokenIndex>
         val returnValue = lastTwo.last().first()
         stack.dropLast(2).plusElement(lastTwo.first().plus(returnValue))
       }
-      else -> {
-        stack.dropLast(1).plusElement(stack.last().plus(tokenIndex))
-      }
+      // Skip pipe operators without a preceding expression
+      // It's easier to ignore them now and detect the errors in later integrity checks
+      // than to include them and sort out the side effects later
+      Rune.dot -> if (stack.last().any())
+        appendToStack(tokenIndex, stack)
+      else
+        stack
+      else -> appendToStack(tokenIndex, stack)
     }
 
 tailrec fun groupTokens(

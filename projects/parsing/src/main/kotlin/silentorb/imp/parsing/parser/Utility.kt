@@ -19,13 +19,16 @@ fun <T> filterIndices(list: List<T>, filter: (T) -> Boolean): List<Int> {
   return list.indices.filter { filter(iterator.next()) }
 }
 
-fun <T> splitAfter(list: List<T>, divider: (T) -> Boolean): List<List<T>> {
-  val indices = listOf(-1).plus(filterIndices(list, divider))
+fun <T> split(list: List<T>, dividers: List<Int>): List<List<T>> {
+  val indices = listOf(-1).plus(dividers)
   return indices.mapIndexed { index, start ->
     val end = indices.getOrElse(index + 1) { list.size }
     list.subList(start + 1, end)
   }
 }
+
+fun <T> split(list: List<T>, divider: (T) -> Boolean): List<List<T>> =
+    split(list, filterIndices(list, divider))
 
 fun <T> nextIndexOf(list: List<T>, start: Int, filter: (T) -> Boolean): Int? {
   val result = list.asSequence().drop(start).indexOfFirst(filter)

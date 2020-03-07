@@ -3,7 +3,7 @@ package silentorb.imp.parsing.parser.expressions
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.filterIndexes
-import silentorb.imp.parsing.parser.splitAfter
+import silentorb.imp.parsing.parser.split
 
 fun getNamedArguments(tokens: Tokens, indices: List<TokenIndex>): Map<Int, String> {
   return (2 until indices.size).mapNotNull { index ->
@@ -46,13 +46,19 @@ fun collapseNamedArgumentClauses(namedArguments: Set<Int>, parents: TokenParents
   }
 }
 
-fun arrangePiping(tokens: Tokens, tokenGraph: TokenGraph): TokenGraph {
+fun getPipingParents(tokens: Tokens, tokenGraph: TokenGraph): TokenParents {
   val pipeOperators = filterIndexes(tokens) { it.rune == Rune.dot }
-  val parentsWithPipes: TokenParents = tokenGraph.parents
-      .filter { (_, children) -> children.any { pipeOperators.contains(it) } }
+  return tokenGraph.parents
+      .filter { (_, children) ->
+        children.any { pipeOperators.contains(it) }
+      }
+}
 
-  val newParentPairs = parentsWithPipes.mapValues { (_, children) ->
-    splitAfter(children) { tokens[it].rune == Rune.dot }
+fun arrangePiping(tokens: Tokens, tokenGraph: TokenGraph): TokenGraph {
+  val pipingParents = getPipingParents(tokens, tokenGraph)
+
+  val newParentPairs = pipingParents.mapValues { (_, children) ->
+    split(children) { tokens[it].rune == Rune.dot }
         .filter { it.any() } // Filter out any bad groups.  Bad groups are handled separately by integrity checks.
         .drop(1)
   }
@@ -75,7 +81,7 @@ fun arrangePiping(tokens: Tokens, tokenGraph: TokenGraph): TokenGraph {
 //      }
 //      .associate { it }
 
-  val truncatedParents: TokenParents = parentsWithPipes.mapValues { (_, children) ->
+  val truncatedParents: TokenParents = pipingParents.mapValues { (_, children) ->
     val firstPipeToken = children.indexOfFirst { tokens[it].rune == Rune.dot }
     children.take(firstPipeToken)
   }
@@ -85,7 +91,7 @@ fun arrangePiping(tokens: Tokens, tokenGraph: TokenGraph): TokenGraph {
       .mapValues { (_, children) ->
         children
             .map { child ->
-              if (parentsWithPipes.containsKey(child))
+              if (pipingParents.containsKey(child))
                 newParents.entries
                     .first { it.value.contains(child) }
                     .key
@@ -100,7 +106,7 @@ fun arrangePiping(tokens: Tokens, tokenGraph: TokenGraph): TokenGraph {
   val stages = tokenGraph.stages
       .flatMap { stage ->
         val (needsExpanding, unchanged) = stage.partition {
-          parentsWithPipes.containsKey(it)
+          pipingParents.containsKey(it)
         }
         val expanded = needsExpanding.flatMap { parent ->
           listOf(listOf(parent)).plus(newParentPairs[parent]!!.map { it.take(1) })

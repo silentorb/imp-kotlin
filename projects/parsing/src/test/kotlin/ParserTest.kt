@@ -177,16 +177,6 @@ class ParserTest {
     }
   }
 
-  @Ignore
-  @Test
-  fun preventsImportsAfterDefinitions() {
-    val code = """ 
-      let output = 10
-      import silentorb.imp.test.simpleFunction
-    """.trimIndent()
-    expectError(TextId.invalidToken, parseText(emptyContext)(code))
-  }
-
   @Test
   fun supportsFunctionCallsWithArguments() {
     val code = """
@@ -311,7 +301,7 @@ let output = simpleFunction2
   fun handlesCascadingEffectsOfInvalidFunctionSignatures() {
     val code = """
 import silentorb.imp.test.*
-let a = simpleFunction2 1 2.1
+let a = simpleFunction2 1.1 2.1
 let output = simpleFunction a (simpleFunction 3 3)
 """.trimIndent()
     expectError(TextId.noMatchingSignature, parseText(simpleContext)(code))
@@ -327,6 +317,18 @@ let output = simpleFunction a (simpleFunction 3 3)
 
     handleRoot(errored, parseText(simpleContext)(code)) { result ->
       val graph = result.graph
+    }
+  }
+
+  @Test
+  fun supportsMatchingArgumentOrderByType() {
+    val code = """
+      import silentorb.imp.test.*
+      let output = simpleFunction2 1 2.0
+    """.trimIndent()
+    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(4, graph.nodes.size)
     }
   }
 
