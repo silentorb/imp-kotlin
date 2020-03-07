@@ -330,4 +330,35 @@ let output = simpleFunction a (simpleFunction 3 3)
     }
   }
 
+  @Test
+  fun supportsPiping() {
+    val code = """
+      import silentorb.imp.test.*
+      let output = simpleFunction 1 1 . simpleFunction2 2.0 . simpleFunction2 3.0
+    """.trimIndent()
+    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(8, graph.nodes.size)
+    }
+  }
+
+  @Test
+  fun preventsDanglingPipeOperators() {
+    val code = """
+      import silentorb.imp.test.simpleFunction
+      let bob = simpleFunction 1 1 .
+      let output = bob
+""".trimIndent()
+    expectError(TextId.missingExpression, parseText(simpleContext)(code))
+  }
+
+  @Test
+  fun requiresPipeOperatorsToHaveAPrecedingExpression() {
+    val code = """
+      import silentorb.imp.test.simpleFunction
+      let output = . simpleFunction 1 1
+""".trimIndent()
+    expectError(TextId.missingExpression, parseText(simpleContext)(code))
+  }
+
 }

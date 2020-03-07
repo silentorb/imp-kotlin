@@ -10,6 +10,7 @@ fun englishText(text: TextId): String =
       TextId.importNotFound -> "Import not found"
       TextId.invalidToken -> "Invalid symbol"
       TextId.missingClosingParenthesis -> "Missing closing parentheses"
+      TextId.missingExpression -> "Missing expression"
       TextId.multipleGraphOutputs -> "Multiple graph outputs"
       TextId.noGraphOutput -> "No graph output"
       TextId.noMatchingSignature -> "No matching function signature"

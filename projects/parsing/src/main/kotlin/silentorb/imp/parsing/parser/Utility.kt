@@ -2,7 +2,6 @@ package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
-import kotlin.math.sign
 
 val emptyContext: Context = listOf(Namespace())
 
@@ -15,9 +14,17 @@ val emptyContext: Context = listOf(Namespace())
 //            a
 //        }
 
-fun <T> filterIndicies(list: List<T>, filter: (T) -> Boolean): List<Int> {
+fun <T> filterIndices(list: List<T>, filter: (T) -> Boolean): List<Int> {
   val iterator = list.iterator()
   return list.indices.filter { filter(iterator.next()) }
+}
+
+fun <T> splitAfter(list: List<T>, divider: (T) -> Boolean): List<List<T>> {
+  val indices = listOf(-1).plus(filterIndices(list, divider))
+  return indices.mapIndexed { index, start ->
+    val end = indices.getOrElse(index + 1) { list.size }
+    list.subList(start + 1, end)
+  }
 }
 
 fun <T> nextIndexOf(list: List<T>, start: Int, filter: (T) -> Boolean): Int? {
@@ -67,3 +74,11 @@ fun matchFunction(arguments: List<Argument>, overloads: Signatures, range: Range
   else
     failure(ParsingError(TextId.ambiguousOverload, range = range))
 }
+
+fun <T> filterIndexes(collection: Collection<T>, predicate: (T) -> Boolean): List<Int> =
+    collection.mapIndexedNotNull { index, token ->
+      if (predicate(token))
+        index
+      else
+        null
+    }

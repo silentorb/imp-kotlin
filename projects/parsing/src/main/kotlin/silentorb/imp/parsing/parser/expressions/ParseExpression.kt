@@ -12,7 +12,7 @@ import silentorb.imp.parsing.parser.validateFunctionTypes
 import silentorb.imp.parsing.parser.validateSignatures
 
 fun parseExpression(nextId: NextId, context: Context): (Tokens) -> Response<Dungeon> = { tokens ->
-  val tokenGraph = newGroupingGraph(groupTokens(tokens))
+  val tokenGraph = arrangePiping(tokens, newGroupingGraph(groupTokens(tokens)))
   val namedArguments = tokenGraph.parents
       .map { (_, children) -> getNamedArguments(tokens, children) }
       .reduce { a, b -> a.plus(b) }
@@ -49,7 +49,7 @@ fun parseExpression(nextId: NextId, context: Context): (Tokens) -> Response<Dung
         val index = tokenNodes.entries.first { it.value == id }.key
         tokens[index].range
       }
-  val typeResolutionErrors = validateFunctionTypes(nodes, types, nodeMap)
+  val typeResolutionErrors = validateFunctionTypes(nodes, functionTypes.plus(types), nodeMap)
   val signatureErrors = validateSignatures(signatureOptions, nodeMap)
   val errors = signatureErrors.plus(typeResolutionErrors)
   if (errors.any())

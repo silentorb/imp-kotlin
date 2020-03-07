@@ -51,7 +51,7 @@ val isDefinitionTerminator: TokenFilter = { token ->
 }
 
 fun partitionImports(tokens: Tokens): Response<List<ImportRange>> {
-  val importTokenIndices = filterIndicies(tokens, isImportToken)
+  val importTokenIndices = filterIndices(tokens, isImportToken)
   val imports = importTokenIndices.map { importTokenIndex ->
     val end = nextIndexOf(tokens, importTokenIndex, isImportTerminator) ?: tokens.size
     ImportRange(

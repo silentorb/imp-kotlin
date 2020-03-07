@@ -13,6 +13,7 @@ enum class TextId {
   missingClosingParenthesis,
   missingArgumentName,
   missingArgumentExpression,
+  missingExpression,
   multipleGraphOutputs,
   noGraphOutput,
   noMatchingSignature,
