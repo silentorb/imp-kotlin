@@ -2,9 +2,6 @@ package silentorb.imp.parsing.parser.expressions
 
 import silentorb.imp.core.*
 
-fun getParametersByType(parameters: List<Parameter>, type: PathKey): List<Parameter> =
-    parameters.filter { it.type == type }
-
 fun arrangeConnections(parents: TokenParents, tokenNodes: Map<TokenIndex, Id>, signatures: SignatureMap,
                        namedArguments: Map<Int, String>,
                        types: Map<Id, PathKey>): Set<Connection> {
@@ -12,18 +9,25 @@ fun arrangeConnections(parents: TokenParents, tokenNodes: Map<TokenIndex, Id>, s
       .flatMap { (tokenIndex, children) ->
         val functionNode = tokenNodes[tokenIndex]!!
         val signature = signatures[functionNode]
-        children.mapIndexed { index, childIndex ->
-          val sourceNode = tokenNodes[childIndex]!!
-          val parameter = namedArguments[childIndex]
-              ?: signature?.parameters?.filter { it.type == types[sourceNode] }?.getOrNull(index)?.name
-              ?: ""
-
-          Connection(
-              destination = functionNode,
-              source = sourceNode,
-              parameter = parameter
-          )
-        }
+        if (signature == null)
+          listOf()
+        else
+          children
+              .groupBy { types[tokenNodes[it]!!] }
+              .flatMap { (type, children) ->
+                val parameters = signature.parameters.filter { it.type == type }
+                children.mapIndexed { index, childIndex ->
+                  val sourceNode = tokenNodes[childIndex]!!
+                  val parameter = namedArguments[childIndex]
+                      ?: parameters.getOrNull(index)?.name
+                      ?: throw Error("Logic for matching signatures and connecting nodes is not aligned.")
+                  Connection(
+                      destination = functionNode,
+                      source = sourceNode,
+                      parameter = parameter
+                  )
+                }
+              }
       }
       .toSet()
 }

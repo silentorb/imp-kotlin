@@ -3,6 +3,7 @@ package silentorb.imp.parsing.general
 fun englishText(text: TextId): String =
     when (text) {
       TextId.ambiguousOverload -> "Ambiguous overload"
+      TextId.badArgument -> "Bad argument"
       TextId.duplicateSymbol -> "Duplicate symbol @tokenText"
       TextId.expectedExpression -> "Expected an expression"
       TextId.expectedIdentifier -> "Expected an identifier"

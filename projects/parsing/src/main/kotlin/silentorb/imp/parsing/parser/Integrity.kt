@@ -4,7 +4,6 @@ import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.expressions.TokenGraph
-import silentorb.imp.parsing.parser.expressions.TokenParents
 import silentorb.imp.parsing.parser.expressions.getPipingParents
 
 val getImportErrors = { import: TokenizedImport ->

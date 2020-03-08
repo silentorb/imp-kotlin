@@ -4,6 +4,7 @@ enum class TextId {
 
   // Error messages
   ambiguousOverload,
+  badArgument,
   duplicateSymbol,
   expectedIdentifier,
   expectedExpression,
