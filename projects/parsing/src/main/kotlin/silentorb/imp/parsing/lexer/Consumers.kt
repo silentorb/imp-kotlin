@@ -55,11 +55,13 @@ tailrec fun consumeComment(bundle: Bundle): TokenStep {
     consumeComment(incrementBundle(character, bundle))
 }
 
-fun consumeCommentOrHyphen(bundle: Bundle): TokenStep {
+fun consumeCommentOrHyphenOrNegativeNumber(bundle: Bundle): TokenStep {
   val character = nextCharacter(bundle)
   return if (character == '-')
     consumeComment(incrementBundle(character, bundle))
-  else
+  else if (character != null && integerStart(character))
+    consumeInteger(bundle)
+    else
     consumeOperator(bundle)
 }
 

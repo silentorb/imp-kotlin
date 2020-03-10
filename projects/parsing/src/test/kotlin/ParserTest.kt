@@ -42,6 +42,17 @@ class ParserTest {
   }
 
   @Test
+  fun supportsNegativeNumbers() {
+    val code = "let output = -10.3"
+
+    handleRoot(errored, parseText(emptyContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(2, graph.nodes.size)
+      assertEquals(-10.3f, graph.values.values.first())
+    }
+  }
+
+  @Test
   fun canParseParenthesis() {
     val code = "let output = (10)"
 
