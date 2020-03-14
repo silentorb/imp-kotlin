@@ -30,13 +30,18 @@ fun parseDefinition(nextId: NextId, context: Context): (Map.Entry<Id, TokenizedD
           destination = id,
           parameter = defaultParameter
       ))
+      val outputType = nextDungeon.graph.types[output]
       PartitionedResponse(
-          nextDungeon.copy(
-              graph = nextDungeon.graph.copy(
-                  types = nextDungeon.graph.types
-                      .plus(id to nextDungeon.graph.types[output]!!)
-              )
-          ),
+          if (outputType != null)
+            nextDungeon.copy(
+                graph = nextDungeon.graph.copy(
+                    types = nextDungeon.graph.types
+                        .plus(id to outputType)
+
+                )
+            )
+          else
+            nextDungeon,
           matchingParenthesesErrors.plus(expressionErrors)
       )
     }
