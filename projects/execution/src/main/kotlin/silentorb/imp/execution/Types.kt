@@ -12,6 +12,12 @@ data class CompleteFunction(
     val implementation: FunctionImplementation
 )
 
+data class TypeAlias(
+    val path: PathKey,
+    val alias: PathKey? = null,
+    val numericConstraint: NumericTypeConstraint? = null
+)
+
 data class Library(
     val namespace: Namespace,
     val implementation: FunctionImplementationMap

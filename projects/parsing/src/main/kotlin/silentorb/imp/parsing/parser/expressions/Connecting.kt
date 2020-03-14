@@ -10,7 +10,7 @@ fun arrangeConnections(parents: TokenParents, tokenNodes: Map<TokenIndex, Id>, s
         if (signatureMatch == null)
           listOf()
         else
-          signatureMatch.alignment.map {(sourceNode, parameter) ->
+          signatureMatch.alignment.map { (parameter, sourceNode) ->
             Connection(
                 destination = functionNode,
                 source = sourceNode,

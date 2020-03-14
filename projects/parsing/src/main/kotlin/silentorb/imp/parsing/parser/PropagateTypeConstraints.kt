@@ -11,8 +11,8 @@ fun propagateTypeConstraints(namespace: Namespace, graph: Graph): ConstrainedLit
         graph.signatureMatches
             .flatMap { (_, signatureMatch) ->
               signatureMatch.alignment.entries
-                  .filter { it.key == node }
-                  .map { Pair(it.key, signatureMatch.signature.parameters.first { parameter -> parameter.name == it.value }.type) }
+                  .filter { it.value == node }
+                  .map { Pair(it.value, signatureMatch.signature.parameters.first { parameter -> parameter.name == it.key }.type) }
             }
             .filter { (_, type) ->
               namespace.numericTypeConstraints.containsKey(type)

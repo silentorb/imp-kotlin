@@ -93,10 +93,15 @@ fun validatePiping(tokens: Tokens, tokenGraph: TokenGraph): ParsingErrors {
 
 fun isValueWithinConstraint(constraint: NumericTypeConstraint, value: Any): Boolean {
   val doubleValue = when (value) {
+    is Double -> value
+    is Int -> value.toDouble()
     is Float -> value.toDouble()
-    else -> throw Error("Invalid numeric type ${value}")
+    else -> null
   }
-  return doubleValue >= constraint.minimum && doubleValue <= constraint.maximum
+  return if (doubleValue == null)
+    false
+  else
+    doubleValue >= constraint.minimum && doubleValue <= constraint.maximum
 }
 
 fun validateTypeConstraints(values: Map<Id, Any>, namespace: Namespace, constraints: ConstrainedLiteralMap, nodeMap: NodeMap): ParsingErrors {

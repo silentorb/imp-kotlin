@@ -4,7 +4,7 @@ import silentorb.imp.core.FunctionKey
 import silentorb.imp.core.mergeNamespaces
 import silentorb.imp.core.newNamespace
 
-fun partitionFunctions(functions: List<CompleteFunction>): Library {
+fun newLibrary(functions: List<CompleteFunction>, types: List<TypeAlias> = listOf()): Library {
   val grouped = functions
       .groupBy { it.path }
 
@@ -18,10 +18,16 @@ fun partitionFunctions(functions: List<CompleteFunction>): Library {
         }
       }
       .associate { it }
-  
+
   return Library(
       namespace = newNamespace().copy(
-          functions = interfaces
+          functions = interfaces,
+          aliases = types
+              .filter { it.alias != null }
+              .associate { Pair(it.path, it.alias!!) },
+          numericTypeConstraints = types
+              .filter { it.numericConstraint != null }
+              .associate { Pair(it.path, it.numericConstraint!!) }
       ),
       implementation = implementation
   )
