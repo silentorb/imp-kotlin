@@ -1,10 +1,7 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
-import silentorb.imp.parsing.general.Response
-import silentorb.imp.parsing.general.Token
-import silentorb.imp.parsing.general.Tokens
-import silentorb.imp.parsing.general.flatten
+import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.expressions.*
 
@@ -22,27 +19,29 @@ data class TokenizedGraph(
     val definitions: List<TokenizedDefinition>
 )
 
-fun parseDefinition(nextId: NextId, context: Context): (Map.Entry<Id, TokenizedDefinition>) -> Response<Dungeon> =
+fun parseDefinition(nextId: NextId, context: Context): (Map.Entry<Id, TokenizedDefinition>) -> PartitionedResponse<Dungeon> =
     { (id, definition) ->
-      checkMatchingParentheses(definition.expression.filter {it.rune != Rune.newline})
-          .then(parseExpression(nextId, context))
-          .map { dungeon ->
-            val output = getGraphOutputNode(dungeon.graph)
-            val nextDungeon = addConnection(dungeon, Connection(
-                source = output,
-                destination = id,
-                parameter = defaultParameter
-            ))
-            nextDungeon.copy(
-                graph = nextDungeon.graph.copy(
-                    types = nextDungeon.graph.types
-                        .plus(id to nextDungeon.graph.types[output]!!)
-                )
-            )
-          }
+      val tokens = definition.expression.filter { it.rune != Rune.newline }
+      val matchingParenthesesErrors = checkMatchingParentheses(tokens)
+      val (dungeon, expressionErrors) = parseExpression(nextId, context, tokens)
+      val output = getGraphOutputNode(dungeon.graph)
+      val nextDungeon = addConnection(dungeon, Connection(
+          source = output,
+          destination = id,
+          parameter = defaultParameter
+      ))
+      PartitionedResponse(
+          nextDungeon.copy(
+              graph = nextDungeon.graph.copy(
+                  types = nextDungeon.graph.types
+                      .plus(id to nextDungeon.graph.types[output]!!)
+              )
+          ),
+          matchingParenthesesErrors.plus(expressionErrors)
+      )
     }
 
-fun finalizeDungeons(nodeRanges: Map<Id, TokenizedDefinition>): (List<Dungeon>) -> Response<Dungeon> =
+fun finalizeDungeons(context: Context, nodeRanges: Map<Id, TokenizedDefinition>): (List<Dungeon>) -> PartitionedResponse<Dungeon> =
     { expressionDungeons ->
       val nodeMap = nodeRanges
           .mapValues { (_, definition) -> definition.symbol.range }
@@ -56,15 +55,25 @@ fun finalizeDungeons(nodeRanges: Map<Id, TokenizedDefinition>): (List<Dungeon>) 
 
       val initialDungeon = Dungeon(
           graph = initialGraph,
-          nodeMap = nodeMap
+          nodeMap = nodeMap,
+          literalConstraints = mapOf()
       )
 
-      val dungeon = expressionDungeons.fold(initialDungeon) { a, expressionDungeon ->
+      val mergedDungeon = expressionDungeons.fold(initialDungeon) { a, expressionDungeon ->
         mergeDistinctDungeons(a, expressionDungeon)
       }
+      val constraints = propagateTypeConstraints(mergeNamespaces(context), mergedDungeon.graph)
+      val dungeon = mergedDungeon.copy(
+          literalConstraints = constraints
+      )
+      val namespace = mergeNamespaces(context)
+      val graphErrors = validateGraph(dungeon.nodeMap, dungeon.graph)
+      val constraintErrors = validateTypeConstraints(dungeon.graph.values, namespace, constraints, dungeon.nodeMap)
 
-      checkForGraphErrors(dungeon.nodeMap)(dungeon.graph)
-          .map { dungeon }
+      PartitionedResponse(
+          dungeon,
+          graphErrors.plus(constraintErrors)
+      )
     }
 
 fun newDefinitionContext(
@@ -72,8 +81,8 @@ fun newDefinitionContext(
     rawImportedFunctions: List<List<Pair<Key, PathKey>>>,
     parentContext: Context): Context {
   val definitionSymbols = nodeRanges.map { (id, definition) ->
-    Pair(definition.symbol.value, id)
-  }
+        Pair(definition.symbol.value, id)
+      }
       .associate { it }
 
   val importedFunctions = rawImportedFunctions
@@ -81,9 +90,9 @@ fun newDefinitionContext(
       .associate { it }
 
   return parentContext.plus(
-      Namespace(
+      newNamespace().copy(
           nodes = definitionSymbols,
-          functionAliases = importedFunctions
+          localFunctionAliases = importedFunctions
       )
   )
 }
@@ -96,34 +105,30 @@ fun addTypesToContext(types: Map<Id, PathKey>, context: Context): Context =
                 .plus(types)
         ))
 
-fun parseDefinitions(nextId: NextId, nodeRanges: Map<Id, TokenizedDefinition>, initialContext: Context): Response<List<Dungeon>> {
+fun parseDefinitions(nextId: NextId, nodeRanges: Map<Id, TokenizedDefinition>, initialContext: Context): PartitionedResponse<List<Dungeon>> {
   val (dungeonResponses) = nodeRanges.entries
-      .fold<Map.Entry<Id, TokenizedDefinition>, Pair<List<Response<Dungeon>>, Context>>(Pair(listOf(), initialContext)) { a, b ->
+      .fold<Map.Entry<Id, TokenizedDefinition>, Pair<List<PartitionedResponse<Dungeon>>, Context>>(Pair(listOf(), initialContext)) { a, b ->
         val (responses, context) = a
         val response = parseDefinition(nextId, context)(b)
-        val nextContext = if (response is Response.Success)
-          addTypesToContext(response.value.graph.types, context)
-        else
-          context
-
+//        val (dungeon, errors) = response
+        val nextContext = addTypesToContext(response.value.graph.types, context)
         Pair(responses.plus(response), nextContext)
       }
 
-  return flatten(dungeonResponses)
+  return flattenResponses(dungeonResponses)
 }
 
-fun parseDungeon(parentContext: Context): (TokenizedGraph) -> Response<Dungeon> =
+fun parseDungeon(parentContext: Context): (TokenizedGraph) -> PartitionedResponse<Dungeon> =
     { (imports, definitions) ->
-      flatten(imports.map(parseImport(parentContext.first())))
-          .then { rawImportedFunctions ->
-            val nextId = newIdSource(1L)
-            val nodeRanges = definitions.mapIndexed { index, definition ->
-              Pair(nextId(), definition)
-            }
-                .associate { it }
+      val (rawImportedFunctions, importErrors) = flattenResponses(imports.map(parseImport(parentContext.first())))
+      val nextId = newIdSource(1L)
+      val nodeRanges = definitions.associateBy { nextId() }
 
-            val context = newDefinitionContext(nodeRanges, rawImportedFunctions, parentContext)
-            parseDefinitions(nextId, nodeRanges, context)
-                .then(finalizeDungeons(nodeRanges))
-          }
+      val context = newDefinitionContext(nodeRanges, rawImportedFunctions, parentContext)
+      val (dungeons, definitionErrors) = parseDefinitions(nextId, nodeRanges, context)
+      val (dungeon, dungeonErrors) = finalizeDungeons(context, nodeRanges)(dungeons)
+      PartitionedResponse(
+          dungeon,
+          importErrors.plus(definitionErrors).plus(dungeonErrors)
+      )
     }

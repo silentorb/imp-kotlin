@@ -1,11 +1,13 @@
 import silentorb.imp.core.*
 
-val vector2iKey = PathKey("silentorb.imp.test", "Vector2i")
+const val testPath = "silentorb.imp.test"
+val vector2iKey = PathKey(testPath, "Vector2i")
+val measurementKey = PathKey(testPath, "Measurement")
 
 val simpleContext = listOf(
-    Namespace(
+    newNamespace().copy(
         functions = mapOf(
-            PathKey("silentorb.imp.test", "simpleFunction") to listOf(
+            PathKey(testPath, "simpleFunction") to listOf(
                 Signature(
                     parameters = listOf(
                         Parameter("first", intKey),
@@ -14,7 +16,7 @@ val simpleContext = listOf(
                     output = intKey
                 )
             ),
-            PathKey("silentorb.imp.test", "simpleFunction2") to listOf(
+            PathKey(testPath, "simpleFunction2") to listOf(
                 Signature(
                     parameters = listOf(
                         Parameter("first", floatKey),
@@ -23,12 +25,20 @@ val simpleContext = listOf(
                     output = intKey
                 )
             ),
-            PathKey("silentorb.imp.test", "something") to listOf(
+            PathKey(testPath, "something") to listOf(
                 Signature(
                     parameters = listOf(
                         Parameter("first", vector2iKey)
                     ),
                     output = vector2iKey
+                )
+            ),
+            PathKey(testPath, "measure") to listOf(
+                Signature(
+                    parameters = listOf(
+                        Parameter("value", measurementKey)
+                    ),
+                    output = intKey
                 )
             ),
             vector2iKey to listOf(
@@ -40,6 +50,12 @@ val simpleContext = listOf(
                     output = vector2iKey
                 )
             )
+        ),
+        aliases = mapOf(
+            measurementKey to floatKey
+        ),
+        numericTypeConstraints = mapOf(
+            measurementKey to NumericTypeConstraint(-10.0, 10.5)
         )
     )
 )

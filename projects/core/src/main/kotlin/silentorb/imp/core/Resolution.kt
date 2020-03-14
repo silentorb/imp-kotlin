@@ -1,6 +1,18 @@
 package silentorb.imp.core
 
-fun overloadMatches(arguments: List<Argument>, overloads: Signatures): Signatures {
+tailrec fun getRootType(aliases: Aliases, type: PathKey): PathKey {
+  val alias = aliases[type]
+  return if (alias == null)
+    type
+  else
+    getRootType(aliases, alias)
+}
+
+fun typeCanBeCastTo(aliases: Aliases, source: PathKey, target: PathKey): Boolean {
+  return getRootType(aliases, source) == getRootType(aliases, target)
+}
+
+fun overloadMatches(aliases: Aliases, arguments: List<Argument>, overloads: Signatures): List<SignatureMatch> {
   // TODO: Move this to a better area lower in the stack as a more formal integrity check
   if (arguments.any { it.name == null } && arguments.any { it.name != null })
     return listOf()
@@ -8,13 +20,27 @@ fun overloadMatches(arguments: List<Argument>, overloads: Signatures): Signature
   val argumentsByType = arguments.groupBy { it.type }
 
   return overloads
-      .filter { overload ->
-        if (arguments.any { it.name == null }) {
-          argumentsByType.all { (type, typeArguments) ->
-            overload.parameters.count { it.type == type } == typeArguments.size
+      .mapNotNull { signature ->
+        val alignment = if (arguments.any { it.name == null }) {
+          argumentsByType.flatMap { (type, typeArguments) ->
+            val parameters = signature.parameters.filter { typeCanBeCastTo(aliases, it.type, type) }
+            if (parameters.size == typeArguments.size)
+              typeArguments.zip(parameters) { a, b -> Pair(a.node, b.name) }
+            else
+              listOf()
           }
-        } else
-          arguments.all { argument -> overload.parameters.firstOrNull { it.name == argument.name!! }?.type == argument.type }
+        } else {
+          arguments.mapNotNull { argument ->
+            val parameter = signature.parameters.firstOrNull { it.name == argument.name!! }
+            if (parameter != null && typeCanBeCastTo(aliases, parameter.type, argument.type))
+              Pair(argument.node, parameter.name)
+            else
+              null
+          }
+        }
+        if (alignment.size < arguments.size)
+          null
+        else
+          SignatureMatch(signature, alignment.associate { it })
       }
 }
-//          arguments.zip(overload.parameters).all { (a, b) -> a.type == b.type }

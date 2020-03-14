@@ -30,7 +30,6 @@ fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: Id):
       .filter { it.destination == destination }
       .associate {
         val value = outputValues[it.source]!!
-
         Pair(it.parameter, value)
       }
 }
@@ -40,9 +39,9 @@ fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: Outp
     graph.values[id]!!
   } else {
     val type = graph.functionTypes[id]
-    val signature = graph.signatures[id]
-    if (type != null && signature != null) {
-      val function = functions[FunctionKey(type, signature)]!!
+    val signatureMatch = graph.signatureMatches[id]
+    if (type != null && signatureMatch != null) {
+      val function = functions[FunctionKey(type, signatureMatch.signature)]!!
       val arguments = prepareArguments(graph, values, id)
       function(arguments)
     } else {

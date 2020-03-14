@@ -18,38 +18,25 @@ val getImportErrors = { import: TokenizedImport ->
   invalidTokens.map(newParsingError(TextId.invalidToken))
 }
 
-val checkImportTokens = checkForErrors { imports: List<TokenizedImport> ->
-  imports.flatMap(getImportErrors)
-}
+fun validateImportTokens(imports: List<TokenizedImport>) =
+    imports.flatMap(getImportErrors)
 
-val checkDefinitionTokens = checkForErrors { definitions: List<TokenizedDefinition> ->
+fun validateDefinitionTokens(definitions: List<TokenizedDefinition>): ParsingErrors {
   val duplicateSymbols = definitions
       .groupBy { it.symbol.value }
       .filter { it.value.size > 1 }
 
-  val duplicateSymbolErrors = duplicateSymbols.flatMap { (_, definitions) ->
+  return duplicateSymbols.flatMap { (_, definitions) ->
     definitions.drop(1).map { definition ->
       newParsingError(TextId.duplicateSymbol, definition.symbol)
     }
   }
-  duplicateSymbolErrors
 }
 
-fun checkForGraphErrors(nodeMap: NodeMap) = checkForErrors { graph: Graph ->
-  val graphOutputs = getGraphOutputNodes(graph)
-  listOfNotNull(
-      errorIf(graphOutputs.none(), TextId.noGraphOutput, Range(newPosition()))
-  )
-      .plus(graphOutputs.drop(1).map {
-        val token = nodeMap[it]!!
-        newParsingError(TextId.multipleGraphOutputs, token)
-      })
-}
-
-val checkMatchingParentheses = checkForErrors { tokens: Tokens ->
+fun checkMatchingParentheses(tokens: Tokens): ParsingErrors {
   val openCount = tokens.count { it.rune == Rune.parenthesesOpen }
   val closeCount = tokens.count { it.rune == Rune.parenthesesClose }
-  if (openCount > closeCount)
+  return if (openCount > closeCount)
     listOf(newParsingError(TextId.missingClosingParenthesis, range = Range(tokens.last().range.end)))
   else if (closeCount > openCount) {
     val range = Range(tokens.last { it.rune == Rune.parenthesesClose }.range.end)
@@ -67,7 +54,7 @@ fun validateFunctionTypes(nodes: Set<Id>, types: Map<Id, PathKey>, nodeMap: Node
       }
 }
 
-fun validateSignatures(signatureOptions: Map<Id, List<Signature>>, nodeMap: NodeMap): ParsingErrors {
+fun validateSignatures(signatureOptions: Map<Id, List<SignatureMatch>>, nodeMap: NodeMap): ParsingErrors {
   return signatureOptions
       .mapNotNull { (id, options) ->
         if (options.size == 1)
@@ -102,4 +89,36 @@ fun validatePiping(tokens: Tokens, tokenGraph: TokenGraph): ParsingErrors {
   }
 
   return prematurePipeErrors.plus(danglingErrors)
+}
+
+fun isValueWithinConstraint(constraint: NumericTypeConstraint, value: Any): Boolean {
+  val doubleValue = when (value) {
+    is Float -> value.toDouble()
+    else -> throw Error("Invalid numeric type ${value}")
+  }
+  return doubleValue >= constraint.minimum && doubleValue <= constraint.maximum
+}
+
+fun validateTypeConstraints(values: Map<Id, Any>, namespace: Namespace, constraints: ConstrainedLiteralMap, nodeMap: NodeMap): ParsingErrors {
+  return values.mapNotNull { (node, value) ->
+    val constraintType = constraints[node]
+    if (constraintType != null) {
+      val constraint = namespace.numericTypeConstraints[constraintType]!!
+      if (isValueWithinConstraint(constraint, value))
+        null
+      else
+        newParsingError(TextId.outsideTypeRange, nodeMap[node]!!)
+    } else null
+  }
+}
+
+fun validateGraph(nodeMap: NodeMap, graph: Graph): ParsingErrors {
+  val graphOutputs = getGraphOutputNodes(graph)
+  return listOfNotNull(
+      errorIf(graphOutputs.none(), TextId.noGraphOutput, Range(newPosition()))
+  )
+      .plus(graphOutputs.drop(1).map {
+        val token = nodeMap[it]!!
+        newParsingError(TextId.multipleGraphOutputs, token)
+      })
 }

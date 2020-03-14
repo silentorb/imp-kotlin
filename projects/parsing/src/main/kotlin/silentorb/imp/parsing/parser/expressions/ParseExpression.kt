@@ -3,16 +3,11 @@ package silentorb.imp.parsing.parser.expressions
 import silentorb.imp.core.Context
 import silentorb.imp.core.Graph
 import silentorb.imp.core.NextId
-import silentorb.imp.parsing.general.Response
-import silentorb.imp.parsing.general.Tokens
-import silentorb.imp.parsing.general.failure
-import silentorb.imp.parsing.general.success
-import silentorb.imp.parsing.parser.Dungeon
-import silentorb.imp.parsing.parser.validateFunctionTypes
-import silentorb.imp.parsing.parser.validatePiping
-import silentorb.imp.parsing.parser.validateSignatures
+import silentorb.imp.core.flattenAliases
+import silentorb.imp.parsing.general.*
+import silentorb.imp.parsing.parser.*
 
-fun parseExpression(nextId: NextId, context: Context): (Tokens) -> Response<Dungeon> = { tokens ->
+fun parseExpression(nextId: NextId, context: Context, tokens: Tokens): PartitionedResponse<Dungeon> {
   val groupGraph = newGroupingGraph(groupTokens(tokens))
   val tokenGraph = arrangePiping(tokens, groupGraph)
   val namedArguments = tokenGraph.parents
@@ -29,8 +24,10 @@ fun parseExpression(nextId: NextId, context: Context): (Tokens) -> Response<Dung
   val functionTypes = resolveFunctionTypes(context, tokens, nonNodeReferenceTokens, tokenNodes)
   val obviousTypes = literalTypes.plus(nodeReferences.values.associate { it })
 
+  val aliases = flattenAliases(context)
   val (signatureOptions, functionReturnTypes) = resolveFunctionSignatures(
       context,
+      aliases,
       tokenGraph,
       parents,
       functionTypes,
@@ -43,7 +40,7 @@ fun parseExpression(nextId: NextId, context: Context): (Tokens) -> Response<Dung
   val signatures = signatureOptions
       .filter { it.value.size == 1 }
       .mapValues { it.value.first() }
-  val connections = arrangeConnections(parents, tokenNodes, signatures, namedArguments, types)
+  val connections = arrangeConnections(parents, tokenNodes, signatures)
   val values = resolveLiterals(tokens, indexedTokens, tokenNodes)
   val newNodes = nodes.minus(nodeReferences.values.map { it.first })
   val nodeMap = newNodes
@@ -55,20 +52,17 @@ fun parseExpression(nextId: NextId, context: Context): (Tokens) -> Response<Dung
   val signatureErrors = validateSignatures(signatureOptions, nodeMap)
   val pipingErrors = validatePiping(tokens, groupGraph)
   val errors = signatureErrors.plus(typeResolutionErrors).plus(pipingErrors)
-  if (errors.any())
-    failure(errors)
-  else {
-    assert(types.keys == nodes)
-    success(Dungeon(
-        graph = Graph(
-            nodes = nodes,
-            connections = connections,
-            functionTypes = functionTypes,
-            types = types,
-            signatures = signatures,
-            values = values
-        ),
-        nodeMap = nodeMap
-    ))
-  }
+  val dungeon = Dungeon(
+      graph = Graph(
+          nodes = nodes,
+          connections = connections,
+          functionTypes = functionTypes,
+          types = types,
+          signatureMatches = signatures,
+          values = values
+      ),
+      nodeMap = nodeMap,
+      literalConstraints = mapOf()
+  )
+  return PartitionedResponse(dungeon, errors)
 }

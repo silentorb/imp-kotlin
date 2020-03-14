@@ -315,7 +315,7 @@ import silentorb.imp.test.*
 let a = simpleFunction2 1.1 2.1
 let output = simpleFunction a (simpleFunction 3 3)
 """.trimIndent()
-    expectError(TextId.noMatchingSignature, parseText(simpleContext)(code))
+      expectError(TextId.noMatchingSignature, parseText(simpleContext)(code))
   }
 
   @Test
@@ -374,4 +374,31 @@ let output = simpleFunction a (simpleFunction 3 3)
     expectError(TextId.missingExpression, parseText(simpleContext)(code))
   }
 
+  @Test
+  fun supportsNumericTypeConstraints() {
+    val code = """
+      import silentorb.imp.test.measure
+      let output = measure 10.0
+    """.trimIndent()
+    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+    }
+  }
+
+  @Test
+  fun preventsValuesAboveNumericConstraint() {
+    val code = """
+      import silentorb.imp.test.measure
+      let output = measure 10.6
+    """.trimIndent()
+    expectError(TextId.outsideTypeRange, parseText(simpleContext)(code))
+  }
+
+  @Test
+  fun preventsValuesBelowNumericConstraint() {
+    val code = """
+      import silentorb.imp.test.measure
+      let output = measure -12.0
+    """.trimIndent()
+    expectError(TextId.outsideTypeRange, parseText(simpleContext)(code))
+  }
 }

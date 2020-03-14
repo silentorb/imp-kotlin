@@ -5,31 +5,50 @@ data class PathKey(
     val name: String
 )
 
+typealias Aliases = Map<PathKey, PathKey>
+
 data class Namespace(
-    val functionAliases: Map<Key, PathKey> = mapOf(),
-    val functions: OverloadsMap = mapOf(),
-    val nodes: Map<Key, Id> = mapOf(),
-    val types: Map<Id, PathKey> = mapOf(),
-    val values: Map<Key, Any> = mapOf(),
-    val structures: Map<PathKey, Structure> = mapOf(),
-    val unions: Map<PathKey, List<Union>> = mapOf()
+    val aliases: Aliases,
+    val localFunctionAliases: Map<Key, PathKey>,
+    val functions: OverloadsMap,
+    val nodes: Map<Key, Id>,
+    val types: Map<Id, PathKey>,
+    val values: Map<Key, Any>,
+    val structures: Map<PathKey, Structure>,
+    val unions: Map<PathKey, List<Union>>,
+    val numericTypeConstraints: Map<PathKey, NumericTypeConstraint>
 )
 
-fun combineNamespaces(namespaces: Collection<Namespace>): Namespace =
+fun newNamespace(): Namespace =
+    Namespace(
+        aliases = mapOf(),
+        localFunctionAliases = mapOf(),
+        functions = mapOf(),
+        nodes = mapOf(),
+        types = mapOf(),
+        values = mapOf(),
+        structures = mapOf(),
+        unions = mapOf(),
+        numericTypeConstraints = mapOf()
+    )
+
+fun mergeNamespaces(namespaces: Collection<Namespace>): Namespace =
     namespaces.reduce { accumulator, namespace ->
-      accumulator.copy(
-          functionAliases = accumulator.functionAliases.plus(namespace.functionAliases),
+      Namespace(
+          aliases = accumulator.aliases.plus(namespace.aliases),
+          localFunctionAliases = accumulator.localFunctionAliases.plus(namespace.localFunctionAliases),
           functions = accumulator.functions.plus(namespace.functions),
           nodes = accumulator.nodes.plus(namespace.nodes),
           types = accumulator.types.plus(namespace.types),
           values = accumulator.values.plus(namespace.values),
           structures = accumulator.structures.plus(namespace.structures),
-          unions = accumulator.unions.plus(namespace.unions)
+          unions = accumulator.unions.plus(namespace.unions),
+          numericTypeConstraints = accumulator.numericTypeConstraints.plus(namespace.numericTypeConstraints)
       )
     }
 
-fun combineNamespaces(vararg namespaces: Namespace): Namespace =
-    combineNamespaces(namespaces.toList())
+fun mergeNamespaces(vararg namespaces: Namespace): Namespace =
+    mergeNamespaces(namespaces.toList())
 
 typealias Context = List<Namespace>
 
@@ -48,7 +67,7 @@ tailrec fun resolveFunction(context: Context, name: String, index: Int): PathKey
     if (index < 0)
       null
     else
-      context[index].functionAliases[name]
+      context[index].localFunctionAliases[name]
           ?: resolveFunction(context, name, index - 1)
 
 fun resolveFunction(context: Context, name: String): PathKey? =
@@ -84,3 +103,6 @@ tailrec fun getTypeDetails(context: Context, path: PathKey, index: Int): Signatu
 
 fun getTypeDetails(context: Context, path: PathKey): Signatures? =
     getTypeDetails(context, path, context.size - 1)
+
+fun flattenAliases(context: Context): Aliases =
+    context.fold(mapOf()) { a, b -> a.plus(b.aliases) }

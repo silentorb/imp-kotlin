@@ -41,5 +41,16 @@ fun errorIf(condition: Boolean, message: TextId, range: Range): ParsingError? =
     else
       null
 
-fun formatError(textLibrary: (TextId)-> String, error: ParsingError): String =
+fun formatError(textLibrary: (TextId) -> String, error: ParsingError): String =
     englishText(error.message) + " at ${rangeString(error.range)}"
+
+data class PartitionedResponse<T>(
+    val value: T,
+    val errors: ParsingErrors
+)
+
+fun <T> flattenResponses(responses: List<PartitionedResponse<T>>): PartitionedResponse<List<T>> =
+    PartitionedResponse(
+        responses.map { it.value },
+        responses.flatMap { it.errors }
+    )

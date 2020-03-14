@@ -50,16 +50,15 @@ val isDefinitionTerminator: TokenFilter = { token ->
   token.rune == Rune.newline
 }
 
-fun partitionImports(tokens: Tokens): Response<List<ImportRange>> {
+fun partitionImports(tokens: Tokens): List<ImportRange> {
   val importTokenIndices = filterIndices(tokens, isImportToken)
-  val imports = importTokenIndices.map { importTokenIndex ->
+  return importTokenIndices.map { importTokenIndex ->
     val end = nextIndexOf(tokens, importTokenIndex, isImportTerminator) ?: tokens.size
     ImportRange(
         start = importTokenIndex,
         end = end
     )
   }
-  return success(imports)
 }
 
 fun definitionIndices(tokens: Tokens): List<Int> {
@@ -79,7 +78,7 @@ fun definitionIndices(tokens: Tokens): List<Int> {
   }
 }
 
-fun partitionDefinitions(tokens: Tokens): Response<List<DefinitionRange>> {
+fun partitionDefinitions(tokens: Tokens): PartitionedResponse<List<DefinitionRange>> {
   val assignmentTokenIndices = definitionIndices(tokens)
   val entries = assignmentTokenIndices.map { step ->
     val token = tokens[step]
@@ -115,27 +114,25 @@ fun partitionDefinitions(tokens: Tokens): Response<List<DefinitionRange>> {
 
   val errors = entries.flatMap { it.first }
 
-  return if (errors.any())
-    failure(errors)
-  else
-    success(entries.map { it.second })
+  return PartitionedResponse(entries.map { it.second }, errors)
 }
 
 fun toTokenizedGraph(
     tokens: Tokens,
     importRanges: List<ImportRange>,
     definitionRanges: List<DefinitionRange>
-): Response<TokenizedGraph> {
+): PartitionedResponse<TokenizedGraph> {
   val imports = importRanges.map(extractImportTokens(tokens))
   val definitions = definitionRanges.map(extractDefinitionTokens(tokens))
-  return checkImportTokens(imports)
-      .then { checkDefinitionTokens(definitions) }
-      .map {
-        TokenizedGraph(
-            imports = imports,
-            definitions = definitions
-        )
-      }
+  val importErrors = validateImportTokens(imports)
+  val definitionErrors = validateDefinitionTokens(definitions)
+  return PartitionedResponse(
+      TokenizedGraph(
+          imports = imports,
+          definitions = definitions
+      ),
+      importErrors.plus(definitionErrors)
+  )
 }
 
 fun getDefinitionsRangeStart(tokens: Tokens, definitionRanges: List<DefinitionRange>): Int =
@@ -144,21 +141,22 @@ fun getDefinitionsRangeStart(tokens: Tokens, definitionRanges: List<DefinitionRa
 fun withoutComments(tokens: Tokens): Tokens =
     tokens.filter { it.rune != Rune.comment }
 
-fun parseTokens(context: Context, tokens: Tokens): Response<Dungeon> =
-    partitionDefinitions(tokens)
-        .then { definitionRanges ->
-          val importRangeMax = getDefinitionsRangeStart(tokens, definitionRanges)
-          partitionImports(tokens.take(importRangeMax))
-              .then { importRanges ->
-                toTokenizedGraph(tokens, importRanges, definitionRanges)
-              }
-        }
-        .then(parseDungeon(context))
+fun parseTokens(context: Context, tokens: Tokens): PartitionedResponse<Dungeon> {
+  val (definitionRanges, partitionErrors) = partitionDefinitions(tokens)
+  val importRangeMax = getDefinitionsRangeStart(tokens, definitionRanges)
+  val importRanges = partitionImports(tokens.take(importRangeMax))
+  val (tokenedGraph, tokenGraphErrors) = toTokenizedGraph(tokens, importRanges, definitionRanges)
+  val (dungeon, dungeonErrors) = parseDungeon(context)(tokenedGraph)
+  return PartitionedResponse(
+      dungeon,
+      partitionErrors.plus(tokenGraphErrors).plus(dungeonErrors)
+  )
+}
 
-fun parseTokens(context: Context): (Tokens) -> Response<Dungeon> = { tokens ->
+fun parseTokens(context: Context): (Tokens) -> PartitionedResponse<Dungeon> = { tokens ->
   assert(context.any())
   if (tokens.none())
-    success(emptyDungeon)
+    PartitionedResponse(emptyDungeon, listOf())
   else
     parseTokens(context, withoutComments(tokens))
 }

@@ -63,25 +63,6 @@ fun <I> flatten(responses: List<Response<I>>): Response<List<I>> {
     success((responses as List<Response.Success<I>>).map { it.value })
 }
 
-typealias PartitionedResponse<I> = Pair<I, ParsingErrors>
-
-fun <I, O> partition(responses: Collection<Response<I>>, transform: (List<I>) -> O): PartitionedResponse<O> {
-  val (successes, failures) = responses
-      .partition { it is Response.Success }
-
-  return Pair(
-      transform((successes as List<Response.Success<I>>).map { it.value }),
-      failures.flatMap { (it as Response.Failure).errors }
-  )
-}
-
-fun <K, V> partitionMap(responses: Map<K, Response<V>>): PartitionedResponse<Map<K, V>> {
-  return Pair(
-      responses.filterValues { it is Response.Success }.mapValues { (it.value as Response.Success<V>).value },
-      responses.filterValues { it is Response.Failure }.flatMap { (it.value as Response.Failure<V>).errors }
-  )
-}
-
 fun <T> checkForErrors(check: (T) -> List<ParsingError>): (T) -> Response<T> = { subject ->
   val errors = check(subject)
   if (errors.any())

@@ -30,7 +30,8 @@ fun resolveInvocationArguments(
           val childNode = tokenNodes[childIndex]!!
           Argument(
               name = namedArguments[childIndex],
-              type = argumentTypes[childNode]!!
+              type = argumentTypes[childNode]!!,
+              node = childNode
           )
         }
         val invocation = FunctionInvocation(
@@ -42,13 +43,13 @@ fun resolveInvocationArguments(
       }
 }
 
-typealias SignatureOptions = Map<Id, List<Signature>>
+typealias SignatureOptions = Map<Id, List<SignatureMatch>>
 
-fun getSignatureOptions(context: Context, invocations: Map<Id, FunctionInvocation>): SignatureOptions {
+fun getSignatureOptions(context: Context, aliases: Aliases, invocations: Map<Id, FunctionInvocation>): SignatureOptions {
   return invocations
       .mapValues { (_, invocation) ->
         val functionOverloads = getTypeDetails(context, invocation.type)!!
-        overloadMatches(invocation.arguments, functionOverloads)
+        overloadMatches(aliases, invocation.arguments, functionOverloads)
       }
 }
 
@@ -59,6 +60,7 @@ data class SignatureOptionsAndTypes(
 
 fun resolveFunctionSignatures(
     context: Context,
+    aliases: Aliases,
     tokenGraph: TokenGraph,
     parents: TokenParents,
     functionTypes: Map<Id, PathKey>,
@@ -71,10 +73,10 @@ fun resolveFunctionSignatures(
     val stageParents = stage.associateWith { parents[it]!! }
     val argumentTypes = types.plus(accumulator.types)
     val invocations = resolveInvocationArguments(stageParents, functionTypes, argumentTypes, tokenNodes, tokens, namedArguments)
-    val signatureOptions = getSignatureOptions(context, invocations)
+    val signatureOptions = getSignatureOptions(context, aliases, invocations)
     val returnTypes = signatureOptions
         .filter { it.value.size == 1 }
-        .mapValues { it.value.first().output }
+        .mapValues { it.value.first().signature.output }
     accumulator.copy(
         signatureOptions = accumulator.signatureOptions.plus(signatureOptions),
         types = accumulator.types.plus(returnTypes)

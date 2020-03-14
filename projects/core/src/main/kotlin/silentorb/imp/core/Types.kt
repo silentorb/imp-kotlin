@@ -17,6 +17,13 @@ typealias Signatures = List<Signature>
 typealias SignatureMap = Map<Id, Signature>
 typealias OverloadsMap = Map<PathKey, Signatures>
 
+data class SignatureMatch(
+    val signature: Signature,
+    val alignment: Map<Id, String>
+)
+
+typealias SignatureMatchMap = Map<Id, SignatureMatch>
+
 data class FunctionKey(
     val path: PathKey,
     val signature: Signature
@@ -52,5 +59,11 @@ fun newIdSource(initialValue: Id): NextId {
 
 data class Argument(
     val name: String?,
-    val type: PathKey
+    val type: PathKey,
+    val node: Id
+)
+
+data class NumericTypeConstraint(
+    val minimum: Double,
+    val maximum: Double
 )

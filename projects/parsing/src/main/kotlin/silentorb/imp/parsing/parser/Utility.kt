@@ -3,7 +3,7 @@ package silentorb.imp.parsing.parser
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
 
-val emptyContext: Context = listOf(Namespace())
+val emptyContext: Context = listOf(newNamespace())
 
 //fun <T> filterIndicies(collection: Collection<T>, filter: (T) -> Boolean) =
 //    collection
@@ -64,18 +64,9 @@ fun <T> until(list: List<T>, filter: (T) -> Boolean): List<T> =
 fun mergeDistinctDungeons(parent: Dungeon, child: Dungeon): Dungeon {
   return Dungeon(
       graph = mergeDistinctGraphs(parent.graph, child.graph),
-      nodeMap = parent.nodeMap.plus(child.nodeMap)
+      nodeMap = parent.nodeMap.plus(child.nodeMap),
+      literalConstraints = mapOf()
   )
-}
-
-fun matchFunction(arguments: List<Argument>, overloads: Signatures, range: Range): Response<Signature> {
-  val matches = overloadMatches(arguments, overloads)
-  return if (matches.size == 1)
-    success(matches.first())
-  else if (matches.none())
-    failure(ParsingError(TextId.noMatchingSignature, range = range))
-  else
-    failure(ParsingError(TextId.ambiguousOverload, range = range))
 }
 
 fun <T> filterIndexes(collection: Collection<T>, predicate: (T) -> Boolean): List<Int> =

@@ -18,6 +18,7 @@ enum class TextId {
   multipleGraphOutputs,
   noGraphOutput,
   noMatchingSignature,
+  outsideTypeRange,
   unexpectedCharacter,
   unknownFunction,
 }

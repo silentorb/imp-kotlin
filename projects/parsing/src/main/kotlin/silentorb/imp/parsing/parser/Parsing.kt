@@ -7,13 +7,18 @@ import silentorb.imp.parsing.lexer.tokenize
 
 fun parseText(context: Context): (CodeBuffer) -> Response<Dungeon> = { code ->
   val tokens = tokenize(code)
-  val errors = tokens.filter { it.rune == Rune.bad }
+  val lexingErrors = tokens.filter { it.rune == Rune.bad }
       .map { newParsingError(TextId.unexpectedCharacter, it) }
 
-  if (errors.any())
-    failure(errors)
-  else
-    parseTokens(context)(tokens)
+  if (lexingErrors.any())
+    failure(lexingErrors)
+  else {
+    val (dungeon, parsingErrors) = parseTokens(context)(tokens)
+    if (parsingErrors.any())
+      failure(parsingErrors)
+    else
+      success(dungeon)
+  }
 }
 
 fun parseTextOrThrow(context: Context, code: CodeBuffer, textLibrary: (TextId) -> String): Dungeon =
