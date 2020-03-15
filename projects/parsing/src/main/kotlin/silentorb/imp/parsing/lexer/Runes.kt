@@ -6,6 +6,7 @@ enum class Rune {
   comment,
   dot,
   identifier,
+  keyword,
   literalFloat,
   literalInteger,
   newline,

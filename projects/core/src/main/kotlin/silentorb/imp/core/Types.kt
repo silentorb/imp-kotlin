@@ -67,3 +67,6 @@ data class NumericTypeConstraint(
     val minimum: Double,
     val maximum: Double
 )
+
+fun newNumericConstraint(minimum: Int, maximum: Int) =
+    NumericTypeConstraint(minimum.toDouble(), maximum.toDouble())

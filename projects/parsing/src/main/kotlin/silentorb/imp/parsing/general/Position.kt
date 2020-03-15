@@ -23,6 +23,9 @@ fun positionString(position: Position): String =
 
 fun rangeString(range: Range): String =
     if (range.start == range.end)
-        positionString(range.start)
+      positionString(range.start)
     else
       "${positionString(range.start)} - ${positionString(range.end)}"
+
+fun isInRange(range: Range, offset: Int): Boolean =
+    offset >= range.start.index && offset <= range.end.index

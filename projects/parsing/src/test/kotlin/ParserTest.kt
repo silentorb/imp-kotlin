@@ -1,13 +1,12 @@
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 import silentorb.imp.core.Connection
 import silentorb.imp.core.floatKey
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.parser.emptyContext
-import silentorb.imp.parsing.parser.parseText
+import silentorb.imp.parsing.parser.parseTextBranching
 import silentorb.imp.testing.errored
 import silentorb.imp.testing.expectError
 
@@ -17,7 +16,7 @@ class ParserTest {
   fun canParseSimple() {
     val code = "let output = 10"
 
-    handleRoot(errored, parseText(emptyContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(emptyContext)(code)) { result ->
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
       assertEquals(1, graph.values.size)
@@ -30,7 +29,7 @@ class ParserTest {
   fun canParseDecimalNumbers() {
     val code = "let output = 10.3"
 
-    handleRoot(errored, parseText(emptyContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(emptyContext)(code)) { result ->
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
       assertEquals(1, graph.values.size)
@@ -45,7 +44,7 @@ class ParserTest {
   fun supportsNegativeNumbers() {
     val code = "let output = -10.3"
 
-    handleRoot(errored, parseText(emptyContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(emptyContext)(code)) { result ->
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
       assertEquals(-10.3f, graph.values.values.first())
@@ -56,7 +55,7 @@ class ParserTest {
   fun canParseParenthesis() {
     val code = "let output = (10)"
 
-    handleRoot(errored, parseText(emptyContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(emptyContext)(code)) { result ->
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
       assertEquals(1, graph.values.size)
@@ -72,7 +71,7 @@ class ParserTest {
       let output = intermediate
     """.trimIndent()
 
-    handleRoot(errored, parseText(emptyContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(emptyContext)(code)) { result ->
       val graph = result.graph
       assertEquals(3, graph.nodes.size)
       assertEquals(1, graph.values.size)
@@ -85,7 +84,7 @@ class ParserTest {
   @Test
   fun requiresANewlineBetweenDefinitions() {
     val code = "let intermediate = 10 let output = intermediate"
-    expectError(TextId.expectedNewline, parseText(emptyContext)(code))
+    expectError(TextId.expectedNewline, parseTextBranching(emptyContext)(code))
   }
 
   @Test
@@ -94,7 +93,7 @@ class ParserTest {
       let output = 10
       let output = output
     """.trimIndent()
-    expectError(TextId.duplicateSymbol, parseText(emptyContext)(code))
+    expectError(TextId.duplicateSymbol, parseTextBranching(emptyContext)(code))
   }
 
   @Test
@@ -103,7 +102,7 @@ class ParserTest {
       let first = 10
       let second = 10
     """.trimIndent()
-    expectError(TextId.multipleGraphOutputs, parseText(emptyContext)(code))
+    expectError(TextId.multipleGraphOutputs, parseTextBranching(emptyContext)(code))
   }
 
   @Test
@@ -111,7 +110,7 @@ class ParserTest {
     val code = """
       import silentorb.imp.test.simpleFunction
     """.trimIndent()
-    expectError(TextId.importNotFound, parseText(emptyContext)(code))
+    expectError(TextId.importNotFound, parseTextBranching(emptyContext)(code))
   }
 
   @Test
@@ -119,7 +118,7 @@ class ParserTest {
     val code = """
       import silentorb.imp.*.simpleFunction
     """.trimIndent()
-    expectError(TextId.invalidToken, parseText(emptyContext)(code))
+    expectError(TextId.invalidToken, parseTextBranching(emptyContext)(code))
   }
 
   @Test
@@ -127,7 +126,7 @@ class ParserTest {
     val code = """
       import silentorb.imp.10.simpleFunction
     """.trimIndent()
-    expectError(TextId.unexpectedCharacter, parseText(emptyContext)(code))
+    expectError(TextId.unexpectedCharacter, parseTextBranching(emptyContext)(code))
   }
 
   @Test
@@ -135,7 +134,7 @@ class ParserTest {
     val code = """
       import .silentorb.imp
     """.trimIndent()
-    expectError(TextId.invalidToken, parseText(emptyContext)(code))
+    expectError(TextId.invalidToken, parseTextBranching(emptyContext)(code))
   }
 
   @Test
@@ -143,7 +142,7 @@ class ParserTest {
     val code = """
       import silentorb.imp.
     """.trimIndent()
-    expectError(TextId.invalidToken, parseText(emptyContext)(code))
+    expectError(TextId.invalidToken, parseTextBranching(emptyContext)(code))
   }
 
   @Test
@@ -151,7 +150,7 @@ class ParserTest {
     val code = """
       import silentorb..imp
     """.trimIndent()
-    expectError(TextId.invalidToken, parseText(emptyContext)(code))
+    expectError(TextId.invalidToken, parseTextBranching(emptyContext)(code))
   }
 
   @Test
@@ -159,7 +158,7 @@ class ParserTest {
     val code = """
       let output = simpleFunction
     """.trimIndent()
-    expectError(TextId.unknownFunction, parseText(emptyContext)(code))
+    expectError(TextId.unknownFunction, parseTextBranching(emptyContext)(code))
   }
 
   @Test
@@ -169,7 +168,7 @@ class ParserTest {
       
       let output = simpleFunction 1 1
     """.trimIndent()
-    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
     }
@@ -182,7 +181,7 @@ class ParserTest {
       
       let output = simpleFunction 1 1
     """.trimIndent()
-    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
     }
@@ -195,7 +194,7 @@ class ParserTest {
       
       let output = simpleFunction 32 5
     """.trimIndent()
-    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(3, graph.connections.size)
@@ -212,7 +211,7 @@ class ParserTest {
       let value = 32
       let output = simpleFunction value value
     """.trimIndent()
-    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
     }
@@ -225,7 +224,7 @@ class ParserTest {
       
       let output = something (Vector2i 3 10)
     """.trimIndent()
-    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(5, graph.nodes.size)
       assertEquals(4, graph.connections.size)
@@ -241,7 +240,7 @@ class ParserTest {
       let value = 32
       let output = simpleFunction value 5
     """.trimIndent()
-    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(5, graph.nodes.size)
       assertEquals(4, graph.connections.size)
@@ -258,7 +257,7 @@ let value = 10
 let output = value
 """
 
-    handleRoot(errored, parseText(emptyContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(emptyContext)(code)) { result ->
       val graph = result.graph
       assertEquals(3, graph.nodes.size)
       assertEquals(1, graph.values.size)
@@ -274,7 +273,7 @@ let output = value
       
       let output = simpleFunction2 second = 1 first = 2.1
     """.trimIndent()
-    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(3, graph.connections.size)
@@ -293,7 +292,7 @@ let output = simpleFunction2
   first = (2.1)
 """.trimIndent()
 
-    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(3, graph.connections.size)
@@ -305,7 +304,7 @@ let output = simpleFunction2
   @Test
   fun properlyHandlesInvalidArgumentTokens() {
     val code = "let output = 10 c"
-    expectError(TextId.unknownFunction, parseText(emptyContext)(code))
+    expectError(TextId.unknownFunction, parseTextBranching(emptyContext)(code))
   }
 
   @Test
@@ -315,7 +314,7 @@ import silentorb.imp.test.*
 let a = simpleFunction2 1.1 2.1
 let output = simpleFunction a (simpleFunction 3 3)
 """.trimIndent()
-      expectError(TextId.noMatchingSignature, parseText(simpleContext)(code))
+      expectError(TextId.noMatchingSignature, parseTextBranching(simpleContext)(code))
   }
 
   @Test
@@ -326,7 +325,7 @@ let a = simpleFunction2 2.1 1
 let output = simpleFunction a (simpleFunction 3 3)
 """.trimIndent()
 
-    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
     }
   }
@@ -337,7 +336,7 @@ let output = simpleFunction a (simpleFunction 3 3)
       import silentorb.imp.test.*
       let output = simpleFunction2 1 2.0
     """.trimIndent()
-    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
     }
@@ -349,7 +348,7 @@ let output = simpleFunction a (simpleFunction 3 3)
       import silentorb.imp.test.*
       let output = simpleFunction 1 1 . simpleFunction2 2.0 . simpleFunction2 3.0
     """.trimIndent()
-    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(8, graph.nodes.size)
     }
@@ -362,7 +361,7 @@ let output = simpleFunction a (simpleFunction 3 3)
       let bob = simpleFunction 1 1 .
       let output = bob
 """.trimIndent()
-    expectError(TextId.missingExpression, parseText(simpleContext)(code))
+    expectError(TextId.missingExpression, parseTextBranching(simpleContext)(code))
   }
 
   @Test
@@ -371,7 +370,7 @@ let output = simpleFunction a (simpleFunction 3 3)
       import silentorb.imp.test.simpleFunction
       let output = . simpleFunction 1 1
 """.trimIndent()
-    expectError(TextId.missingExpression, parseText(simpleContext)(code))
+    expectError(TextId.missingExpression, parseTextBranching(simpleContext)(code))
   }
 
   @Test
@@ -380,7 +379,7 @@ let output = simpleFunction a (simpleFunction 3 3)
       import silentorb.imp.test.measure
       let output = measure 10.0
     """.trimIndent()
-    handleRoot(errored, parseText(simpleContext)(code)) { result ->
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
     }
   }
 
@@ -390,7 +389,7 @@ let output = simpleFunction a (simpleFunction 3 3)
       import silentorb.imp.test.measure
       let output = measure 10.6
     """.trimIndent()
-    expectError(TextId.outsideTypeRange, parseText(simpleContext)(code))
+    expectError(TextId.outsideTypeRange, parseTextBranching(simpleContext)(code))
   }
 
   @Test
@@ -399,6 +398,6 @@ let output = simpleFunction a (simpleFunction 3 3)
       import silentorb.imp.test.measure
       let output = measure -12.0
     """.trimIndent()
-    expectError(TextId.outsideTypeRange, parseText(simpleContext)(code))
+    expectError(TextId.outsideTypeRange, parseTextBranching(simpleContext)(code))
   }
 }
