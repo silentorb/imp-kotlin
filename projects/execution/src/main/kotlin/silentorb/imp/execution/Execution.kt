@@ -25,6 +25,9 @@ fun arrangeGraphStages(graph: Graph): List<List<Id>> {
   return result
 }
 
+fun arrangeGraphSequence(graph: Graph): List<Id> =
+    arrangeGraphStages(graph).flatten()
+
 fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: Id): Arguments {
   return graph.connections
       .filter { it.destination == destination }
@@ -53,21 +56,17 @@ fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: Outp
   }
 }
 
-fun executeStage(graph: Graph, functions: FunctionImplementationMap): (OutputValues, List<Id>) -> OutputValues = { values, stage ->
-  val newValues = stage.map { id ->
-    Pair(id, executeNode(graph, functions, values, id))
-  }
-      .associate { it }
-  values.plus(newValues)
+fun executeStep(functions: FunctionImplementationMap, graph: Graph): (OutputValues, Id) -> OutputValues = { values, node ->
+  values.plus(node to executeNode(graph, functions, values, node))
 }
 
-fun execute(functions: FunctionImplementationMap, graph: Graph, stages: List<List<Id>>): OutputValues {
-  return stages.fold(mapOf(), executeStage(graph, functions))
+fun execute(functions: FunctionImplementationMap, graph: Graph, steps: List<Id>): OutputValues {
+  return steps.fold(mapOf(), executeStep(functions, graph))
 }
 
 fun execute(functions: FunctionImplementationMap, graph: Graph): OutputValues {
-  val stages = arrangeGraphStages(graph)
-  return execute(functions, graph, stages)
+  val steps = arrangeGraphSequence(graph)
+  return execute(functions, graph, steps)
 }
 
 fun executeToSingleValue(functions: FunctionImplementationMap, graph: Graph): Any {

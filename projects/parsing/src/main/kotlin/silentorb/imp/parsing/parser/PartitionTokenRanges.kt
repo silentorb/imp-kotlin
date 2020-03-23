@@ -84,7 +84,7 @@ fun partitionDefinitions(tokens: Tokens): PartitionedResponse<List<DefinitionRan
     val token = tokens[step]
     val peek = peek(tokens, step)
     val neighbor = peek(-1)
-    val symbol = peek(1)
+//    val symbol = peek(1)
     val firstExpressionToken = peek(3)
     fun formatError(condition: Boolean, textId: TextId, errorToken: Token?) =
         if (condition) null else newParsingError(textId, errorToken ?: token)

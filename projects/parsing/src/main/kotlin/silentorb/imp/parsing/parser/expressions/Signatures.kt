@@ -26,7 +26,7 @@ fun resolveInvocationArguments(
       .associate { (tokenIndex, children) ->
         val id = tokenNodes[tokenIndex]!!
         val functionType = functionTypes[id]!!
-        val arguments = children.mapIndexed { index, childIndex ->
+        val arguments = children.map { childIndex ->
           val childNode = tokenNodes[childIndex]!!
           Argument(
               name = namedArguments[childIndex],
