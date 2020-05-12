@@ -12,10 +12,14 @@ tailrec fun consumeBadIdentifier(bundle: Bundle): TokenStep {
     badCharacter(bundle)
 }
 
-tailrec fun consumeSingleLineWhitespace(bundle: Bundle): Position {
+tailrec fun consumeSingleLineWhitespace(bundle: Bundle): TokenStep? {
   val character = consumeSingle(bundle, singleLineWhitespace)
-  return if (character == null)
-    bundle.end
+  return if (character == null) {
+    if (bundle.end != bundle.start)
+      tokenFromBundle(Rune.whitespace)(bundle)
+    else
+      null
+  }
   else
     consumeSingleLineWhitespace(incrementBundle(character, bundle))
 }

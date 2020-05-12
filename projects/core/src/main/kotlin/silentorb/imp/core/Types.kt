@@ -70,3 +70,6 @@ data class NumericTypeConstraint(
 
 fun newNumericConstraint(minimum: Int, maximum: Int) =
     NumericTypeConstraint(minimum.toDouble(), maximum.toDouble())
+
+fun newNumericConstraint(minimum: Float, maximum: Float) =
+    NumericTypeConstraint(minimum.toDouble(), maximum.toDouble())

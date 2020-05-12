@@ -2,6 +2,7 @@ import org.junit.Assert
 import org.junit.Test
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.lexer.Rune
+import silentorb.imp.parsing.lexer.stripWhitespace
 import silentorb.imp.parsing.lexer.tokenize
 import silentorb.imp.testing.errored
 
@@ -16,7 +17,8 @@ class LexingTest {
   @Test
   fun canParseEmptyWhitespace() {
     val tokens = tokenize("   ")
-    Assert.assertEquals(0, tokens.size)
+    Assert.assertEquals(1, tokens.size)
+    Assert.assertEquals(Rune.whitespace, tokens[0].rune)
   }
 
   @Test
@@ -31,7 +33,7 @@ class LexingTest {
   fun canTokenizeWithInt() {
     val code = "output = 10"
 
-    val tokens = tokenize(code)
+    val tokens = stripWhitespace(tokenize(code))
     Assert.assertEquals(3, tokens.size)
     Assert.assertEquals("output", tokens.first().value)
     Assert.assertEquals(tokens[1].range.start.index + 1, tokens[1].range.end.index)
@@ -68,7 +70,7 @@ class LexingTest {
   fun canTokenizeWithFloat() {
     val code = "output = 10.3"
     val tokens = tokenize(code)
-    Assert.assertEquals(3, tokens.size)
+    Assert.assertEquals(5, tokens.size)
     Assert.assertEquals("output", tokens.first().value)
   }
 
@@ -76,7 +78,7 @@ class LexingTest {
   fun canTokenizeWithParenthesis() {
     val code = "output = (10)"
     val tokens = tokenize(code)
-    Assert.assertEquals(5, tokens.size)
+    Assert.assertEquals(7, tokens.size)
   }
 
   @Test

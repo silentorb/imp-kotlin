@@ -21,8 +21,7 @@ fun singleCharacterTokenMatch(position: Position, character: Char): TokenStep? {
         token = Token(rune, Range(position, end), character.toString()),
         position = end
     )
-  }
-  else
+  } else
     null
 }
 
@@ -62,7 +61,7 @@ fun tokenStart(code: CodeBuffer): (Position) -> TokenStep = { position ->
 }
 
 fun nextToken(code: CodeBuffer, position: Position): TokenStep {
-  return tokenStart(code)(consumeSingleLineWhitespace(Bundle(code, position, position)))
+  return consumeSingleLineWhitespace(Bundle(code, position, position)) ?: tokenStart(code)(position)
 }
 
 tailrec fun tokenize(code: CodeBuffer, position: Position, tokens: Tokens): Tokens {
@@ -76,3 +75,6 @@ tailrec fun tokenize(code: CodeBuffer, position: Position, tokens: Tokens): Toke
 
 fun tokenize(code: CodeBuffer): Tokens =
     tokenize(code, position = newPosition(), tokens = listOf())
+
+fun stripWhitespace(tokens: Tokens): Tokens =
+    tokens.filter { it.rune != Rune.whitespace }

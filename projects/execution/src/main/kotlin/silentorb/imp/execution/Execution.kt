@@ -37,7 +37,8 @@ fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: Id):
       }
 }
 
-fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: OutputValues, id: Id): Any {
+fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: OutputValues, id: Id,
+                additionalArguments: Arguments? = null): Any {
   return if (graph.values.containsKey(id)) {
     graph.values[id]!!
   } else {
@@ -46,7 +47,7 @@ fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: Outp
     if (type != null && signatureMatch != null) {
       val function = functions[FunctionKey(type, signatureMatch.signature)]!!
       val arguments = prepareArguments(graph, values, id)
-      function(arguments)
+      function(if (additionalArguments != null) arguments.plus(additionalArguments) else arguments)
     } else {
       // Pass through
       val arguments = prepareArguments(graph, values, id)
@@ -59,6 +60,9 @@ fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: Outp
 fun executeStep(functions: FunctionImplementationMap, graph: Graph): (OutputValues, Id) -> OutputValues = { values, node ->
   values.plus(node to executeNode(graph, functions, values, node))
 }
+
+fun executeStep(functions: FunctionImplementationMap, graph: Graph, values: OutputValues, node: Id, additionalArguments: Arguments) =
+    values.plus(node to executeNode(graph, functions, values, node, additionalArguments))
 
 fun execute(functions: FunctionImplementationMap, graph: Graph, steps: List<Id>): OutputValues {
   return steps.fold(mapOf(), executeStep(functions, graph))
