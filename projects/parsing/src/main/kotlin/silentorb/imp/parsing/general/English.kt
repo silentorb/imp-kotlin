@@ -9,6 +9,7 @@ fun englishText(text: TextId): String =
       TextId.expectedIdentifier -> "Expected an identifier"
       TextId.expectedNewline -> "Expected a new line"
       TextId.importNotFound -> "Import not found"
+      TextId.incompleteParameter -> "Missing parameter type"
       TextId.invalidToken -> "Invalid symbol"
       TextId.missingArgumentName -> "Missing argument name"
       TextId.missingArgumentExpression -> "Missing argument expression"

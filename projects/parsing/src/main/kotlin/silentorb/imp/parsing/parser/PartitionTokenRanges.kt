@@ -15,6 +15,7 @@ data class ImportRange(
 
 data class DefinitionRange(
     val symbol: Int,
+    val parameters: List<TokenizedParameter>,
     val expressionStart: Int,
     val expressionEnd: Int
 )
@@ -28,6 +29,7 @@ fun extractImportTokens(tokens: Tokens): (ImportRange) -> TokenizedImport = { ra
 fun extractDefinitionTokens(tokens: Tokens): (DefinitionRange) -> TokenizedDefinition = { range ->
   TokenizedDefinition(
       symbol = tokens[range.symbol],
+      parameters = range.parameters,
       expression = tokens.subList(range.expressionStart, range.expressionEnd)
   )
 }
@@ -61,50 +63,87 @@ fun partitionImports(tokens: Tokens): List<ImportRange> {
   }
 }
 
-fun definitionIndices(tokens: Tokens): List<Int> {
+tailrec fun definitionAssignmentIndex(tokens: Tokens, step: Int): Int? {
+  val current = tokens[step]
+  return if (current.rune == Rune.assignment)
+    step
+  else if (current.rune != Rune.identifier && current.rune != Rune.colon)
+    null
+  else
+    definitionAssignmentIndex(tokens, step + 1)
+}
+
+data class DefinitionIndex(
+    val start: Int,
+    val assigmentIndex: Int
+)
+
+fun definitionIndices(tokens: Tokens): List<DefinitionIndex> {
   val letTokens = tokens.indices.filter { index ->
     val token = tokens[index]
     token.rune == Rune.identifier && token.value == "let"
   }
 
-  return letTokens.filter { index ->
-    if (index < tokens.size - 2) {
-      val symbol = tokens[index + 1]
-      val equals = tokens[index + 2]
-      symbol.rune == Rune.identifier
-          && equals.rune == Rune.assignment
+  return letTokens.mapNotNull { index ->
+    if (index < tokens.size - 2 && tokens[index + 1].rune == Rune.identifier) {
+      val assigmentIndex = definitionAssignmentIndex(tokens, index + 2)
+      if (assigmentIndex != null)
+        DefinitionIndex(index, assigmentIndex)
+      else
+        null
     } else
-      false
+      null
+  }
+}
+
+tailrec fun partitionParameters(tokens: Tokens, start: Int, end: Int, accumulator: List<TokenizedParameter>): PartitionedResponse<List<TokenizedParameter>> {
+  val length = end - start
+  return if (length == 0)
+    PartitionedResponse(accumulator, listOf())
+  else if (length < 3) {
+    PartitionedResponse(accumulator, listOf(newParsingError(TextId.incompleteParameter, tokens[start])))
+  } else {
+    val symbol = tokens[start]
+    val separator = tokens[start + 1]
+    val type = tokens[start + 2]
+    if (symbol.rune != Rune.identifier)
+      PartitionedResponse(accumulator, listOf(newParsingError(TextId.expectedIdentifier, symbol)))
+    else if (separator.rune != Rune.colon)
+      PartitionedResponse(accumulator, listOf(newParsingError(TextId.invalidToken, separator)))
+    else if (type.rune != Rune.identifier)
+      PartitionedResponse(accumulator, listOf(newParsingError(TextId.expectedIdentifier, type)))
+    else {
+      val parameter = TokenizedParameter(symbol.value, type.value)
+      partitionParameters(tokens, start + 3, end, accumulator + parameter)
+    }
   }
 }
 
 fun partitionDefinitions(tokens: Tokens): PartitionedResponse<List<DefinitionRange>> {
   val assignmentTokenIndices = definitionIndices(tokens)
-  val entries = assignmentTokenIndices.map { step ->
+  val entries = assignmentTokenIndices.map { (step, assigmentIndex) ->
     val token = tokens[step]
     val peek = peek(tokens, step)
     val neighbor = peek(-1)
-//    val symbol = peek(1)
     val firstExpressionToken = peek(3)
     fun formatError(condition: Boolean, textId: TextId, errorToken: Token?) =
         if (condition) null else newParsingError(textId, errorToken ?: token)
 
+    val (parameters, parameterErrors) = partitionParameters(tokens, step + 2, assigmentIndex, listOf())
+
     val newErrors = listOfNotNull(
-//        formatError(symbol?.rune == Rune.identifier, TextId.expectedIdentifier, symbol),
         formatError(neighbor?.rune == Rune.newline || neighbor?.rune == null, TextId.expectedNewline, neighbor),
         formatError(firstExpressionToken?.rune != Rune.newline && firstExpressionToken?.rune != null, TextId.expectedExpression, firstExpressionToken)
-    )
+    ) + parameterErrors
 
-    val expressionStart = step + 3
+    val expressionStart = assigmentIndex + 1
     val terminatorMatchIndex = nextIndexOf(tokens, expressionStart + 1) { it.rune == Rune.identifier && it.value == "let" }
-    val expressionEnd = if (terminatorMatchIndex != null)
-      terminatorMatchIndex
-    else
-      tokens.size
+    val expressionEnd = terminatorMatchIndex ?: tokens.size
 
     assert(expressionStart < expressionEnd)
     val newDefinition = DefinitionRange(
         symbol = step + 1,
+        parameters = parameters,
         expressionStart = expressionStart,
         expressionEnd = expressionEnd
     )

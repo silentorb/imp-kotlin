@@ -10,6 +10,7 @@ enum class TextId {
   expectedExpression,
   expectedNewline,
   importNotFound,
+  incompleteParameter,
   invalidToken,
   missingClosingParenthesis,
   missingArgumentName,

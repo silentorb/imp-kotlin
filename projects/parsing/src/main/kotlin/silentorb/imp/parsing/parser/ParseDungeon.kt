@@ -1,16 +1,25 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
-import silentorb.imp.parsing.general.*
+import silentorb.imp.parsing.general.PartitionedResponse
+import silentorb.imp.parsing.general.Token
+import silentorb.imp.parsing.general.Tokens
+import silentorb.imp.parsing.general.flattenResponses
 import silentorb.imp.parsing.lexer.Rune
-import silentorb.imp.parsing.parser.expressions.*
+import silentorb.imp.parsing.parser.expressions.parseExpression
 
 data class TokenizedImport(
     val path: Tokens
 )
 
+data class TokenizedParameter(
+    val name: String,
+    val type: String
+)
+
 data class TokenizedDefinition(
     val symbol: Token,
+    val parameters: List<TokenizedParameter>,
     val expression: Tokens
 )
 

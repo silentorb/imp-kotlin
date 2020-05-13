@@ -452,4 +452,18 @@ let output = simpleFunction a (simpleFunction 3 3)
       assertEquals(4, graph.types.size)
     }
   }
+
+  @Ignore()
+  @Test
+  fun supportsCustomFunctions() {
+    val code = """
+      import silentorb.imp.test.*
+      let add a:Int b:Int = a + b
+      let output = add 1 2
+    """.trimIndent()
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(7, graph.nodes.size)
+    }
+  }
 }
