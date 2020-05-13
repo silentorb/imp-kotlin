@@ -72,12 +72,11 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<Id, TokenizedDefinition>)
           literalConstraints = constraints
       )
       val namespace = mergeNamespaces(context)
-      val graphErrors = validateGraph(dungeon.nodeMap, dungeon.graph)
       val constraintErrors = validateTypeConstraints(dungeon.graph.values, namespace, constraints, dungeon.nodeMap)
 
       PartitionedResponse(
           dungeon,
-          graphErrors.plus(constraintErrors)
+          constraintErrors
       )
     }
 

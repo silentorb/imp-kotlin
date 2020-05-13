@@ -66,6 +66,17 @@ fun validateSignatures(signatureOptions: Map<Id, List<SignatureMatch>>, nodeMap:
       }
 }
 
+fun validateMissingSignatures(
+    functionTypes: Map<Id, PathKey>,
+    signatures: Map<Id, SignatureMatch>,
+    nodeMap: NodeMap
+): ParsingErrors =
+    functionTypes
+        .minus(signatures.keys)
+        .map { (id, _) ->
+          ParsingError(TextId.noMatchingSignature, range = nodeMap[id]!!)
+        }
+
 fun validatePiping(tokens: Tokens, tokenGraph: TokenGraph): ParsingErrors {
   val pipingParents = getPipingParents(tokens, tokenGraph)
   val pipeTokens = filterIndices(tokens) { it.rune == Rune.dot }

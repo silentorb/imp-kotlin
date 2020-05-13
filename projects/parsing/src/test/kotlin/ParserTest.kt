@@ -1,5 +1,6 @@
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Ignore
 import org.junit.Test
 import silentorb.imp.core.Connection
 import silentorb.imp.core.floatKey
@@ -96,6 +97,7 @@ class ParserTest {
     expectError(TextId.duplicateSymbol, parseTextBranching(emptyContext)(code))
   }
 
+  @Ignore
   @Test
   fun preventsMultipleGraphOutputs() {
     val code = """
@@ -185,6 +187,16 @@ class ParserTest {
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
     }
+  }
+
+  @Test
+  fun preventsInvalidArguments() {
+    val code = """
+      import silentorb.imp.test.*
+      
+      let output = simpleFunction 1 1.0
+    """.trimIndent()
+    expectError(TextId.noMatchingSignature, parseTextBranching(simpleContext)(code))
   }
 
   @Test
@@ -415,5 +427,29 @@ let output = simpleFunction a (simpleFunction 3 3)
       let output = measure -12.0
     """.trimIndent()
     expectError(TextId.outsideTypeRange, parseTextBranching(simpleContext)(code))
+  }
+
+  @Test
+  fun preventsInvalidFunctionsWithNoArguments() {
+    val code = """
+      import silentorb.imp.test.*
+      
+      let output = simpleFunction eightPointFive 1.0
+    """.trimIndent()
+    expectError(TextId.noMatchingSignature, parseTextBranching(simpleContext)(code))
+  }
+
+  @Test
+  fun supportsFunctionsWithNoArguments() {
+    val code = """
+      import silentorb.imp.test.*
+      
+      let output = simpleFunction eight 1
+    """.trimIndent()
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(4, graph.nodes.size)
+      assertEquals(4, graph.types.size)
+    }
   }
 }

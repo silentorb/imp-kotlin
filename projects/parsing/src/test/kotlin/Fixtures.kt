@@ -7,6 +7,18 @@ val measurementKey = PathKey(testPath, "Measurement")
 val simpleContext = listOf(
     newNamespace().copy(
         functions = mapOf(
+            PathKey(testPath, "eight") to listOf(
+                Signature(
+                    parameters = listOf(),
+                    output = intKey
+                )
+            ),
+            PathKey(testPath, "eightPointFive") to listOf(
+                Signature(
+                    parameters = listOf(),
+                    output = floatKey
+                )
+            ),
             PathKey(testPath, "simpleFunction") to listOf(
                 Signature(
                     parameters = listOf(

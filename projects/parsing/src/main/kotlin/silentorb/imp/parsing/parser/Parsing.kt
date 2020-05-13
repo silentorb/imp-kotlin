@@ -23,7 +23,7 @@ fun parseTextBranching(context: Context): (CodeBuffer) -> Response<Dungeon> = { 
 }
 
 fun parseText(context: Context): (CodeBuffer) -> PartitionedResponse<Dungeon> = { code ->
-  val tokens = tokenize(code)
+  val tokens = stripWhitespace(tokenize(code))
   val lexingErrors = tokens.filter { it.rune == Rune.bad }
       .map { newParsingError(TextId.unexpectedCharacter, it) }
 

@@ -49,7 +49,8 @@ fun parseExpression(nextId: NextId, context: Context, tokens: Tokens): Partition
         tokens[index].range
       }
   val typeResolutionErrors = validateFunctionTypes(newNodes, functionTypes.plus(types), nodeMap)
-  val signatureErrors = validateSignatures(signatureOptions, nodeMap)
+  val signatureErrors = validateSignatures(signatureOptions, nodeMap) +
+          validateMissingSignatures(functionTypes, signatures, nodeMap)
   val pipingErrors = validatePiping(tokens, groupGraph)
   val errors = signatureErrors.plus(typeResolutionErrors).plus(pipingErrors)
   val dungeon = Dungeon(

@@ -20,7 +20,7 @@ fun resolveInvocationArguments(
   return parents.entries
       .filter { (tokenIndex, children) ->
         val id = tokenNodes[tokenIndex]!!
-        children.any() && children.all { childIndex -> argumentTypes.containsKey(tokenNodes[childIndex]!!) }
+        children.all { childIndex -> argumentTypes.containsKey(tokenNodes[childIndex]!!) }
             && functionTypes.containsKey(id)
       }
       .associate { (tokenIndex, children) ->
@@ -69,17 +69,21 @@ fun resolveFunctionSignatures(
     tokens: Tokens,
     namedArguments: Map<Int, String>
 ): SignatureOptionsAndTypes {
-  return tokenGraph.stages.fold(SignatureOptionsAndTypes()) { accumulator, stage ->
-    val stageParents = stage.associateWith { parents[it]!! }
-    val argumentTypes = types.plus(accumulator.types)
-    val invocations = resolveInvocationArguments(stageParents, functionTypes, argumentTypes, tokenNodes, tokens, namedArguments)
-    val signatureOptions = getSignatureOptions(context, aliases, invocations)
-    val returnTypes = signatureOptions
-        .filter { it.value.size == 1 }
-        .mapValues { it.value.first().signature.output }
-    accumulator.copy(
-        signatureOptions = accumulator.signatureOptions.plus(signatureOptions),
-        types = accumulator.types.plus(returnTypes)
-    )
-  }
+  val endpointFunctions = functionTypes.keys.minus(parents.keys).map { i -> tokenNodes.entries.first { it.value == i }.key }
+  val stages = listOf(endpointFunctions) + tokenGraph.stages
+  return stages
+      .fold(SignatureOptionsAndTypes()) { accumulator, stage ->
+        val stageParents = stage
+            .associateWith { parents[it] ?: listOf() }
+        val argumentTypes = types.plus(accumulator.types)
+        val invocations = resolveInvocationArguments(stageParents, functionTypes, argumentTypes, tokenNodes, tokens, namedArguments)
+        val signatureOptions = getSignatureOptions(context, aliases, invocations)
+        val returnTypes = signatureOptions
+            .filter { it.value.size == 1 }
+            .mapValues { it.value.first().signature.output }
+        accumulator.copy(
+            signatureOptions = accumulator.signatureOptions.plus(signatureOptions),
+            types = accumulator.types.plus(returnTypes)
+        )
+      }
 }
