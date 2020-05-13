@@ -22,7 +22,7 @@ fun newLibrary(functions: List<CompleteFunction>, types: List<TypeAlias> = listO
   return Library(
       namespace = newNamespace().copy(
           functions = interfaces,
-          aliases = types
+          references = types
               .filter { it.alias != null }
               .associate { Pair(it.path, it.alias!!) },
           numericTypeConstraints = types

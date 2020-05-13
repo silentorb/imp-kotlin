@@ -3,10 +3,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Test
 import silentorb.imp.core.Connection
+import silentorb.imp.core.PathKey
 import silentorb.imp.core.floatKey
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.parser.emptyContext
+import silentorb.imp.parsing.parser.localPath
 import silentorb.imp.parsing.parser.parseTextBranching
 import silentorb.imp.testing.errored
 import silentorb.imp.testing.expectError
@@ -34,10 +36,10 @@ class ParserTest {
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
       assertEquals(1, graph.values.size)
-      assertEquals(2, graph.types.size)
+      assertEquals(2, graph.outputTypes.size)
       assertEquals(1, graph.connections.size)
       assertEquals(10.3f, graph.values.values.first())
-      assertEquals(floatKey, graph.types.values.first())
+      assertEquals(floatKey, graph.outputTypes.values.first())
     }
   }
 
@@ -78,7 +80,9 @@ class ParserTest {
       assertEquals(1, graph.values.size)
       assertEquals(2, graph.connections.size)
       assertEquals(10, graph.values.values.first())
-      assertTrue(graph.nodes.containsAll(setOf(1L, 2L, 3L)))
+      assertTrue(graph.nodes.contains(PathKey(localPath, "@intermediate1")))
+      assertTrue(graph.nodes.contains(PathKey(localPath, "@output1")))
+      assertTrue(graph.nodes.contains(PathKey(localPath + ".intermediate", "#literal1")))
     }
   }
 
@@ -210,9 +214,12 @@ class ParserTest {
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(3, graph.connections.size)
-      assertEquals(4, graph.types.size)
-      assertTrue(graph.connections.contains(Connection(destination = 2, source = 3, parameter = "first")))
-      assertTrue(graph.connections.contains(Connection(destination = 2, source = 4, parameter = "second")))
+      assertEquals(4, graph.outputTypes.size)
+      val node2 = PathKey("", "")
+      val node3 = PathKey("", "")
+      val node4 = PathKey("", "")
+      assertTrue(graph.connections.contains(Connection(destination = node2, source = node3, parameter = "first")))
+      assertTrue(graph.connections.contains(Connection(destination = node2, source = node4, parameter = "second")))
     }
   }
 
@@ -240,7 +247,7 @@ class ParserTest {
       val graph = result.graph
       assertEquals(5, graph.nodes.size)
       assertEquals(4, graph.connections.size)
-      assertEquals(5, graph.types.size)
+      assertEquals(5, graph.outputTypes.size)
     }
   }
 
@@ -256,7 +263,7 @@ class ParserTest {
       val graph = result.graph
       assertEquals(5, graph.nodes.size)
       assertEquals(4, graph.connections.size)
-      assertEquals(5, graph.types.size)
+      assertEquals(5, graph.outputTypes.size)
     }
   }
 
@@ -342,7 +349,7 @@ import silentorb.imp.test.*
 let a = simpleFunction2 1.1 2.1
 let output = simpleFunction a (simpleFunction 3 3)
 """.trimIndent()
-      expectError(TextId.noMatchingSignature, parseTextBranching(simpleContext)(code))
+    expectError(TextId.noMatchingSignature, parseTextBranching(simpleContext)(code))
   }
 
   @Test
@@ -449,7 +456,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
-      assertEquals(4, graph.types.size)
+      assertEquals(4, graph.outputTypes.size)
     }
   }
 

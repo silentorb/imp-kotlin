@@ -11,12 +11,12 @@ data class FunctionInvocation(
 
 fun resolveInvocationArguments(
     parents: TokenParents,
-    functionTypes: Map<Id, PathKey>,
-    argumentTypes: Map<Id, PathKey>,
-    tokenNodes: Map<TokenIndex, Id>,
+    functionTypes: Map<PathKey, PathKey>,
+    argumentTypes: Map<PathKey, PathKey>,
+    tokenNodes: Map<TokenIndex, PathKey>,
     tokens: Tokens,
     namedArguments: Map<Int, String>
-): Map<Id, FunctionInvocation> {
+): Map<PathKey, FunctionInvocation> {
   return parents.entries
       .filter { (tokenIndex, children) ->
         val id = tokenNodes[tokenIndex]!!
@@ -43,19 +43,22 @@ fun resolveInvocationArguments(
       }
 }
 
-typealias SignatureOptions = Map<Id, List<SignatureMatch>>
+typealias SignatureOptions = Map<PathKey, List<SignatureMatch>>
 
-fun getSignatureOptions(context: Context, aliases: Aliases, invocations: Map<Id, FunctionInvocation>): SignatureOptions {
+fun getSignatureOptions(context: Context, aliases: Aliases, invocations: Map<PathKey, FunctionInvocation>): SignatureOptions {
   return invocations
       .mapValues { (_, invocation) ->
-        val functionOverloads = getTypeDetails(context, invocation.type)!!
-        overloadMatches(aliases, invocation.arguments, functionOverloads)
+        val functionOverloads = getTypeDetails(context, invocation.type)
+        if (functionOverloads != null)
+          overloadMatches(aliases, invocation.arguments, functionOverloads)
+        else
+          listOf()
       }
 }
 
 data class SignatureOptionsAndTypes(
     val signatureOptions: SignatureOptions = mapOf(),
-    val types: Map<Id, PathKey> = mapOf()
+    val types: Map<PathKey, PathKey> = mapOf()
 )
 
 fun resolveFunctionSignatures(
@@ -63,9 +66,9 @@ fun resolveFunctionSignatures(
     aliases: Aliases,
     tokenGraph: TokenGraph,
     parents: TokenParents,
-    functionTypes: Map<Id, PathKey>,
-    types: Map<Id, PathKey>,
-    tokenNodes: Map<TokenIndex, Id>,
+    functionTypes: Map<PathKey, PathKey>,
+    types: Map<PathKey, PathKey>,
+    tokenNodes: Map<TokenIndex, PathKey>,
     tokens: Tokens,
     namedArguments: Map<Int, String>
 ): SignatureOptionsAndTypes {

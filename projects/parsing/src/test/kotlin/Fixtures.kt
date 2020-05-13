@@ -63,7 +63,7 @@ val simpleContext = listOf(
                 )
             )
         ),
-        aliases = mapOf(
+        references = mapOf(
             measurementKey to floatKey
         ),
         numericTypeConstraints = mapOf(

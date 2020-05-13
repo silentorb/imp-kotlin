@@ -2,18 +2,18 @@ package silentorb.imp.execution
 
 import silentorb.imp.core.*
 
-typealias OutputValues = Map<Id, Any>
+typealias OutputValues = Map<PathKey, Any>
 typealias Arguments = Map<String, Any>
 
-fun nextStage(nodes: Set<Id>, connections: Collection<Connection>): List<Id> {
+fun nextStage(nodes: Set<PathKey>, connections: Collection<Connection>): List<PathKey> {
   return nodes.filter { node -> connections.none { it.destination == node } }
       .map { it }
 }
 
-fun arrangeGraphStages(graph: Graph): List<List<Id>> {
+fun arrangeGraphStages(graph: Graph): List<List<PathKey>> {
   var nodes = graph.nodes
   var connections = graph.connections
-  var result = listOf<List<Id>>()
+  var result = listOf<List<PathKey>>()
 
   while (nodes.any()) {
     val nextNodes = nextStage(nodes, connections)
@@ -25,10 +25,10 @@ fun arrangeGraphStages(graph: Graph): List<List<Id>> {
   return result
 }
 
-fun arrangeGraphSequence(graph: Graph): List<Id> =
+fun arrangeGraphSequence(graph: Graph): List<PathKey> =
     arrangeGraphStages(graph).flatten()
 
-fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: Id): Arguments {
+fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: PathKey): Arguments {
   return graph.connections
       .filter { it.destination == destination }
       .associate {
@@ -37,12 +37,12 @@ fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: Id):
       }
 }
 
-fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: OutputValues, id: Id,
+fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: OutputValues, id: PathKey,
                 additionalArguments: Arguments? = null): Any {
   return if (graph.values.containsKey(id)) {
     graph.values[id]!!
   } else {
-    val type = graph.functionTypes[id]
+    val type = graph.references[id]
     val signatureMatch = graph.signatureMatches[id]
     if (type != null && signatureMatch != null) {
       val function = functions[FunctionKey(type, signatureMatch.signature)]!!
@@ -57,14 +57,14 @@ fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: Outp
   }
 }
 
-fun executeStep(functions: FunctionImplementationMap, graph: Graph): (OutputValues, Id) -> OutputValues = { values, node ->
+fun executeStep(functions: FunctionImplementationMap, graph: Graph): (OutputValues, PathKey) -> OutputValues = { values, node ->
   values.plus(node to executeNode(graph, functions, values, node))
 }
 
-fun executeStep(functions: FunctionImplementationMap, graph: Graph, values: OutputValues, node: Id, additionalArguments: Arguments) =
+fun executeStep(functions: FunctionImplementationMap, graph: Graph, values: OutputValues, node: PathKey, additionalArguments: Arguments) =
     values.plus(node to executeNode(graph, functions, values, node, additionalArguments))
 
-fun execute(functions: FunctionImplementationMap, graph: Graph, steps: List<Id>): OutputValues {
+fun execute(functions: FunctionImplementationMap, graph: Graph, steps: List<PathKey>): OutputValues {
   return steps.fold(mapOf(), executeStep(functions, graph))
 }
 
@@ -79,7 +79,7 @@ fun executeToSingleValue(functions: FunctionImplementationMap, graph: Graph): An
   return result[output]!!
 }
 
-//fun getGraphOutput(graph: Graph, values: OutputValues): Map<Id, Any> {
+//fun getGraphOutput(graph: Graph, values: OutputValues): Map<PathKey, Any> {
 //  val outputNode = getGraphOutputNode(graph)
 //  return graph.connections
 //      .filter { it.destination == outputNode }

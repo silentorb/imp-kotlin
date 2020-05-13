@@ -7,14 +7,14 @@ import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.ResolvedLiteral
 import silentorb.imp.parsing.parser.parseTokenLiteral
 
-fun getNodeReference(context: Context): (Token) -> NodeReference? = { token ->
+fun getNodeReference(context: Context): (Token) -> PathKey? = { token ->
   if (token.rune == Rune.identifier)
-    resolveNode(context, token.value)
+    resolveReference(context, token.value)
   else
     null
 }
 
-typealias NodeReferenceMap = Map<Int, NodeReference>
+typealias NodeReferenceMap = Map<Int, PathKey>
 
 fun getNodeReferences(context: Context): (Map<Int, Token>) -> NodeReferenceMap = { tokens ->
   tokens.mapNotNull { (index, token) ->
@@ -76,7 +76,7 @@ data class ExpressionResolution(
 //  )
 //}
 
-fun resolveNodeReferences(context: Context, tokens: Tokens, indexes: List<TokenIndex>): NodeReferenceMap {
+fun resolveReferences(context: Context, tokens: Tokens, indexes: List<TokenIndex>): Map<Int, PathKey> {
   return indexes.mapNotNull {
     val reference = getNodeReference(context)(tokens[it])
     if (reference != null)
@@ -87,7 +87,7 @@ fun resolveNodeReferences(context: Context, tokens: Tokens, indexes: List<TokenI
       .associate { it }
 }
 
-fun resolveLiterals(tokens: Tokens, indexes: List<TokenIndex>, tokenNodes: Map<TokenIndex, Id>): Map<Id, Any> {
+fun resolveLiterals(tokens: Tokens, indexes: List<TokenIndex>, tokenNodes: Map<TokenIndex, PathKey>): Map<PathKey, Any> {
   return indexes
       .mapNotNull { tokenIndex ->
         val literalValuePair = parseTokenLiteral(tokens[tokenIndex])

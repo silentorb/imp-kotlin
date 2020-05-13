@@ -3,9 +3,9 @@ package silentorb.imp.parsing.parser
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.Range
 
-typealias NodeMap = Map<Id, Range>
+typealias NodeMap = Map<PathKey, Range>
 
-typealias ConstrainedLiteralMap = Map<Id, PathKey>
+typealias ConstrainedLiteralMap = Map<PathKey, PathKey>
 
 data class Dungeon(
     val graph: Graph,
@@ -19,7 +19,7 @@ data class Dungeon(
         )
       }
 
-  fun addSignature(id: Id, signature: SignatureMatch) =
+  fun addSignature(id: PathKey, signature: SignatureMatch) =
       modifyGraph(this) { graph ->
         graph.copy(
             signatureMatches = graph.signatureMatches.plus(Pair(id, signature))
@@ -32,7 +32,7 @@ val emptyDungeon =
         graph = Graph(
             nodes = setOf(),
             connections = setOf(),
-            types = mapOf(),
+            outputTypes = mapOf(),
             values = mapOf()
         ),
         nodeMap = mapOf(),

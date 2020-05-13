@@ -8,6 +8,14 @@ tailrec fun getRootType(aliases: Aliases, type: PathKey): PathKey {
     getRootType(aliases, alias)
 }
 
+tailrec fun getRootType(context: Context, type: PathKey): PathKey {
+  val alias = resolveAlias(context, type)
+  return if (alias == type)
+    type
+  else
+    getRootType(context, alias)
+}
+
 fun typeCanBeCastTo(aliases: Aliases, source: PathKey, target: PathKey): Boolean {
   return getRootType(aliases, source) == getRootType(aliases, target)
 }

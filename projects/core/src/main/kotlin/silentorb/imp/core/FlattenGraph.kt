@@ -1,15 +1,15 @@
 package silentorb.imp.core
 
-typealias MapId = (Id) -> Id
+typealias MapId = (PathKey) -> PathKey
 
-fun newChildMap(parent: Set<Id>, child: Set<Id>): MapId {
-  val nextId = getNextId(parent)
-  val childMap = child
-      .mapIndexed { index, id -> Pair(id, nextId + index.toLong()) }
-      .associate { it }
-
-  return { childMap[it] ?: it }
-}
+//fun newChildMap(parent: Set<PathKey>, child: Set<PathKey>): MapId {
+//  val nextId = getNextId(parent)
+//  val childMap = child
+//      .mapIndexed { index, id -> Pair(id, nextId + index.toLong()) }
+//      .associate { it }
+//
+//  return { childMap[it] ?: it }
+//}
 
 //fun flattenGraph(parent: Graph, child: Graph, mapId: MapId): Graph {
 //  val newNodes = child.nodes.map(mapId)
@@ -42,8 +42,8 @@ fun mergeDistinctGraphs(parent: Graph, child: Graph): Graph {
       nodes = parent.nodes.plus(child.nodes),
       connections = parent.connections.plus(child.connections),
       signatureMatches = parent.signatureMatches.plus(child.signatureMatches),
-      functionTypes = parent.functionTypes.plus(child.functionTypes),
-      types = parent.types.plus(child.types),
+      references = parent.references.plus(child.references),
+      outputTypes = parent.outputTypes.plus(child.outputTypes),
       values = parent.values.plus(child.values)
   )  
 }

@@ -45,7 +45,7 @@ fun checkMatchingParentheses(tokens: Tokens): ParsingErrors {
     listOf()
 }
 
-fun validateFunctionTypes(nodes: Set<Id>, types: Map<Id, PathKey>, nodeMap: NodeMap): ParsingErrors {
+fun validateFunctionTypes(nodes: Set<PathKey>, types: Map<PathKey, PathKey>, nodeMap: NodeMap): ParsingErrors {
   return nodes
       .filter { !types.containsKey(it) }
       .map { node ->
@@ -54,7 +54,7 @@ fun validateFunctionTypes(nodes: Set<Id>, types: Map<Id, PathKey>, nodeMap: Node
       }
 }
 
-fun validateSignatures(signatureOptions: Map<Id, List<SignatureMatch>>, nodeMap: NodeMap): ParsingErrors {
+fun validateSignatures(signatureOptions: Map<PathKey, List<SignatureMatch>>, nodeMap: NodeMap): ParsingErrors {
   return signatureOptions
       .mapNotNull { (id, options) ->
         if (options.size == 1)
@@ -67,8 +67,8 @@ fun validateSignatures(signatureOptions: Map<Id, List<SignatureMatch>>, nodeMap:
 }
 
 fun validateMissingSignatures(
-    functionTypes: Map<Id, PathKey>,
-    signatures: Map<Id, SignatureMatch>,
+    functionTypes: Map<PathKey, PathKey>,
+    signatures: Map<PathKey, SignatureMatch>,
     nodeMap: NodeMap
 ): ParsingErrors =
     functionTypes
@@ -115,7 +115,7 @@ fun isValueWithinConstraint(constraint: NumericTypeConstraint, value: Any): Bool
     doubleValue >= constraint.minimum && doubleValue <= constraint.maximum
 }
 
-fun validateTypeConstraints(values: Map<Id, Any>, namespace: Namespace, constraints: ConstrainedLiteralMap, nodeMap: NodeMap): ParsingErrors {
+fun validateTypeConstraints(values: Map<PathKey, Any>, namespace: Namespace, constraints: ConstrainedLiteralMap, nodeMap: NodeMap): ParsingErrors {
   return values.mapNotNull { (node, value) ->
     val constraintType = constraints[node]
     if (constraintType != null) {
