@@ -8,12 +8,11 @@ data class PathKey(
 typealias Aliases = Map<PathKey, PathKey>
 
 data class Namespace(
-    val references: Aliases,
+    val references: Map<PathKey, PathKey>,
     val localFunctionAliases: Map<Key, PathKey>,
     val functions: OverloadsMap,
     val nodes: Set<PathKey>,
-    val types: Map<PathKey, PathKey>,
-    val values: Map<Key, Any>,
+    val values: Map<PathKey, Any>,
     val structures: Map<PathKey, Structure>,
     val unions: Map<PathKey, List<Union>>,
     val numericTypeConstraints: Map<PathKey, NumericTypeConstraint>
@@ -25,7 +24,6 @@ fun newNamespace(): Namespace =
         localFunctionAliases = mapOf(),
         functions = mapOf(),
         nodes = setOf(),
-        types = mapOf(),
         values = mapOf(),
         structures = mapOf(),
         unions = mapOf(),
@@ -39,7 +37,6 @@ fun mergeNamespaces(namespaces: Collection<Namespace>): Namespace =
           localFunctionAliases = accumulator.localFunctionAliases.plus(namespace.localFunctionAliases),
           functions = accumulator.functions.plus(namespace.functions),
           nodes = accumulator.nodes.plus(namespace.nodes),
-          types = accumulator.types.plus(namespace.types),
           values = accumulator.values.plus(namespace.values),
           structures = accumulator.structures.plus(namespace.structures),
           unions = accumulator.unions.plus(namespace.unions),
@@ -89,15 +86,6 @@ tailrec fun resolveReference(context: Context, name: String, index: Int): PathKe
 fun resolveReference(context: Context, name: String): PathKey? =
     resolveReference(context, name, context.size - 1)
 
-tailrec fun getType(context: Context, key: PathKey, index: Int): PathKey? =
-    if (index < 0)
-      null
-    else
-      context[index].types[key] ?: getType(context, key, index - 1)
-
-fun getType(context: Context, key: PathKey): PathKey? =
-    getType(context, key, context.size - 1)
-
 tailrec fun getTypeDetails(context: Context, path: PathKey, index: Int): Signatures? =
     if (index < 0)
       null
@@ -112,7 +100,8 @@ tailrec fun resolveAlias(context: Context, key: PathKey, index: Int): PathKey =
     if (index < 0)
       key
     else
-      context[index].references[key] ?: resolveAlias(context, key, index - 1)
+      context[index].references[key]
+          ?: resolveAlias(context, key, index - 1)
 
 fun resolveAlias(context: Context, key: PathKey): PathKey =
     resolveAlias(context, key, context.size - 1)

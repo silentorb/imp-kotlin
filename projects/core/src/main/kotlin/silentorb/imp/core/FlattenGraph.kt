@@ -41,9 +41,8 @@ fun mergeDistinctGraphs(parent: Graph, child: Graph): Graph {
   return Graph(
       nodes = parent.nodes.plus(child.nodes),
       connections = parent.connections.plus(child.connections),
-      signatureMatches = parent.signatureMatches.plus(child.signatureMatches),
       references = parent.references.plus(child.references),
-      outputTypes = parent.outputTypes.plus(child.outputTypes),
+      signatureMatches = parent.signatureMatches.plus(child.signatureMatches),
       values = parent.values.plus(child.values)
   )  
 }

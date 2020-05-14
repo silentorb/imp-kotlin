@@ -45,14 +45,22 @@ fun resolveInvocationArguments(
 
 typealias SignatureOptions = Map<PathKey, List<SignatureMatch>>
 
-fun getSignatureOptions(context: Context, aliases: Aliases, invocations: Map<PathKey, FunctionInvocation>): SignatureOptions {
+fun getSignatureOptions(context: Context, invocations: Map<PathKey, FunctionInvocation>): SignatureOptions {
   return invocations
       .mapValues { (_, invocation) ->
         val functionOverloads = getTypeDetails(context, invocation.type)
         if (functionOverloads != null)
-          overloadMatches(aliases, invocation.arguments, functionOverloads)
-        else
-          listOf()
+          overloadMatches(context, invocation.arguments, functionOverloads)
+        else {
+          val type = getRootType(context, invocation.type)
+          listOf(SignatureMatch(
+              signature = Signature(
+                  parameters = listOf(),
+                  output = type
+              ),
+              alignment = mapOf()
+          ))
+        }
       }
 }
 
@@ -80,7 +88,7 @@ fun resolveFunctionSignatures(
             .associateWith { parents[it] ?: listOf() }
         val argumentTypes = types.plus(accumulator.types)
         val invocations = resolveInvocationArguments(stageParents, functionTypes, argumentTypes, tokenNodes, tokens, namedArguments)
-        val signatureOptions = getSignatureOptions(context, aliases, invocations)
+        val signatureOptions = getSignatureOptions(context, invocations)
         val returnTypes = signatureOptions
             .filter { it.value.size == 1 }
             .mapValues { it.value.first().signature.output }

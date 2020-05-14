@@ -1,13 +1,5 @@
 package silentorb.imp.core
 
-tailrec fun getRootType(aliases: Aliases, type: PathKey): PathKey {
-  val alias = aliases[type]
-  return if (alias == null)
-    type
-  else
-    getRootType(aliases, alias)
-}
-
 tailrec fun getRootType(context: Context, type: PathKey): PathKey {
   val alias = resolveAlias(context, type)
   return if (alias == type)
@@ -16,11 +8,11 @@ tailrec fun getRootType(context: Context, type: PathKey): PathKey {
     getRootType(context, alias)
 }
 
-fun typeCanBeCastTo(aliases: Aliases, source: PathKey, target: PathKey): Boolean {
-  return getRootType(aliases, source) == getRootType(aliases, target)
+fun typeCanBeCastTo(context: Context, source: PathKey, target: PathKey): Boolean {
+  return getRootType(context, source) == getRootType(context, target)
 }
 
-fun overloadMatches(aliases: Aliases, arguments: List<Argument>, overloads: Signatures): List<SignatureMatch> {
+fun overloadMatches(context: Context, arguments: List<Argument>, overloads: Signatures): List<SignatureMatch> {
   val argumentsByType = arguments.groupBy { it.type }
 
   return overloads
@@ -29,7 +21,7 @@ fun overloadMatches(aliases: Aliases, arguments: List<Argument>, overloads: Sign
             .filter { argument -> argument.name != null }
             .mapNotNull { argument ->
               val parameter = signature.parameters.firstOrNull { it.name == argument.name!! }
-              if (parameter != null && typeCanBeCastTo(aliases, argument.type, parameter.type))
+              if (parameter != null && typeCanBeCastTo(context, argument.type, parameter.type))
                 Pair(parameter.name, argument.node)
               else
                 null
@@ -37,7 +29,7 @@ fun overloadMatches(aliases: Aliases, arguments: List<Argument>, overloads: Sign
         val indexedArguments = argumentsByType
             .flatMap { (argumentType, typeArguments) ->
               val parameters = signature.parameters.filter { parameter ->
-                typeCanBeCastTo(aliases, argumentType, parameter.type) && namedArguments.none { it.first == parameter.name }
+                typeCanBeCastTo(context, argumentType, parameter.type) && namedArguments.none { it.first == parameter.name }
               }
               if (parameters.size == typeArguments.size)
                 typeArguments.zip(parameters) { a, b -> Pair(b.name, a.node) }

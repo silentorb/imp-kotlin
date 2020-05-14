@@ -64,7 +64,6 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
       val initialGraph = Graph(
           nodes = nodeRanges.keys,
           connections = setOf(),
-          outputTypes = mapOf(),
           values = mapOf()
       )
 
@@ -110,8 +109,7 @@ fun addGraphToContext(graph: Graph, context: Context): Context =
     context
         .dropLast(1)
         .plus(context.last().copy(
-            references = context.last().references + graph.references,
-            types = context.last().types + graph.outputTypes
+            references = context.last().references + graph.references
         ))
 
 fun parseDefinitions(nodeRanges: Map<PathKey, TokenizedDefinition>, initialContext: Context): PartitionedResponse<List<Dungeon>> {

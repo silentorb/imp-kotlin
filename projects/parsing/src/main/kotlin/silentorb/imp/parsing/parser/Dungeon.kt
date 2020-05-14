@@ -32,7 +32,6 @@ val emptyDungeon =
         graph = Graph(
             nodes = setOf(),
             connections = setOf(),
-            outputTypes = mapOf(),
             values = mapOf()
         ),
         nodeMap = mapOf(),

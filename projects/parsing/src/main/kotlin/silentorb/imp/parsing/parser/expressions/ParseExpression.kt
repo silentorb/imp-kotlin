@@ -22,7 +22,7 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): Partitione
       .groupBy { tokens[it].value }
       .flatMap { (name, tokenIndices) ->
         tokenIndices.mapIndexed { index, tokenIndex ->
-          Pair(tokenIndex, PathKey(path, "@$name${index + 1}"))
+          Pair(tokenIndex, PathKey(path, "$name${index + 1}"))
         }
       }
       .associate { it }
@@ -31,9 +31,8 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): Partitione
   val nodes = tokenNodes.values.toSet()
   val nonNodeReferenceTokens = indexedTokens.minus(nodeReferences.keys)
   val literalTypes = resolveLiteralTypes(tokens, nonNodeReferenceTokens, tokenNodes)
-//  val functionTypes = resolveFunctionTypes(context, tokens, nonNodeReferenceTokens, tokenNodes)
   val functionTypes = nodeReferences.mapKeys { tokenNodes[it.key]!! }
-  val obviousTypes = literalTypes + associateWithNotNull(nodeReferences.values) { getType(context, it) }
+  val obviousTypes = literalTypes + associateWithNotNull(nodeReferences.values) { resolveAlias(context, it) }
 
   val aliases = flattenAliases(context)
   val (signatureOptions, functionReturnTypes) = resolveFunctionSignatures(
@@ -61,17 +60,18 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): Partitione
       }
   val rootTokenIndex = tokenGraph.stages.last().first()
   val rootNode = tokenNodes[rootTokenIndex]!!
+
   val typeResolutionErrors = validateFunctionTypes(newNodes, functionTypes.plus(types), nodeMap)
   val signatureErrors = validateSignatures(signatureOptions, nodeMap) +
       validateMissingSignatures(functionTypes, signatures, nodeMap)
   val pipingErrors = validatePiping(tokens, groupGraph)
   val errors = signatureErrors.plus(typeResolutionErrors).plus(pipingErrors)
+
   val dungeon = Dungeon(
       graph = Graph(
           nodes = nodes,
           connections = connections,
-          references = functionTypes + (root to rootNode),
-          outputTypes = obviousTypes,
+          references = literalTypes + functionTypes + (root to rootNode),
           signatureMatches = signatures,
           values = values
       ),

@@ -36,10 +36,8 @@ class ParserTest {
       val graph = result.graph
       assertEquals(2, graph.nodes.size)
       assertEquals(1, graph.values.size)
-      assertEquals(2, graph.outputTypes.size)
       assertEquals(1, graph.connections.size)
       assertEquals(10.3f, graph.values.values.first())
-      assertEquals(floatKey, graph.outputTypes.values.first())
     }
   }
 
@@ -76,12 +74,12 @@ class ParserTest {
 
     handleRoot(errored, parseTextBranching(emptyContext)(code)) { result ->
       val graph = result.graph
-      assertEquals(3, graph.nodes.size)
+      assertEquals(4, graph.nodes.size)
       assertEquals(1, graph.values.size)
       assertEquals(2, graph.connections.size)
       assertEquals(10, graph.values.values.first())
-      assertTrue(graph.nodes.contains(PathKey(localPath, "@intermediate1")))
-      assertTrue(graph.nodes.contains(PathKey(localPath, "@output1")))
+      assertTrue(graph.nodes.contains(PathKey(localPath, "intermediate")))
+      assertTrue(graph.nodes.contains(PathKey(localPath, "output")))
       assertTrue(graph.nodes.contains(PathKey(localPath + ".intermediate", "#literal1")))
     }
   }
@@ -214,10 +212,9 @@ class ParserTest {
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(3, graph.connections.size)
-      assertEquals(4, graph.outputTypes.size)
-      val node2 = PathKey("", "")
-      val node3 = PathKey("", "")
-      val node4 = PathKey("", "")
+      val node2 = PathKey("@local.output", "simpleFunction1")
+      val node3 = PathKey("@local.output", "#literal1")
+      val node4 = PathKey("@local.output", "#literal2")
       assertTrue(graph.connections.contains(Connection(destination = node2, source = node3, parameter = "first")))
       assertTrue(graph.connections.contains(Connection(destination = node2, source = node4, parameter = "second")))
     }
@@ -232,7 +229,7 @@ class ParserTest {
     """.trimIndent()
     handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
-      assertEquals(4, graph.nodes.size)
+      assertEquals(6, graph.nodes.size)
     }
   }
 
@@ -247,7 +244,6 @@ class ParserTest {
       val graph = result.graph
       assertEquals(5, graph.nodes.size)
       assertEquals(4, graph.connections.size)
-      assertEquals(5, graph.outputTypes.size)
     }
   }
 
@@ -261,9 +257,8 @@ class ParserTest {
     """.trimIndent()
     handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
-      assertEquals(5, graph.nodes.size)
+      assertEquals(6, graph.nodes.size)
       assertEquals(4, graph.connections.size)
-      assertEquals(5, graph.outputTypes.size)
     }
   }
 
@@ -278,7 +273,7 @@ let output = value
 
     handleRoot(errored, parseTextBranching(emptyContext)(code)) { result ->
       val graph = result.graph
-      assertEquals(3, graph.nodes.size)
+      assertEquals(4, graph.nodes.size)
       assertEquals(1, graph.values.size)
       assertEquals(2, graph.connections.size)
       assertEquals(10, graph.values.values.first())
@@ -456,7 +451,6 @@ let output = simpleFunction a (simpleFunction 3 3)
     handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
-      assertEquals(4, graph.outputTypes.size)
     }
   }
 
