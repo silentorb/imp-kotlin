@@ -84,7 +84,11 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
       val constraintErrors = validateTypeConstraints(dungeon.graph.values, namespace, constraints, dungeon.nodeMap)
 
       PartitionedResponse(
-          dungeon,
+          dungeon.copy(
+              graph = dungeon.graph.copy(
+                  references = dungeon.graph.references.mapValues { resolveAlias(context, it.value) }
+              )
+          ),
           constraintErrors
       )
     }

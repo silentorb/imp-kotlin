@@ -60,15 +60,24 @@ fun getDirectoryContents(namespace: Namespace, path: String): Set<PathKey> =
         .filterKeys { it.path == path }
         .keys
 
-tailrec fun resolveFunction(context: Context, name: String, index: Int): PathKey? =
+typealias ContextIterator<K, V> = (Context, K) -> V?
+
+tailrec fun <K, V> resolveContextField(context: Context, key: K, index: Int, getter: (Namespace, K) -> V?): V? =
     if (index < 0)
       null
     else
-      context[index].localFunctionAliases[name]
-          ?: resolveFunction(context, name, index - 1)
+      getter(context[index], key)
+          ?: resolveContextField(context, key, index - 1, getter)
 
-fun resolveFunction(context: Context, name: String): PathKey? =
-    resolveFunction(context, name, context.size - 1)
+fun <K, V> resolveContextField(getter: (Namespace, K) -> V?): (Context, K) -> V? = { context, key ->
+  resolveContextField(context, key, context.size - 1, getter)
+}
+
+fun <K, V> resolveContextField(context: Context, key: K, getter: (Namespace, K) -> V?): V? =
+    resolveContextField(context, key, context.size - 1, getter)
+
+val resolveFunction: ContextIterator<Key, PathKey> =
+    resolveContextField { namespace, key -> namespace.localFunctionAliases[key] }
 
 tailrec fun resolveReference(context: Context, name: String, index: Int): PathKey? =
     if (index < 0)
@@ -86,25 +95,11 @@ tailrec fun resolveReference(context: Context, name: String, index: Int): PathKe
 fun resolveReference(context: Context, name: String): PathKey? =
     resolveReference(context, name, context.size - 1)
 
-tailrec fun getTypeDetails(context: Context, path: PathKey, index: Int): Signatures? =
-    if (index < 0)
-      null
-    else
-      context[index].functions[path]
-          ?: getTypeDetails(context, path, index - 1)
-
 fun getTypeDetails(context: Context, path: PathKey): Signatures? =
-    getTypeDetails(context, getRootType(context, path), context.size - 1)
-
-tailrec fun resolveAlias(context: Context, key: PathKey, index: Int): PathKey =
-    if (index < 0)
-      key
-    else
-      context[index].references[key]
-          ?: resolveAlias(context, key, index - 1)
+    resolveContextField(context, getRootType(context, path)) { namespace, key -> namespace.functions[key] }
 
 fun resolveAlias(context: Context, key: PathKey): PathKey =
-    resolveAlias(context, key, context.size - 1)
+    resolveContextField(context, key) { namespace, k -> namespace.references[k] } ?: key
 
-fun flattenAliases(context: Context): Aliases =
-    context.fold(mapOf()) { a, b -> a.plus(b.references) }
+val resolveNumericTypeConstraint: ContextIterator<PathKey, NumericTypeConstraint> =
+    resolveContextField { namespace, key -> namespace.numericTypeConstraints[key] }

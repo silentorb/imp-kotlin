@@ -71,7 +71,6 @@ data class SignatureOptionsAndTypes(
 
 fun resolveFunctionSignatures(
     context: Context,
-    aliases: Aliases,
     tokenGraph: TokenGraph,
     parents: TokenParents,
     functionTypes: Map<PathKey, PathKey>,

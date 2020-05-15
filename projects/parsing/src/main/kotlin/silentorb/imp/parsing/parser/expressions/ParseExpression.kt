@@ -34,10 +34,8 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): Partitione
   val functionTypes = nodeReferences.mapKeys { tokenNodes[it.key]!! }
   val obviousTypes = literalTypes + associateWithNotNull(nodeReferences.values) { resolveAlias(context, it) }
 
-  val aliases = flattenAliases(context)
   val (signatureOptions, functionReturnTypes) = resolveFunctionSignatures(
       context,
-      aliases,
       tokenGraph,
       parents,
       functionTypes,
