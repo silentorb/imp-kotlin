@@ -1,46 +1,38 @@
 package silentorb.imp.core
 
-data class PathKey(
-    val path: String,
-    val name: String
-)
-
-typealias Aliases = Map<PathKey, PathKey>
-
-data class Namespace(
-    val references: Map<PathKey, PathKey>,
-    val localFunctionAliases: Map<Key, PathKey>,
-    val functions: OverloadsMap,
-    val nodes: Set<PathKey>,
-    val values: Map<PathKey, Any>,
-    val structures: Map<PathKey, Structure>,
-    val unions: Map<PathKey, List<Union>>,
-    val numericTypeConstraints: Map<PathKey, NumericTypeConstraint>
-)
+fun newTypings(): Typings =
+    Typings(
+        signatures = mapOf(),
+        unions = mapOf()
+    )
 
 fun newNamespace(): Namespace =
     Namespace(
+        connections = setOf(),
+        nodeTypes = mapOf(),
         references = mapOf(),
-        localFunctionAliases = mapOf(),
-        functions = mapOf(),
-        nodes = setOf(),
         values = mapOf(),
         structures = mapOf(),
-        unions = mapOf(),
+        typings = newTypings(),
         numericTypeConstraints = mapOf()
+    )
+
+fun mergeTypings(first: Typings, second: Typings): Typings =
+    Typings(
+        signatures = first.signatures + second.signatures,
+        unions = first.unions + second.unions
     )
 
 fun mergeNamespaces(namespaces: Collection<Namespace>): Namespace =
     namespaces.reduce { accumulator, namespace ->
       Namespace(
-          references = accumulator.references.plus(namespace.references),
-          localFunctionAliases = accumulator.localFunctionAliases.plus(namespace.localFunctionAliases),
-          functions = accumulator.functions.plus(namespace.functions),
-          nodes = accumulator.nodes.plus(namespace.nodes),
-          values = accumulator.values.plus(namespace.values),
-          structures = accumulator.structures.plus(namespace.structures),
-          unions = accumulator.unions.plus(namespace.unions),
-          numericTypeConstraints = accumulator.numericTypeConstraints.plus(namespace.numericTypeConstraints)
+          connections = accumulator.connections + namespace.connections,
+          nodeTypes = accumulator.nodeTypes + namespace.nodeTypes,
+          references = accumulator.references + namespace.references,
+          structures = accumulator.structures + namespace.structures,
+          numericTypeConstraints = accumulator.numericTypeConstraints + namespace.numericTypeConstraints,
+          typings = mergeTypings(accumulator.typings, namespace.typings),
+          values = accumulator.values + namespace.values
       )
     }
 
@@ -55,10 +47,9 @@ fun toPathString(list: List<String>) =
 fun toPathKey(list: List<String>) =
     PathKey(toPathString(list.dropLast(1)), list.takeLast(1).first())
 
-fun getDirectoryContents(namespace: Namespace, path: String): Set<PathKey> =
-    namespace.functions
-        .filterKeys { it.path == path }
-        .keys
+fun getDirectoryContents(namespace: Namespace, path: String): Map<PathKey, TypeHash> =
+    namespace.nodeTypes
+        .filter { it.key.path == path }
 
 typealias ContextIterator<K, V> = (Context, K) -> V?
 
@@ -73,33 +64,71 @@ fun <K, V> resolveContextField(getter: (Namespace, K) -> V?): (Context, K) -> V?
   resolveContextField(context, key, context.size - 1, getter)
 }
 
+tailrec fun <K, V> resolveContextFieldGreedy(
+    context: Context, key: K, index: Int, getter: (Namespace, K) -> List<V>,
+    accumulator: List<V>
+): List<V> =
+    if (index < 0)
+      accumulator
+    else {
+      val next = accumulator + getter(context[index], key)
+      resolveContextFieldGreedy(context, key, index - 1, getter, next)
+    }
+
+fun <K, V> resolveContextFieldGreedy(context: Context, key: K, getter: (Namespace, K) -> List<V>): List<V> =
+    resolveContextFieldGreedy(context, key, context.size - 1, getter, listOf())
+
 fun <K, V> resolveContextField(context: Context, key: K, getter: (Namespace, K) -> V?): V? =
     resolveContextField(context, key, context.size - 1, getter)
-
-val resolveFunction: ContextIterator<Key, PathKey> =
-    resolveContextField { namespace, key -> namespace.localFunctionAliases[key] }
 
 tailrec fun resolveReference(context: Context, name: String, index: Int): PathKey? =
     if (index < 0)
       null
     else {
-      val nodes = context[index].nodes.filter { it.name == name }
-          .plus(context[index].functions.keys.filter { it.name == name })
+      val nodes = context[index].nodeTypes.filter { it.key.name == name }
 
       if (nodes.size > 1)
         throw Error("Not yet supported")
 
-      nodes.firstOrNull() ?: resolveReference(context, name, index - 1)
+      nodes.keys.firstOrNull() ?: resolveReference(context, name, index - 1)
     }
 
 fun resolveReference(context: Context, name: String): PathKey? =
     resolveReference(context, name, context.size - 1)
 
-fun getTypeDetails(context: Context, path: PathKey): Signatures? =
-    resolveContextField(context, getRootType(context, path)) { namespace, key -> namespace.functions[key] }
+fun resolveAlias(context: Context, key: PathKey): PathKey? =
+    resolveContextField(context, key) { namespace, k -> namespace.references[k] }
 
-fun resolveAlias(context: Context, key: PathKey): PathKey =
-    resolveContextField(context, key) { namespace, k -> namespace.references[k] } ?: key
+fun flattenTypeSignatures(context: Context): (TypeHash) -> List<Signature> = { type ->
+  resolveContextFieldGreedy(context, type) { namespace, key ->
+    val signature = namespace.typings.signatures[key]
+    if (signature != null)
+      listOf(signature)
+    else {
+      val union = namespace.typings.unions[key]
+      union?.flatMap(flattenTypeSignatures(context)) ?: listOf()
+    }
+  }
+}
+
+fun getTypeSignatures(context: Context, path: PathKey): List<Signature> {
+  val types = resolveContextFieldGreedy(context, resolveAlias(context, path)) { namespace, key ->
+    listOfNotNull(namespace.nodeTypes[key])
+  }
+  return types
+      .flatMap(flattenTypeSignatures(context))
+      .distinct()
+}
 
 val resolveNumericTypeConstraint: ContextIterator<PathKey, NumericTypeConstraint> =
     resolveContextField { namespace, key -> namespace.numericTypeConstraints[key] }
+
+fun extractTypings(signature: Signature): Typings {
+
+}
+
+fun extractTypings(overloadsMap: OverloadsMap): Typings {
+  return overloadsMap
+//      .map(::extractTypings)
+//      .reduce(::mergeTypings)
+}

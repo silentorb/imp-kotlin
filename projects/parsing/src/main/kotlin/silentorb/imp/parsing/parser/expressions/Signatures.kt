@@ -9,91 +9,89 @@ data class FunctionInvocation(
     val range: Range
 )
 
-fun resolveInvocationArguments(
-    parents: TokenParents,
-    functionTypes: Map<PathKey, PathKey>,
-    argumentTypes: Map<PathKey, PathKey>,
+fun getSignatureOptions(context: Context, invocation: FunctionInvocation): List<SignatureMatch> {
+  val functionOverloads = getTypeSignatures(context, invocation.type)
+//  if (functionOverloads != null)
+    return overloadMatches(context, invocation.arguments, functionOverloads)
+//  else {
+//    val type = getRootType(context, invocation.type)
+//    listOf(SignatureMatch(
+//        signature = Signature(
+//            parameters = listOf(),
+//            output = type
+//        ),
+//        alignment = mapOf()
+//    ))
+//  }
+}
+
+fun narrowTypeByArguments(
+    context: Context,
+    references: Map<PathKey, PathKey>,
+    argumentTypes: Map<PathKey, TypeHash>,
     tokenNodes: Map<TokenIndex, PathKey>,
     tokens: Tokens,
     namedArguments: Map<Int, String>
-): Map<PathKey, FunctionInvocation> {
-  return parents.entries
-      .filter { (tokenIndex, children) ->
-        val id = tokenNodes[tokenIndex]!!
-        children.all { childIndex -> argumentTypes.containsKey(tokenNodes[childIndex]!!) }
-            && functionTypes.containsKey(id)
-      }
-      .associate { (tokenIndex, children) ->
-        val id = tokenNodes[tokenIndex]!!
-        val functionType = functionTypes[id]!!
-        val arguments = children.map { childIndex ->
-          val childNode = tokenNodes[childIndex]!!
-          Argument(
-              name = namedArguments[childIndex],
-              type = argumentTypes[childNode]!!,
-              node = childNode
-          )
-        }
-        val invocation = FunctionInvocation(
-            type = functionType,
-            arguments = arguments,
-            range = tokensToRange(listOf(tokens[tokenIndex]).plus(children.map { tokens[it] }))
-        )
-        Pair(id, invocation)
-      }
+): (Map.Entry<TokenIndex, List<TokenIndex>>) -> Pair<PathKey, List<SignatureMatch>>? = { (tokenIndex, children) ->
+  val id = tokenNodes[tokenIndex]!!
+  if (children.all { childIndex -> argumentTypes.containsKey(tokenNodes[childIndex]!!) }
+      && references.containsKey(id)) {
+    val functionType = references[id]!!
+    val arguments = children.map { childIndex ->
+      val childNode = tokenNodes[childIndex]!!
+      Argument(
+          name = namedArguments[childIndex],
+          type = argumentTypes[childNode]!!,
+          node = childNode
+      )
+    }
+    val invocation = FunctionInvocation(
+        type = functionType,
+        arguments = arguments,
+        range = tokensToRange(listOf(tokens[tokenIndex]).plus(children.map { tokens[it] }))
+    )
+    val signatureMatches = getSignatureOptions(context, invocation)
+    Pair(id, signatureMatches)
+  } else
+    null
 }
 
 typealias SignatureOptions = Map<PathKey, List<SignatureMatch>>
 
-fun getSignatureOptions(context: Context, invocations: Map<PathKey, FunctionInvocation>): SignatureOptions {
-  return invocations
-      .mapValues { (_, invocation) ->
-        val functionOverloads = getTypeDetails(context, invocation.type)
-        if (functionOverloads != null)
-          overloadMatches(context, invocation.arguments, functionOverloads)
-        else {
-          val type = getRootType(context, invocation.type)
-          listOf(SignatureMatch(
-              signature = Signature(
-                  parameters = listOf(),
-                  output = type
-              ),
-              alignment = mapOf()
-          ))
-        }
-      }
-}
-
 data class SignatureOptionsAndTypes(
     val signatureOptions: SignatureOptions = mapOf(),
-    val types: Map<PathKey, PathKey> = mapOf()
+    val types: Map<PathKey, TypeHash> = mapOf()
 )
 
 fun resolveFunctionSignatures(
     context: Context,
     tokenGraph: TokenGraph,
     parents: TokenParents,
-    functionTypes: Map<PathKey, PathKey>,
-    types: Map<PathKey, PathKey>,
+    references: Map<PathKey, PathKey>,
+    types: Map<PathKey, TypeHash>,
     tokenNodes: Map<TokenIndex, PathKey>,
     tokens: Tokens,
     namedArguments: Map<Int, String>
 ): SignatureOptionsAndTypes {
-  val endpointFunctions = functionTypes.keys.minus(parents.keys).map { i -> tokenNodes.entries.first { it.value == i }.key }
+  val endpointFunctions = references.keys.minus(parents.keys).map { i -> tokenNodes.entries.first { it.value == i }.key }
   val stages = listOf(endpointFunctions) + tokenGraph.stages
   return stages
       .fold(SignatureOptionsAndTypes()) { accumulator, stage ->
         val stageParents = stage
             .associateWith { parents[it] ?: listOf() }
         val argumentTypes = types.plus(accumulator.types)
-        val invocations = resolveInvocationArguments(stageParents, functionTypes, argumentTypes, tokenNodes, tokens, namedArguments)
-        val signatureOptions = getSignatureOptions(context, invocations)
-        val returnTypes = signatureOptions
-            .filter { it.value.size == 1 }
-            .mapValues { it.value.first().signature.output }
+        val signatureOptions = stageParents.mapNotNull(narrowTypeByArguments(context, references, argumentTypes, tokenNodes, tokens, namedArguments))
+            .associate { it }
+//        val signatureOptions = getSignatureOptions(context, invocations)
+//        val returnTypes = signatureOptions
+//            .filter { it.value.size == 1 }
+//            .mapValues { it.value.first().signature.output }
+        val newTypes = signatureOptions.mapValues { (_, matches) ->
+          signaturesToTypeHash(matches.map { it.signature })
+        }
         accumulator.copy(
-            signatureOptions = accumulator.signatureOptions.plus(signatureOptions),
-            types = accumulator.types.plus(returnTypes)
+            signatureOptions = accumulator.signatureOptions + signatureOptions,
+            types = accumulator.types + newTypes
         )
       }
 }

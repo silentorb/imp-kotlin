@@ -51,7 +51,7 @@ fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>)
 //                )
 //            )
 //          else
-            nextDungeon,
+          nextDungeon,
           matchingParenthesesErrors.plus(expressionErrors)
       )
     }
@@ -61,8 +61,8 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
       val nodeMap = nodeRanges
           .mapValues { (_, definition) -> definition.symbol.range }
 
-      val initialGraph = Graph(
-          nodes = nodeRanges.keys,
+      val initialGraph = newNamespace().copy(
+//          nodes = nodeRanges.keys,
           connections = setOf(),
           values = mapOf()
       )
@@ -84,27 +84,28 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
       val constraintErrors = validateTypeConstraints(dungeon.graph.values, namespace, constraints, dungeon.nodeMap)
 
       PartitionedResponse(
-          dungeon.copy(
-              graph = dungeon.graph.copy(
-                  references = dungeon.graph.references.mapValues { resolveAlias(context, it.value) }
-              )
-          ),
+          dungeon
+//              .copy(
+//              graph = dungeon.graph.copy(
+//                  references = dungeon.graph.references.mapValues { resolveAlias(context, it.value) }
+//              )
+//          )
+          ,
           constraintErrors
       )
     }
 
 fun newDefinitionContext(
     nodeRanges: Map<PathKey, TokenizedDefinition>,
-    rawImportedFunctions: List<List<Pair<Key, PathKey>>>,
+    rawImportedFunctions: List<Map<PathKey, TypeHash>>,
     parentContext: Context): Context {
   val importedFunctions = rawImportedFunctions
-      .flatten()
-      .associate { it }
+      .reduce { a, b -> a + b }
 
   return parentContext.plus(
       newNamespace().copy(
-          nodes = nodeRanges.keys,
-          localFunctionAliases = importedFunctions
+//          nodes = nodeRanges.keys,
+          nodeTypes = importedFunctions
       )
   )
 }

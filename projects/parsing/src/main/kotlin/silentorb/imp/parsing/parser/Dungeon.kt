@@ -19,18 +19,18 @@ data class Dungeon(
         )
       }
 
-  fun addSignature(id: PathKey, signature: SignatureMatch) =
-      modifyGraph(this) { graph ->
-        graph.copy(
-            signatureMatches = graph.signatureMatches.plus(Pair(id, signature))
-        )
-      }
+//  fun addSignature(id: PathKey, signature: SignatureMatch) =
+//      modifyGraph(this) { graph ->
+//        graph.copy(
+//            signatureMatches = graph.signatureMatches.plus(Pair(id, signature))
+//        )
+//      }
 }
 
 val emptyDungeon =
     Dungeon(
-        graph = Graph(
-            nodes = setOf(),
+        graph = newNamespace().copy(
+//            nodes = setOf(),
             connections = setOf(),
             values = mapOf()
         ),

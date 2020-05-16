@@ -6,7 +6,7 @@ const val mathPath = "$standardLibraryPath.math"
 
 val plusKey = PathKey(mathPath, "+")
 
-fun mathOperatorSignature(type: PathKey) = Signature(
+fun mathOperatorSignature(type: TypeHash) = Signature(
     parameters = listOf(
         Parameter("first", type),
         Parameter("second", type)
@@ -14,9 +14,9 @@ fun mathOperatorSignature(type: PathKey) = Signature(
     output = type
 )
 
-val intOperatorSignature = mathOperatorSignature(intKey)
-val floatOperatorSignature = mathOperatorSignature(floatKey)
-val doubleOperatorSignature = mathOperatorSignature(doubleKey)
+val intOperatorSignature = mathOperatorSignature(intSignature.hashCode())
+val floatOperatorSignature = mathOperatorSignature(floatSignature.hashCode())
+val doubleOperatorSignature = mathOperatorSignature(doubleSignature.hashCode())
 
 fun standardMathOperatorDefinition() =
     listOf(

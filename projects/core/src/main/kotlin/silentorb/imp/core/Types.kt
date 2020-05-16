@@ -1,22 +1,28 @@
 package silentorb.imp.core
 
 typealias Key = String
-//typealias Id = Long
+typealias TypeHash = Int
+
+data class PathKey(
+    val path: String,
+    val name: String
+)
+
+typealias Union = Set<TypeHash>
 
 data class Parameter(
     val name: String,
-    val type: PathKey
+    val type: TypeHash
 )
 
 data class Signature(
-    val parameters: List<Parameter>,
-    val output: PathKey
+    val parameters: List<Parameter> = listOf(),
+    val output: TypeHash
 )
 
-typealias Signatures = List<Signature>
+//typealias Signatures = List<Signature>
 typealias SignatureMap = Map<PathKey, Signature>
-typealias OverloadsMap = Map<PathKey, Signatures>
-typealias Type = List<PathKey>
+typealias OverloadsMap = Map<PathKey, List<Signature>>
 
 data class SignatureMatch(
     val signature: Signature,
@@ -26,8 +32,8 @@ data class SignatureMatch(
 typealias SignatureMatchMap = Map<PathKey, SignatureMatch>
 
 data class FunctionKey(
-    val path: PathKey,
-    val signature: Signature
+    val key: PathKey,
+    val type: TypeHash
 )
 
 data class Connection(
@@ -41,24 +47,11 @@ data class Structure(
     val parameters: List<Key>
 )
 
-typealias Union = List<PathKey>
-
 const val defaultParameter = ""
-
-//fun newIdSource(initialValue: PathKey): NextId {
-//  var nextId: PathKey = initialValue
-//  return { nextId++ }
-//}
-
-//fun mapTypes(types: List<Function>) =
-//    types.associate { Pair(it.key, it) }
-//
-//fun mapTypes(vararg types: Function) =
-//    types.associate { Pair(it.key, it) }
 
 data class Argument(
     val name: String?,
-    val type: PathKey,
+    val type: TypeHash,
     val node: PathKey
 )
 

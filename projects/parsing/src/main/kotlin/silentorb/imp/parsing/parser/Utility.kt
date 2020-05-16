@@ -63,7 +63,7 @@ fun <T> until(list: List<T>, filter: (T) -> Boolean): List<T> =
 
 fun mergeDistinctDungeons(parent: Dungeon, child: Dungeon): Dungeon {
   return Dungeon(
-      graph = mergeDistinctGraphs(parent.graph, child.graph),
+      graph = mergeNamespaces(parent.graph, child.graph),
       nodeMap = parent.nodeMap.plus(child.nodeMap),
       literalConstraints = mapOf()
   )
