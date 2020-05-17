@@ -2,69 +2,70 @@ import silentorb.imp.core.*
 
 const val testPath = "silentorb.imp.test"
 val vector2iKey = PathKey(testPath, "Vector2i")
+val vector2iType = vector2iKey.hashCode()
 val measurementKey = PathKey(testPath, "Measurement")
+val measurementType = measurementKey.hashCode()
 
 val simpleContext = listOf(
-    newNamespace().copy(
-        functions = mapOf(
-            PathKey(testPath, "eight") to listOf(
-                Signature(
-                    parameters = listOf(),
-                    output = intKey
-                )
-            ),
-            PathKey(testPath, "eightPointFive") to listOf(
-                Signature(
-                    parameters = listOf(),
-                    output = floatKey
-                )
-            ),
-            PathKey(testPath, "simpleFunction") to listOf(
-                Signature(
-                    parameters = listOf(
-                        Parameter("first", intKey),
-                        Parameter("second", intKey)
-                    ),
-                    output = intKey
-                )
-            ),
-            PathKey(testPath, "simpleFunction2") to listOf(
-                Signature(
-                    parameters = listOf(
-                        Parameter("first", floatKey),
-                        Parameter("second", intKey)
-                    ),
-                    output = intKey
-                )
-            ),
-            PathKey(testPath, "something") to listOf(
-                Signature(
-                    parameters = listOf(
-                        Parameter("first", vector2iKey)
-                    ),
-                    output = vector2iKey
-                )
-            ),
-            PathKey(testPath, "measure") to listOf(
-                Signature(
-                    parameters = listOf(
-                        Parameter("value", measurementKey)
-                    ),
-                    output = intKey
-                )
-            ),
-            vector2iKey to listOf(
-                Signature(
-                    parameters = listOf(
-                        Parameter("x", intKey),
-                        Parameter("y", intKey)
-                    ),
-                    output = vector2iKey
-                )
+    namespaceFromOverloads(mapOf(
+        PathKey(testPath, "eight") to listOf(
+            Signature(
+                parameters = listOf(),
+                output = intType
             )
         ),
-        references = mapOf(
-            measurementKey to floatKey
+        PathKey(testPath, "eightPointFive") to listOf(
+            Signature(
+                parameters = listOf(),
+                output = floatType
+            )
+        ),
+        PathKey(testPath, "simpleFunction") to listOf(
+            Signature(
+                parameters = listOf(
+                    Parameter("first", intType),
+                    Parameter("second", intType)
+                ),
+                output = intType
+            )
+        ),
+        PathKey(testPath, "simpleFunction2") to listOf(
+            Signature(
+                parameters = listOf(
+                    Parameter("first", floatType),
+                    Parameter("second", intType)
+                ),
+                output = intType
+            )
+        ),
+        PathKey(testPath, "something") to listOf(
+            Signature(
+                parameters = listOf(
+                    Parameter("first", vector2iType)
+                ),
+                output = vector2iType
+            )
+        ),
+        PathKey(testPath, "measure") to listOf(
+            Signature(
+                parameters = listOf(
+                    Parameter("value", measurementType)
+                ),
+                output = intType
+            )
+        ),
+        vector2iKey to listOf(
+            Signature(
+                parameters = listOf(
+                    Parameter("x", intType),
+                    Parameter("y", intType)
+                ),
+                output = vector2iType
+            )
+        )
+    )) + newNamespace().copy(
+        nodeTypes = mapOf(
+            measurementKey to floatType
         ),
         numericTypeConstraints = mapOf(
             measurementKey to NumericTypeConstraint(-10.0, 10.5)

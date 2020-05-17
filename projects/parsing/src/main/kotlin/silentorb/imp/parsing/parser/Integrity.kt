@@ -45,7 +45,7 @@ fun checkMatchingParentheses(tokens: Tokens): ParsingErrors {
     listOf()
 }
 
-fun validateFunctionTypes(nodes: Set<PathKey>, types: Map<PathKey, PathKey>, nodeMap: NodeMap): ParsingErrors {
+fun validateFunctionTypes(nodes: Set<PathKey>, types: Map<PathKey, TypeHash>, nodeMap: NodeMap): ParsingErrors {
   return nodes
       .filter { !types.containsKey(it) }
       .map { node ->
@@ -54,15 +54,17 @@ fun validateFunctionTypes(nodes: Set<PathKey>, types: Map<PathKey, PathKey>, nod
       }
 }
 
-fun validateSignatures(signatureOptions: Map<PathKey, List<SignatureMatch>>, nodeMap: NodeMap): ParsingErrors {
-  return signatureOptions
-      .mapNotNull { (id, options) ->
+fun validateSignatures(parents: Set<PathKey>, signatureOptions: Map<PathKey, List<SignatureMatch>>,
+                       nodeMap: NodeMap): ParsingErrors {
+  return parents
+      .mapNotNull { pathKey ->
+        val options = signatureOptions[pathKey] ?: listOf()
         if (options.size == 1)
           null
         else if (options.none())
-          ParsingError(TextId.noMatchingSignature, range = nodeMap[id]!!)
+          ParsingError(TextId.noMatchingSignature, range = nodeMap[pathKey]!!)
         else
-          ParsingError(TextId.ambiguousOverload, range = nodeMap[id]!!)
+          ParsingError(TextId.ambiguousOverload, range = nodeMap[pathKey]!!)
       }
 }
 

@@ -11,32 +11,11 @@ fun getLiteralRuneType(rune: Rune): TypeHash? =
       else -> null
     }
 
-//fun resolveFunctionTypes(context: Context, tokens: Tokens, indexes: List<TokenIndex>,
-//                         tokenNodes: Map<TokenIndex, PathKey>): Map<PathKey, PathKey> {
-//  return indexes
-//      .mapNotNull { tokenIndex ->
-//        val token = tokens[tokenIndex]
-//        val type = getFunctionReference(context)(token)
-//        if (type != null) {
-//          val id = tokenNodes[tokenIndex]!!
-//          Pair(id, type)
-//        } else
-//          null
-//      }
-//      .associate { it }
-//}
-
-fun resolveLiteralTypes(tokens: Tokens, indexes: List<TokenIndex>,
-                         tokenNodes: Map<TokenIndex, PathKey>): Map<PathKey, TypeHash> {
-  return indexes
-      .mapNotNull { tokenIndex ->
+fun resolveLiteralTypes(tokens: Tokens, tokenNodes: Map<TokenIndex, PathKey>): Map<PathKey, TypeHash> {
+  return tokenNodes.entries
+      .associate { (tokenIndex, pathKey) ->
         val token = tokens[tokenIndex]
-        val type = getLiteralRuneType(token.rune)
-        if (type != null) {
-          val id = tokenNodes[tokenIndex]!!
-          Pair(id, type)
-        } else
-          null
+        val type = getLiteralRuneType(token.rune)!!
+        Pair(pathKey, type)
       }
-      .associate { it }
 }

@@ -1,12 +1,10 @@
 package silentorb.imp.core
 
 fun getGraphOutputNodes(graph: Graph): List<PathKey> =
-    graph.connections
-        .filter { connection -> graph.connections.none { it.source == connection.destination } }
-        .map { it.destination }
+    graph.nodes.filter { node -> graph.connections.none { it.source == node } }
 
-fun getGraphOutputNode(graph: Graph): PathKey =
-    getGraphOutputNodes(graph).first()
+fun getGraphOutputNode(graph: Graph): PathKey? =
+    getGraphOutputNodes(graph).firstOrNull()
 
 fun <K, V> associateWithNotNull(collection: Collection<K>, mapper: (K) -> V?): Map<K, V> =
     collection.mapNotNull {
@@ -24,4 +22,13 @@ fun signaturesToTypeHash(signatures: List<Signature>): TypeHash {
     signatures.first().hashCode()
   else
     signatures.toSet().hashCode()
+}
+
+fun typesToTypeHash(types: List<TypeHash>): TypeHash? {
+  return if (types.none())
+    null
+  else if (types.size == 1)
+    types.first()
+  else
+    types.toSet().hashCode()
 }

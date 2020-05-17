@@ -4,7 +4,6 @@ import org.junit.Ignore
 import org.junit.Test
 import silentorb.imp.core.Connection
 import silentorb.imp.core.PathKey
-import silentorb.imp.core.floatKey
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.parser.emptyContext

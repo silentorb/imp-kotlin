@@ -2,17 +2,18 @@ package silentorb.imp.parsing.parser.expressions
 
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
+import silentorb.imp.parsing.parser.NodeMap
 
 data class FunctionInvocation(
-    val type: PathKey,
+    val type: TypeHash,
     val arguments: List<Argument>,
     val range: Range
 )
 
 fun getSignatureOptions(context: Context, invocation: FunctionInvocation): List<SignatureMatch> {
-  val functionOverloads = getTypeSignatures(context, invocation.type)
+  val functionOverloads = flattenTypeSignatures(context)(invocation.type)
 //  if (functionOverloads != null)
-    return overloadMatches(context, invocation.arguments, functionOverloads)
+  return overloadMatches(context, invocation.arguments, functionOverloads)
 //  else {
 //    val type = getRootType(context, invocation.type)
 //    listOf(SignatureMatch(
@@ -27,33 +28,32 @@ fun getSignatureOptions(context: Context, invocation: FunctionInvocation): List<
 
 fun narrowTypeByArguments(
     context: Context,
-    references: Map<PathKey, PathKey>,
     argumentTypes: Map<PathKey, TypeHash>,
-    tokenNodes: Map<TokenIndex, PathKey>,
-    tokens: Tokens,
-    namedArguments: Map<Int, String>
-): (Map.Entry<TokenIndex, List<TokenIndex>>) -> Pair<PathKey, List<SignatureMatch>>? = { (tokenIndex, children) ->
-  val id = tokenNodes[tokenIndex]!!
-  if (children.all { childIndex -> argumentTypes.containsKey(tokenNodes[childIndex]!!) }
-      && references.containsKey(id)) {
-    val functionType = references[id]!!
-    val arguments = children.map { childIndex ->
-      val childNode = tokenNodes[childIndex]!!
-      Argument(
-          name = namedArguments[childIndex],
-          type = argumentTypes[childNode]!!,
-          node = childNode
-      )
-    }
-    val invocation = FunctionInvocation(
-        type = functionType,
-        arguments = arguments,
-        range = tokensToRange(listOf(tokens[tokenIndex]).plus(children.map { tokens[it] }))
+    nodeMap: NodeMap,
+    namedArguments: Map<PathKey, String>
+): (Map.Entry<PathKey, List<PathKey>>) -> Pair<PathKey, List<SignatureMatch>>? = { (pathKey, children) ->
+//  if (children.all { childIndex -> argumentTypes.containsKey(tokenNodes[childIndex]!!) }
+//      && references.containsKey(pathKey)) {
+  val functionType = argumentTypes[pathKey]!!
+  val arguments = children.map { childNode ->
+    Argument(
+        name = childNode.name,
+        type = argumentTypes[childNode]!!,
+        node = childNode
     )
-    val signatureMatches = getSignatureOptions(context, invocation)
-    Pair(id, signatureMatches)
-  } else
+  }
+  val invocation = FunctionInvocation(
+      type = functionType,
+      arguments = arguments,
+      range = Range(nodeMap[pathKey]!!.start, nodeMap[children.lastOrNull()]?.end ?: nodeMap[pathKey]!!.end)
+  )
+  val signatureMatches = getSignatureOptions(context, invocation)
+  if (signatureMatches.any())
+    Pair(pathKey, signatureMatches)
+  else
     null
+//  } else
+//    null
 }
 
 typealias SignatureOptions = Map<PathKey, List<SignatureMatch>>
@@ -65,27 +65,23 @@ data class SignatureOptionsAndTypes(
 
 fun resolveFunctionSignatures(
     context: Context,
-    tokenGraph: TokenGraph,
-    parents: TokenParents,
-    references: Map<PathKey, PathKey>,
-    types: Map<PathKey, TypeHash>,
-    tokenNodes: Map<TokenIndex, PathKey>,
-    tokens: Tokens,
-    namedArguments: Map<Int, String>
+    stages: List<List<PathKey>>,
+    parents: Map<PathKey, List<PathKey>>,
+    initialTypes: Map<PathKey, TypeHash>,
+    nodeMap: NodeMap,
+    namedArguments: Map<PathKey, String>
 ): SignatureOptionsAndTypes {
-  val endpointFunctions = references.keys.minus(parents.keys).map { i -> tokenNodes.entries.first { it.value == i }.key }
-  val stages = listOf(endpointFunctions) + tokenGraph.stages
+//  val endpointFunctions = references.keys.minus(parents.keys).map { i -> tokenNodes.entries.first { it.value == i }.key }
+//  val stages = //listOf(endpointFunctions) +
+//      stages
   return stages
       .fold(SignatureOptionsAndTypes()) { accumulator, stage ->
         val stageParents = stage
             .associateWith { parents[it] ?: listOf() }
-        val argumentTypes = types.plus(accumulator.types)
-        val signatureOptions = stageParents.mapNotNull(narrowTypeByArguments(context, references, argumentTypes, tokenNodes, tokens, namedArguments))
+        val argumentTypes = initialTypes.plus(accumulator.types)
+        val signatureOptions = stageParents
+            .mapNotNull(narrowTypeByArguments(context, argumentTypes, nodeMap, namedArguments))
             .associate { it }
-//        val signatureOptions = getSignatureOptions(context, invocations)
-//        val returnTypes = signatureOptions
-//            .filter { it.value.size == 1 }
-//            .mapValues { it.value.first().signature.output }
         val newTypes = signatureOptions.mapValues { (_, matches) ->
           signaturesToTypeHash(matches.map { it.signature })
         }

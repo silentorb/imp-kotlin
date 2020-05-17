@@ -17,12 +17,6 @@ fun newNamespace(): Namespace =
         numericTypeConstraints = mapOf()
     )
 
-fun mergeTypings(first: Typings, second: Typings): Typings =
-    Typings(
-        signatures = first.signatures + second.signatures,
-        unions = first.unions + second.unions
-    )
-
 fun mergeNamespaces(namespaces: Collection<Namespace>): Namespace =
     namespaces.reduce { accumulator, namespace ->
       Namespace(
@@ -85,12 +79,13 @@ tailrec fun resolveReference(context: Context, name: String, index: Int): PathKe
     if (index < 0)
       null
     else {
-      val nodes = context[index].nodeTypes.filter { it.key.name == name }
+      val nodes = context[index].nodeTypes.keys.filter { it.name == name }
+          .plus(context[index].references.keys.filter { it.name == name })
 
       if (nodes.size > 1)
         throw Error("Not yet supported")
 
-      nodes.keys.firstOrNull() ?: resolveReference(context, name, index - 1)
+      nodes.firstOrNull() ?: resolveReference(context, name, index - 1)
     }
 
 fun resolveReference(context: Context, name: String): PathKey? =
@@ -98,6 +93,18 @@ fun resolveReference(context: Context, name: String): PathKey? =
 
 fun resolveAlias(context: Context, key: PathKey): PathKey? =
     resolveContextField(context, key) { namespace, k -> namespace.references[k] }
+
+fun getSymbolType(context: Context, name: String): TypeHash? =
+    typesToTypeHash(
+        resolveContextFieldGreedy(context, name) { namespace, key ->
+          namespace.nodeTypes.filterKeys { it.name == name }.values.toList()
+        }
+    )
+
+fun getPathKeyTypes(context: Context, pathKey: PathKey): List<TypeHash> =
+    resolveContextFieldGreedy(context, resolveAlias(context, pathKey)) { namespace, key ->
+      listOfNotNull(namespace.nodeTypes[key])
+    }
 
 fun flattenTypeSignatures(context: Context): (TypeHash) -> List<Signature> = { type ->
   resolveContextFieldGreedy(context, type) { namespace, key ->
@@ -111,24 +118,20 @@ fun flattenTypeSignatures(context: Context): (TypeHash) -> List<Signature> = { t
   }
 }
 
-fun getTypeSignatures(context: Context, path: PathKey): List<Signature> {
-  val types = resolveContextFieldGreedy(context, resolveAlias(context, path)) { namespace, key ->
-    listOfNotNull(namespace.nodeTypes[key])
-  }
+fun getTypeSignatures(context: Context, pathKey: PathKey): List<Signature> {
+  val types = getPathKeyTypes(context, pathKey)
   return types
       .flatMap(flattenTypeSignatures(context))
       .distinct()
 }
 
+
 val resolveNumericTypeConstraint: ContextIterator<PathKey, NumericTypeConstraint> =
     resolveContextField { namespace, key -> namespace.numericTypeConstraints[key] }
 
-fun extractTypings(signature: Signature): Typings {
-
-}
-
-fun extractTypings(overloadsMap: OverloadsMap): Typings {
-  return overloadsMap
-//      .map(::extractTypings)
-//      .reduce(::mergeTypings)
+fun namespaceFromOverloads(functions: OverloadsMap): Namespace {
+  return newNamespace().copy(
+      nodeTypes = functions.mapValues { signaturesToTypeHash(it.value) },
+      typings = extractTypings(functions.values)
+  )
 }

@@ -1,8 +1,6 @@
 package silentorb.imp.parsing.parser
 
-import silentorb.imp.core.PathKey
-import silentorb.imp.core.floatKey
-import silentorb.imp.core.intKey
+import silentorb.imp.core.*
 import silentorb.imp.parsing.general.Token
 import silentorb.imp.parsing.lexer.Rune
 

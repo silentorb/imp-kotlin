@@ -2,10 +2,9 @@ package silentorb.imp.parsing.parser.expressions
 
 import silentorb.imp.core.*
 
-fun arrangeConnections(parents: TokenParents, tokenNodes: Map<TokenIndex, PathKey>, signatures: Map<PathKey, SignatureMatch>): Set<Connection> {
+fun arrangeConnections(parents: Map<PathKey, List<PathKey>>, signatures: Map<PathKey, SignatureMatch>): Set<Connection> {
   return parents
-      .flatMap { (tokenIndex, _) ->
-        val functionNode = tokenNodes[tokenIndex]!!
+      .flatMap { (functionNode, _) ->
         val signatureMatch = signatures[functionNode]
         if (signatureMatch == null)
           listOf()

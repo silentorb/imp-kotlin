@@ -42,14 +42,14 @@ fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: Outp
   return if (graph.values.containsKey(id)) {
     graph.values[id]!!
   } else {
-    val type = graph.references[id]
-    val signatureMatch = graph.signatureMatches[id]
-    if (type != null && signatureMatch != null) {
-      val function = functions[FunctionKey(type, signatureMatch.signature)]!!
+    val typePath = graph.references[id]
+    val type = graph.nodeTypes[id]
+    if (typePath != null && type != null) {
+      val function = functions[FunctionKey(typePath, type)]!!
       val arguments = prepareArguments(graph, values, id)
       function(if (additionalArguments != null) arguments.plus(additionalArguments) else arguments)
     } else {
-      // Pass through
+      // Pass through)
       val arguments = prepareArguments(graph, values, id)
       assert(arguments.size == 1)
       arguments.values.first()
@@ -73,10 +73,13 @@ fun execute(functions: FunctionImplementationMap, graph: Graph): OutputValues {
   return execute(functions, graph, steps)
 }
 
-fun executeToSingleValue(functions: FunctionImplementationMap, graph: Graph): Any {
+fun executeToSingleValue(functions: FunctionImplementationMap, graph: Graph): Any? {
   val result = execute(functions, graph)
   val output = getGraphOutputNode(graph)
-  return result[output]!!
+  return if (output == null)
+    null
+  else
+    result[output]
 }
 
 //fun getGraphOutput(graph: Graph, values: OutputValues): Map<PathKey, Any> {

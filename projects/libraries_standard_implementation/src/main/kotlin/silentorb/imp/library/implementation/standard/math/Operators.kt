@@ -17,7 +17,7 @@ private fun <T> operation(action: (a: T, b: T) -> T): (Map<Key, Any>) -> T =
     }
 
 fun mathOperatorImplementations(): FunctionImplementationMap = mapOf(
-    FunctionKey(plusKey, intOperatorSignature) to operation<Int> { a, b -> a + b },
-    FunctionKey(plusKey, floatOperatorSignature) to operation<Float> { a, b -> a + b },
-    FunctionKey(plusKey, doubleOperatorSignature) to operation<Double> { a, b -> a + b }
+    FunctionKey(plusKey, intOperatorSignature.hashCode()) to operation<Int> { a, b -> a + b },
+    FunctionKey(plusKey, floatOperatorSignature.hashCode()) to operation<Float> { a, b -> a + b },
+    FunctionKey(plusKey, doubleOperatorSignature.hashCode()) to operation<Double> { a, b -> a + b }
 )

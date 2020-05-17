@@ -35,11 +35,20 @@ fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>)
       val path = PathKey(localPath, definition.symbol.value)
       val (dungeon, expressionErrors) = parseExpression(path, context, tokens)
       val output = getGraphOutputNode(dungeon.graph)
-      val nextDungeon = addConnection(dungeon, Connection(
-          source = output,
-          destination = id,
-          parameter = defaultParameter
-      ))
+      val nextDungeon = if (output != null)
+        dungeon.copy(
+            graph = dungeon.graph.copy(
+                connections = dungeon.graph.connections + Connection(
+                    source = output,
+                    destination = id,
+                    parameter = defaultParameter
+                ),
+                nodeTypes = dungeon.graph.nodeTypes + (path to dungeon.graph.nodeTypes[output]!!)
+            )
+        )
+      else
+        dungeon
+
 //      val outputType = nextDungeon.graph.outputTypes[output]
       PartitionedResponse(
 //          if (outputType != null)
@@ -99,8 +108,10 @@ fun newDefinitionContext(
     nodeRanges: Map<PathKey, TokenizedDefinition>,
     rawImportedFunctions: List<Map<PathKey, TypeHash>>,
     parentContext: Context): Context {
-  val importedFunctions = rawImportedFunctions
-      .reduce { a, b -> a + b }
+  val importedFunctions = if (rawImportedFunctions.any())
+    rawImportedFunctions.reduce { a, b -> a + b }
+  else
+    mapOf()
 
   return parentContext.plus(
       newNamespace().copy(
@@ -113,9 +124,7 @@ fun newDefinitionContext(
 fun addGraphToContext(graph: Graph, context: Context): Context =
     context
         .dropLast(1)
-        .plus(context.last().copy(
-            references = context.last().references + graph.references
-        ))
+        .plus(context.last() + graph)
 
 fun parseDefinitions(nodeRanges: Map<PathKey, TokenizedDefinition>, initialContext: Context): PartitionedResponse<List<Dungeon>> {
   val (dungeonResponses) = nodeRanges.entries
