@@ -36,11 +36,14 @@ fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): Partition
       }
       .associate { it }
       .plus(literalTokenKeys)
-
   val nodeMap = tokenNodes.entries
       .associate { (tokenIndex, pathKey) ->
         Pair(pathKey, tokens[tokenIndex].range)
       }
+      .plus(indexedTokens.minus(tokenNodes.keys)
+          .mapIndexed { index, tokenIndex ->
+            Pair(PathKey(path, "#unknown${index + 1}"), tokens[tokenIndex].range)
+          })
 
   val literalTypes = resolveLiteralTypes(tokens, literalTokenKeys)
   val referenceTypes = tokenNodes
