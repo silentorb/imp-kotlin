@@ -5,12 +5,11 @@ import silentorb.imp.parsing.general.Range
 
 typealias NodeMap = Map<PathKey, Range>
 
-typealias ConstrainedLiteralMap = Map<PathKey, PathKey>
+typealias ConstrainedLiteralMap = Map<PathKey, TypeHash>
 
 data class Dungeon(
     val graph: Graph,
-    val nodeMap: NodeMap,
-    val literalConstraints: ConstrainedLiteralMap
+    val nodeMap: NodeMap
 ) {
   fun addConnection(connection: Connection) =
       modifyGraph(this) { graph ->
@@ -34,8 +33,7 @@ val emptyDungeon =
             connections = setOf(),
             values = mapOf()
         ),
-        nodeMap = mapOf(),
-        literalConstraints = mapOf()
+        nodeMap = mapOf()
     )
 
 fun modifyGraph(dungeon: Dungeon, transform: (Graph) -> Graph) =

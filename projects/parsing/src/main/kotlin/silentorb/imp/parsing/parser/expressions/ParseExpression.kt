@@ -36,14 +36,15 @@ fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): Partition
       }
       .associate { it }
       .plus(literalTokenKeys)
+      .plus(indexedTokens.minus(nodeReferences.keys).minus(literalTokenKeys.keys)
+          .mapIndexed { index, tokenIndex ->
+            Pair(tokenIndex, PathKey(path, "#unknown${index + 1}"))
+          })
+
   val nodeMap = tokenNodes.entries
       .associate { (tokenIndex, pathKey) ->
         Pair(pathKey, tokens[tokenIndex].range)
       }
-      .plus(indexedTokens.minus(tokenNodes.keys)
-          .mapIndexed { index, tokenIndex ->
-            Pair(PathKey(path, "#unknown${index + 1}"), tokens[tokenIndex].range)
-          })
 
   val literalTypes = resolveLiteralTypes(tokens, literalTokenKeys)
   val referenceTypes = tokenNodes
@@ -52,7 +53,7 @@ fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): Partition
       .associate { Pair(it.value, getSymbolType(context, tokens[it.key].value)) }
       .filter { it.value != null }.mapValues { it.value!! }
 
-  val pipingErrors = validatePiping(tokens, tokenGraph)
+  val pipingErrors = validatePiping(tokens, groupGraph)
   val pathKeyParents = parents.entries
       .mapNotNull { (key, value) ->
         val parent = tokenNodes[key]
@@ -87,7 +88,7 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): Partitione
       values
   ) = intermediate
 
-  val (signatureOptions, functionReturnTypes) = resolveFunctionSignatures(
+  val (signatureOptions, implementationTypes, reducedTypes, typings) = resolveFunctionSignatures(
       context,
       stages,
       parents,
@@ -99,25 +100,20 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): Partitione
       .filter { it.value.size == 1 }
       .mapValues { it.value.first() }
   val connections = arrangeConnections(parents, signatures)
-//  val rootNode = stages.last().first()
   val nonNullaryFunctions = parents.filter { it.value.any() }.keys
-  // TODO: Validate function types and signatures
   val typeResolutionErrors = validateFunctionTypes(nodeMap.keys, initialTypes, nodeMap)
   val signatureErrors = validateSignatures(nonNullaryFunctions, signatureOptions, nodeMap)// +
-//      validateMissingSignatures(functionTypes, signatures, nodeMap)
   val errors = signatureErrors + typeResolutionErrors + tokenErrors
 
   val dungeon = Dungeon(
       graph = newNamespace().copy(
-//          nodes = nodes,
           connections = connections,
-//          references = (root to rootNode),
-          nodeTypes = initialTypes,
-//          signatureMatches = signatures,
+          implementationTypes = implementationTypes,
+          nodeTypes = initialTypes + reducedTypes,
+          typings = typings,
           values = values
       ),
-      nodeMap = nodeMap,
-      literalConstraints = mapOf()
+      nodeMap = nodeMap
   )
   return PartitionedResponse(dungeon, errors)
 }

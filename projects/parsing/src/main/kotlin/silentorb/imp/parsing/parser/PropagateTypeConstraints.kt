@@ -1,12 +1,33 @@
 package silentorb.imp.parsing.parser
 
-import silentorb.imp.core.Graph
-import silentorb.imp.core.Namespace
+import silentorb.imp.core.*
 
 // Constraint propagation only travels upward, with later uses applying restrictions to earlier definitions
 
-fun propagateTypeConstraints(namespace: Namespace, graph: Graph): ConstrainedLiteralMap {
-  return mapOf() // TODO: Uncomment below code
+fun propagateLiteralTypeAliases(context: Context, graph: Graph): Map<PathKey, TypeHash> {
+  val propagations = graph.values.keys
+      .mapNotNull { id ->
+        val connections = graph.connections.filter { it.source == id }
+        val types = connections
+            .mapNotNull { connection ->
+              val functionType = graph.implementationTypes[connection.destination]
+              if (functionType != null)
+                getTypeSignature(context, functionType)?.parameters?.firstOrNull { it.name == connection.parameter }?.type
+              else
+                null
+            }
+            .distinct()
+        if (types.size == 1)
+          Pair(id, types.first())
+        else
+          null
+      }
+      .associate { it }
+
+  return propagations
+//  return mapOf() // TODO: Uncomment below code
+//  val constraints = graph.connections
+//      .filter {}
 //  val constraints = graph.nodes
 //      .flatMap { node ->
 //        graph.signatureMatches

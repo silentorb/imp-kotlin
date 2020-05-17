@@ -64,11 +64,11 @@ val simpleContext = listOf(
             )
         )
     )) + newNamespace().copy(
-        nodeTypes = mapOf(
-            measurementKey to floatType
+        typeAliases = mapOf(
+            measurementType to floatType
         ),
         numericTypeConstraints = mapOf(
-            measurementKey to NumericTypeConstraint(-10.0, 10.5)
+            measurementType to NumericTypeConstraint(-10.0, 10.5)
         )
     )
 )

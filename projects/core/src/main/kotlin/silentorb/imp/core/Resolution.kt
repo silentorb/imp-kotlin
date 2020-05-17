@@ -1,20 +1,20 @@
 package silentorb.imp.core
 
-//tailrec fun getRootType(context: Context, type: TypeHash): TypeHash? {
-//  else if (alias.size == 1)
-//    getRootType(context, alias.first().key)
-//  else
-//    alias
-//}
+tailrec fun getRootType(context: Context, type: TypeHash): TypeHash {
+  val alias = getTypeAlias(context, type)
+  return if (alias == null)
+    type
+  else
+    getRootType(context, alias)
+}
 
 fun typeCanBeCastTo(context: Context, source: TypeHash, target: TypeHash): Boolean {
-  return source == target
-//  return getRootType(context, source) == getRootType(context, target)
+  return getRootType(context, source) == getRootType(context, target)
 }
 
 fun overloadMatches(context: Context, arguments: List<Argument>, overloads: List<Signature>): List<SignatureMatch> {
   val argumentsByType = arguments.groupBy { it.type }
-  return overloads
+  val matches = overloads
       .mapNotNull { signature ->
         val namedArguments = arguments
             .filter { argument -> argument.name != null }
@@ -41,4 +41,8 @@ fun overloadMatches(context: Context, arguments: List<Argument>, overloads: List
         else
           SignatureMatch(signature, alignment.associate { it })
       }
+  if (matches.none()) {
+    val k = 0
+  }
+  return matches
 }

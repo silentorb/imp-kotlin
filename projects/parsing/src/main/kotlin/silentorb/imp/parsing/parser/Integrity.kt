@@ -121,8 +121,8 @@ fun validateTypeConstraints(values: Map<PathKey, Any>, namespace: Namespace, con
   return values.mapNotNull { (node, value) ->
     val constraintType = constraints[node]
     if (constraintType != null) {
-      val constraint = namespace.numericTypeConstraints[constraintType]!!
-      if (isValueWithinConstraint(constraint, value))
+      val constraint = namespace.numericTypeConstraints[constraintType]
+      if (constraint == null || isValueWithinConstraint(constraint, value))
         null
       else
         newParsingError(TextId.outsideTypeRange, nodeMap[node]!!)

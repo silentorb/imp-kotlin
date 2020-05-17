@@ -78,19 +78,20 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
 
       val initialDungeon = Dungeon(
           graph = initialGraph,
-          nodeMap = nodeMap,
-          literalConstraints = mapOf()
+          nodeMap = nodeMap
       )
 
       val mergedDungeon = expressionDungeons.fold(initialDungeon) { a, expressionDungeon ->
         mergeDistinctDungeons(a, expressionDungeon)
       }
-      val constraints = propagateTypeConstraints(mergeNamespaces(context), mergedDungeon.graph)
+      val propagations = propagateLiteralTypeAliases(context, mergedDungeon.graph)
       val dungeon = mergedDungeon.copy(
-          literalConstraints = constraints
+          graph = mergedDungeon.graph.copy(
+              nodeTypes = mergedDungeon.graph.nodeTypes + propagations
+          )
       )
       val namespace = mergeNamespaces(context)
-      val constraintErrors = validateTypeConstraints(dungeon.graph.values, namespace, constraints, dungeon.nodeMap)
+      val constraintErrors = validateTypeConstraints(dungeon.graph.values, namespace, propagations, dungeon.nodeMap)
 
       PartitionedResponse(
           dungeon

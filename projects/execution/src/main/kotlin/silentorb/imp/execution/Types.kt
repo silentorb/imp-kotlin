@@ -13,8 +13,8 @@ data class CompleteFunction(
 )
 
 data class TypeAlias(
-    val path: PathKey,
-    val alias: PathKey? = null,
+    val path: TypeHash,
+    val alias: TypeHash? = null,
     val numericConstraint: NumericTypeConstraint? = null
 )
 

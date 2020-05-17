@@ -1,34 +1,54 @@
 package silentorb.imp.core
 
-fun newTypings(): Typings =
-    Typings(
-        signatures = mapOf(),
-        unions = mapOf()
-    )
+data class Namespace(
+    val connections: Set<Connection>,
+    val references: Map<PathKey, PathKey>,
+    val implementationTypes: Map<PathKey, TypeHash>,
+    val nodeTypes: Map<PathKey, TypeHash>,
+    val values: Map<PathKey, Any>,
+    val typeAliases: Map<TypeHash, TypeHash>,
+    val typings: Typings,
+    val numericTypeConstraints: Map<TypeHash, NumericTypeConstraint>
+) {
+  val nodes: Set<PathKey>
+    get() =
+      connections
+          .flatMap { listOf(it.source, it.destination) }
+          .toSet()
+          .plus(nodeTypes.keys)
+
+  operator fun plus(other: Namespace): Namespace =
+      mergeNamespaces(this, other)
+}
+
+typealias Graph = Namespace
 
 fun newNamespace(): Namespace =
     Namespace(
         connections = setOf(),
+        implementationTypes = mapOf(),
         nodeTypes = mapOf(),
         references = mapOf(),
         values = mapOf(),
-        structures = mapOf(),
+        typeAliases = mapOf(),
         typings = newTypings(),
         numericTypeConstraints = mapOf()
     )
 
+fun mergeNamespaces(first: Namespace, second: Namespace): Namespace =
+    Namespace(
+        connections = first.connections + second.connections,
+        implementationTypes = first.implementationTypes + second.implementationTypes,
+        nodeTypes = first.nodeTypes + second.nodeTypes,
+        references = first.references + second.references,
+        typeAliases = first.typeAliases + second.typeAliases,
+        numericTypeConstraints = first.numericTypeConstraints + second.numericTypeConstraints,
+        typings = mergeTypings(first.typings, second.typings),
+        values = first.values + second.values
+    )
+
 fun mergeNamespaces(namespaces: Collection<Namespace>): Namespace =
-    namespaces.reduce { accumulator, namespace ->
-      Namespace(
-          connections = accumulator.connections + namespace.connections,
-          nodeTypes = accumulator.nodeTypes + namespace.nodeTypes,
-          references = accumulator.references + namespace.references,
-          structures = accumulator.structures + namespace.structures,
-          numericTypeConstraints = accumulator.numericTypeConstraints + namespace.numericTypeConstraints,
-          typings = mergeTypings(accumulator.typings, namespace.typings),
-          values = accumulator.values + namespace.values
-      )
-    }
+    namespaces.reduce(::mergeNamespaces)
 
 fun mergeNamespaces(vararg namespaces: Namespace): Namespace =
     mergeNamespaces(namespaces.toList())
@@ -94,6 +114,12 @@ fun resolveReference(context: Context, name: String): PathKey? =
 fun resolveAlias(context: Context, key: PathKey): PathKey? =
     resolveContextField(context, key) { namespace, k -> namespace.references[k] }
 
+fun getTypeAlias(context: Context, key: TypeHash): TypeHash? =
+    resolveContextField(context, key) { namespace, k -> namespace.typeAliases[k] }
+
+fun getTypeSignature(context: Context, key: TypeHash): Signature? =
+    resolveContextField(context, key) { namespace, k -> namespace.typings.signatures[k] }
+
 fun getSymbolType(context: Context, name: String): TypeHash? =
     typesToTypeHash(
         resolveContextFieldGreedy(context, name) { namespace, key ->
@@ -125,8 +151,7 @@ fun getTypeSignatures(context: Context, pathKey: PathKey): List<Signature> {
       .distinct()
 }
 
-
-val resolveNumericTypeConstraint: ContextIterator<PathKey, NumericTypeConstraint> =
+val resolveNumericTypeConstraint: ContextIterator<TypeHash, NumericTypeConstraint> =
     resolveContextField { namespace, key -> namespace.numericTypeConstraints[key] }
 
 fun namespaceFromOverloads(functions: OverloadsMap): Namespace {

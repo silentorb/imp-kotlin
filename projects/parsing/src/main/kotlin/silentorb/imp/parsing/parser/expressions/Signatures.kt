@@ -10,44 +10,24 @@ data class FunctionInvocation(
     val range: Range
 )
 
-fun getSignatureOptions(context: Context, invocation: FunctionInvocation): List<SignatureMatch> {
-  val functionOverloads = flattenTypeSignatures(context)(invocation.type)
-//  if (functionOverloads != null)
-  return overloadMatches(context, invocation.arguments, functionOverloads)
-//  else {
-//    val type = getRootType(context, invocation.type)
-//    listOf(SignatureMatch(
-//        signature = Signature(
-//            parameters = listOf(),
-//            output = type
-//        ),
-//        alignment = mapOf()
-//    ))
-//  }
-}
-
 fun narrowTypeByArguments(
     context: Context,
     argumentTypes: Map<PathKey, TypeHash>,
     nodeMap: NodeMap,
     namedArguments: Map<PathKey, String>
 ): (Map.Entry<PathKey, List<PathKey>>) -> Pair<PathKey, List<SignatureMatch>>? = { (pathKey, children) ->
-//  if (children.all { childIndex -> argumentTypes.containsKey(tokenNodes[childIndex]!!) }
-//      && references.containsKey(pathKey)) {
   val functionType = argumentTypes[pathKey]!!
-  val arguments = children.map { childNode ->
-    Argument(
-        name = childNode.name,
-        type = argumentTypes[childNode]!!,
-        node = childNode
-    )
-  }
-  val invocation = FunctionInvocation(
-      type = functionType,
-      arguments = arguments,
-      range = Range(nodeMap[pathKey]!!.start, nodeMap[children.lastOrNull()]?.end ?: nodeMap[pathKey]!!.end)
-  )
-  val signatureMatches = getSignatureOptions(context, invocation)
+  val arguments = children
+      .filter { argumentTypes.containsKey(it) }
+      .map { childNode ->
+        Argument(
+            name = childNode.name,
+            type = argumentTypes[childNode]!!,
+            node = childNode
+        )
+      }
+  val functionOverloads = flattenTypeSignatures(context)(functionType)
+  val signatureMatches = overloadMatches(context, arguments, functionOverloads)
   if (signatureMatches.any())
     Pair(pathKey, signatureMatches)
   else
@@ -60,7 +40,9 @@ typealias SignatureOptions = Map<PathKey, List<SignatureMatch>>
 
 data class SignatureOptionsAndTypes(
     val signatureOptions: SignatureOptions = mapOf(),
-    val types: Map<PathKey, TypeHash> = mapOf()
+    val implementationTypes: Map<PathKey, TypeHash> = mapOf(),
+    val types: Map<PathKey, TypeHash> = mapOf(),
+    val typings: Typings = newTypings()
 )
 
 fun resolveFunctionSignatures(
@@ -77,17 +59,28 @@ fun resolveFunctionSignatures(
   return stages
       .fold(SignatureOptionsAndTypes()) { accumulator, stage ->
         val stageParents = stage
+            .filter { parents[it]?.any() ?: false }
             .associateWith { parents[it] ?: listOf() }
         val argumentTypes = initialTypes.plus(accumulator.types)
+        val newContext = context + newNamespace().copy(typings = accumulator.typings)
         val signatureOptions = stageParents
-            .mapNotNull(narrowTypeByArguments(context, argumentTypes, nodeMap, namedArguments))
+            .mapNotNull(narrowTypeByArguments(newContext, argumentTypes, nodeMap, namedArguments))
             .associate { it }
-        val newTypes = signatureOptions.mapValues { (_, matches) ->
+        val reducedNestedSignatures = signatureOptions.mapValues { (_, matches) ->
+          matches.map { reduceSignature(it.signature, it.alignment.keys) }
+        }
+        val newImplementationTypes = signatureOptions.mapValues { (_, matches) ->
           signaturesToTypeHash(matches.map { it.signature })
         }
+        val newTypes = reducedNestedSignatures.mapValues { (_, signatures) ->
+          signaturesToTypeHash(signatures)
+        }
+        val newTypings = reduceTypings(reducedNestedSignatures.values.map(::extractTypings))
         accumulator.copy(
             signatureOptions = accumulator.signatureOptions + signatureOptions,
-            types = accumulator.types + newTypes
+            implementationTypes = accumulator.implementationTypes + newImplementationTypes,
+            types = accumulator.types + newTypes,
+            typings = accumulator.typings + newTypings
         )
       }
 }
