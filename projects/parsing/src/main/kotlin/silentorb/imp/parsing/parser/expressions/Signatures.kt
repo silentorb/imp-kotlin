@@ -1,7 +1,7 @@
 package silentorb.imp.parsing.parser.expressions
 
 import silentorb.imp.core.*
-import silentorb.imp.parsing.general.*
+import silentorb.imp.parsing.general.Range
 import silentorb.imp.parsing.parser.NodeMap
 
 data class FunctionInvocation(
@@ -16,24 +16,25 @@ fun narrowTypeByArguments(
     nodeMap: NodeMap,
     namedArguments: Map<PathKey, String>
 ): (Map.Entry<PathKey, List<PathKey>>) -> Pair<PathKey, List<SignatureMatch>>? = { (pathKey, children) ->
-  val functionType = argumentTypes[pathKey]!!
-  val arguments = children
-      .filter { argumentTypes.containsKey(it) }
-      .map { childNode ->
-        Argument(
-            name = childNode.name,
-            type = argumentTypes[childNode]!!,
-            node = childNode
-        )
-      }
-  val functionOverloads = flattenTypeSignatures(context)(functionType)
-  val signatureMatches = overloadMatches(context, arguments, functionOverloads)
-  if (signatureMatches.any())
-    Pair(pathKey, signatureMatches)
-  else
+  val functionType = argumentTypes[pathKey]
+  if (functionType != null) {
+    val arguments = children
+        .filter { argumentTypes.containsKey(it) }
+        .map { childNode ->
+          Argument(
+              name = childNode.name,
+              type = argumentTypes[childNode]!!,
+              node = childNode
+          )
+        }
+    val functionOverloads = flattenTypeSignatures(context)(functionType)
+    val signatureMatches = overloadMatches(context, arguments, functionOverloads)
+    if (signatureMatches.any())
+      Pair(pathKey, signatureMatches)
+    else
+      null
+  } else
     null
-//  } else
-//    null
 }
 
 typealias SignatureOptions = Map<PathKey, List<SignatureMatch>>

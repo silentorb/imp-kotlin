@@ -157,9 +157,17 @@ class ParserTest {
   }
 
   @Test
-  fun preventsUnknownFunctions() {
+  fun preventsUnknownNullaryFunctions() {
     val code = """
       let output = simpleFunction
+    """.trimIndent()
+    expectError(TextId.unknownFunction, parseTextBranching(emptyContext)(code))
+  }
+
+  @Test
+  fun preventsUnknownUnaryFunctions() {
+    val code = """
+      let output = + 10
     """.trimIndent()
     expectError(TextId.unknownFunction, parseTextBranching(emptyContext)(code))
   }
