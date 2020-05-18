@@ -9,7 +9,7 @@ import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.parseTokenLiteral
 
 fun getNodeReference(context: Context): (Token) -> PathKey? = { token ->
-  if (token.rune == Rune.identifier)
+  if (token.rune == Rune.identifier || token.rune == Rune.operator)
     resolveReference(context, token.value)
   else
     null

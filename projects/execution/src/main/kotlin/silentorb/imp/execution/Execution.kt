@@ -43,7 +43,7 @@ fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: Outp
     graph.values[id]!!
   } else {
     val typePath = graph.references[id]
-    val type = graph.nodeTypes[id]
+    val type = graph.implementationTypes[id]
     if (typePath != null && type != null) {
       val function = functions[FunctionKey(typePath, type)]!!
       val arguments = prepareArguments(graph, values, id)

@@ -10,6 +10,7 @@ data class IntermediateExpression(
     val namedArguments: Map<PathKey, String>,
     val nodeMap: NodeMap,
     val parents: Map<PathKey, List<PathKey>>,
+    val references: Map<PathKey, PathKey>,
     val stages: List<List<PathKey>>,
     val values: Map<PathKey, Any>
 )
@@ -69,6 +70,7 @@ fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): Partition
           initialTypes = literalTypes + referenceTypes,
           nodeMap = nodeMap,
           parents = pathKeyParents,
+          references = nodeReferences.mapKeys { tokenNodes[it.key]!! },
           stages = tokenGraph.stages.map { stage -> stage.mapNotNull { tokenNodes[it] } },
           namedArguments = namedArguments.mapKeys { (tokenIndex, _) -> tokenNodes[tokenIndex]!! },
           values = resolveLiterals(tokens, indexedTokens, tokenNodes)
@@ -84,6 +86,7 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): Partitione
       namedArguments,
       nodeMap,
       parents,
+      references,
       stages,
       values
   ) = intermediate
@@ -110,6 +113,7 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): Partitione
           connections = connections,
           implementationTypes = implementationTypes,
           nodeTypes = initialTypes + reducedTypes,
+          references = references,
           typings = typings,
           values = values
       ),
