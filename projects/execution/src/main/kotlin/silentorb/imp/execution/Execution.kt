@@ -5,21 +5,23 @@ import silentorb.imp.core.*
 typealias OutputValues = Map<PathKey, Any>
 typealias Arguments = Map<String, Any>
 
-fun nextStage(nodes: Set<PathKey>, connections: Collection<Connection>): List<PathKey> {
-  return nodes.filter { node -> connections.none { it.destination == node } }
+fun nextStage(nodes: Set<PathKey>, connections: Collection<Connection>, references: Map<PathKey, PathKey>): List<PathKey> {
+  return nodes.filter { node -> connections.none { it.destination == node } && nodes.none { references[node] == it } }
       .map { it }
 }
 
 fun arrangeGraphStages(graph: Graph): List<List<PathKey>> {
   var nodes = graph.nodes
   var connections = graph.connections
+  var references = graph.references
   var result = listOf<List<PathKey>>()
 
   while (nodes.any()) {
-    val nextNodes = nextStage(nodes, connections)
+    val nextNodes = nextStage(nodes, connections, references)
     result = result.plusElement(nextNodes)
     nodes = nodes.minus(nextNodes)
     connections = connections.filter { !nextNodes.contains(it.source) }.toSet()
+    references = references.filter { !nextNodes.contains(it.value) }
   }
 
   return result
@@ -42,18 +44,20 @@ fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: Outp
   return if (graph.values.containsKey(id)) {
     graph.values[id]!!
   } else {
-    val typePath = graph.references[id]
+    val reference = graph.references[id]
     val type = graph.implementationTypes[id]
-    if (typePath != null && type != null) {
-      val function = functions[FunctionKey(typePath, type)]!!
-      val arguments = prepareArguments(graph, values, id)
-      function(if (additionalArguments != null) arguments.plus(additionalArguments) else arguments)
-    } else {
-      // Pass through)
+    if (reference == null) {
       val arguments = prepareArguments(graph, values, id)
       assert(arguments.size == 1)
       arguments.values.first()
-    }
+    } else if (type != null) {
+      val function = functions[FunctionKey(reference, type)]!!
+      val arguments = prepareArguments(graph, values, id)
+      function(if (additionalArguments != null) arguments.plus(additionalArguments) else arguments)
+    } else if (values.containsKey(reference)) {
+      values[reference]!!
+    } else
+      throw Error("Insufficient data to execute node $id")
   }
 }
 

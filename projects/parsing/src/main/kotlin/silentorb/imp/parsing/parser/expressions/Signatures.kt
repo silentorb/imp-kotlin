@@ -73,9 +73,11 @@ fun resolveFunctionSignatures(
         val newImplementationTypes = signatureOptions.mapValues { (_, matches) ->
           signaturesToTypeHash(matches.map { it.signature })
         }
-        val newTypes = reducedNestedSignatures.mapValues { (_, signatures) ->
-          signaturesToTypeHash(signatures)
-        }
+        val newTypes = reducedNestedSignatures
+            .filter { it.value.size == 1 }
+            .mapValues { (_, signatures) ->
+              signatures.first().output
+            }
         val newTypings = reduceTypings(reducedNestedSignatures.values.map(::extractTypings))
         accumulator.copy(
             signatureOptions = accumulator.signatureOptions + signatureOptions,

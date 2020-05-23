@@ -1,7 +1,7 @@
 package silentorb.imp.core
 
 fun getGraphOutputNodes(graph: Graph): List<PathKey> =
-    graph.nodes.filter { node -> graph.connections.none { it.source == node } }
+    graph.nodes.filter { node -> graph.connections.none { it.source == node } && graph.nodes.none { graph.references[it] == node } }
 
 fun getGraphOutputNode(graph: Graph): PathKey? =
     getGraphOutputNodes(graph).firstOrNull()

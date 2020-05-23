@@ -4,6 +4,7 @@ import org.junit.Ignore
 import org.junit.Test
 import silentorb.imp.core.Connection
 import silentorb.imp.core.PathKey
+import silentorb.imp.core.defaultParameter
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.parser.emptyContext
@@ -73,13 +74,16 @@ class ParserTest {
 
     handleRoot(errored, parseTextBranching(emptyContext)(code)) { result ->
       val graph = result.graph
+      val intermediate = PathKey(localPath, "intermediate")
+      val intermediateReference = PathKey(localPath + ".output", "intermediate1")
       assertEquals(4, graph.nodes.size)
       assertEquals(1, graph.values.size)
       assertEquals(2, graph.connections.size)
       assertEquals(10, graph.values.values.first())
-      assertTrue(graph.nodes.contains(PathKey(localPath, "intermediate")))
+      assertTrue(graph.nodes.contains(intermediate))
       assertTrue(graph.nodes.contains(PathKey(localPath, "output")))
       assertTrue(graph.nodes.contains(PathKey(localPath + ".intermediate", "#literal1")))
+      assertTrue(graph.references.containsKey(intermediateReference))
     }
   }
 
