@@ -1,9 +1,6 @@
 package silentorb.imp.execution
 
-import silentorb.imp.core.FunctionKey
-import silentorb.imp.core.mergeNamespaces
-import silentorb.imp.core.namespaceFromOverloads
-import silentorb.imp.core.newNamespace
+import silentorb.imp.core.*
 
 fun newLibrary(functions: List<CompleteFunction>, types: List<TypeAlias> = listOf()): Library {
   val grouped = functions
@@ -20,14 +17,17 @@ fun newLibrary(functions: List<CompleteFunction>, types: List<TypeAlias> = listO
       }
       .associate { it }
 
+  val namespace = namespaceFromOverloads(interfaces)
   return Library(
-      namespace = namespaceFromOverloads(interfaces).copy(
-          typeAliases = types
-              .filter { it.alias != null }
-              .associate { Pair(it.path, it.alias!!) },
-          numericTypeConstraints = types
-              .filter { it.numericConstraint != null }
-              .associate { Pair(it.path, it.numericConstraint!!) }
+      namespace = namespace.copy(
+          typings = namespace.typings + newTypings().copy(
+              typeAliases = types
+                  .filter { it.alias != null }
+                  .associate { Pair(it.path, it.alias!!) },
+              numericTypeConstraints = types
+                  .filter { it.numericConstraint != null }
+                  .associate { Pair(it.path, it.numericConstraint!!) }
+          )
       ),
       implementation = implementation
   )

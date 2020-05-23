@@ -173,6 +173,14 @@ class ParserTest {
   }
 
   @Test
+  fun preventsMissingFunctions() {
+    val code = """
+      let output = simpleFunction 1 1
+    """.trimIndent()
+    expectError(TextId.unknownFunction, parseTextBranching(simpleContext)(code))
+  }
+
+  @Test
   fun supportsImportingSingleSymbols() {
     val code = """
       import silentorb.imp.test.simpleFunction

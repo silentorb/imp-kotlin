@@ -1,6 +1,7 @@
 import silentorb.imp.core.*
 
 const val testPath = "silentorb.imp.test"
+const val testPath2 = "silentorb.imp.cat"
 val vector2iKey = PathKey(testPath, "Vector2i")
 val vector2iType = vector2iKey.hashCode()
 val measurementKey = PathKey(testPath, "Measurement")
@@ -64,11 +65,14 @@ val simpleContext = listOf(
             )
         )
     )) + newNamespace().copy(
-        typeAliases = mapOf(
-            measurementType to floatType
-        ),
-        numericTypeConstraints = mapOf(
-            measurementType to NumericTypeConstraint(-10.0, 10.5)
-        )
+        typings = newTypings()
+            .copy(
+                typeAliases = mapOf(
+                    measurementType to floatType
+                ),
+                numericTypeConstraints = mapOf(
+                    measurementType to NumericTypeConstraint(-10.0, 10.5)
+                )
+            )
     )
 )

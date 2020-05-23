@@ -6,9 +6,7 @@ data class Namespace(
     val implementationTypes: Map<PathKey, TypeHash>,
     val nodeTypes: Map<PathKey, TypeHash>,
     val values: Map<PathKey, Any>,
-    val typeAliases: Map<TypeHash, TypeHash>,
-    val typings: Typings,
-    val numericTypeConstraints: Map<TypeHash, NumericTypeConstraint>
+    val typings: Typings
 ) {
   val nodes: Set<PathKey>
     get() =
@@ -30,9 +28,7 @@ fun newNamespace(): Namespace =
         nodeTypes = mapOf(),
         references = mapOf(),
         values = mapOf(),
-        typeAliases = mapOf(),
-        typings = newTypings(),
-        numericTypeConstraints = mapOf()
+        typings = newTypings()
     )
 
 fun mergeNamespaces(first: Namespace, second: Namespace): Namespace =
@@ -41,8 +37,6 @@ fun mergeNamespaces(first: Namespace, second: Namespace): Namespace =
         implementationTypes = first.implementationTypes + second.implementationTypes,
         nodeTypes = first.nodeTypes + second.nodeTypes,
         references = first.references + second.references,
-        typeAliases = first.typeAliases + second.typeAliases,
-        numericTypeConstraints = first.numericTypeConstraints + second.numericTypeConstraints,
         typings = mergeTypings(first.typings, second.typings),
         values = first.values + second.values
     )
@@ -115,7 +109,7 @@ fun resolveAlias(context: Context, key: PathKey): PathKey? =
     resolveContextField(context, key) { namespace, k -> namespace.references[k] }
 
 fun getTypeAlias(context: Context, key: TypeHash): TypeHash? =
-    resolveContextField(context, key) { namespace, k -> namespace.typeAliases[k] }
+    resolveContextField(context, key) { namespace, k -> namespace.typings.typeAliases[k] }
 
 fun getTypeSignature(context: Context, key: TypeHash): Signature? =
     resolveContextField(context, key) { namespace, k -> namespace.typings.signatures[k] }
@@ -152,7 +146,7 @@ fun getTypeSignatures(context: Context, pathKey: PathKey): List<Signature> {
 }
 
 val resolveNumericTypeConstraint: ContextIterator<TypeHash, NumericTypeConstraint> =
-    resolveContextField { namespace, key -> namespace.numericTypeConstraints[key] }
+    resolveContextField { namespace, key -> namespace.typings.numericTypeConstraints[key] }
 
 fun namespaceFromOverloads(functions: OverloadsMap): Namespace {
   return newNamespace().copy(

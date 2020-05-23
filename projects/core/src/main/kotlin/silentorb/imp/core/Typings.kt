@@ -1,8 +1,10 @@
 package silentorb.imp.core
 
 data class Typings(
+    val numericTypeConstraints: Map<TypeHash, NumericTypeConstraint>,
     val signatures: Map<TypeHash, Signature>,
     val structures: Map<TypeHash, Structure>,
+    val typeAliases: Map<TypeHash, TypeHash>,
     val unions: Map<TypeHash, Union>
 ) {
   operator fun plus(other: Typings): Typings =
@@ -11,15 +13,19 @@ data class Typings(
 
 fun newTypings(): Typings =
     Typings(
+        numericTypeConstraints = mapOf(),
         signatures = mapOf(),
         structures = mapOf(),
+        typeAliases = mapOf(),
         unions = mapOf()
     )
 
 fun mergeTypings(first: Typings, second: Typings): Typings =
     Typings(
+        numericTypeConstraints = first.numericTypeConstraints + second.numericTypeConstraints,
         signatures = first.signatures + second.signatures,
         structures = first.structures + second.structures,
+        typeAliases = first.typeAliases + second.typeAliases,
         unions = first.unions + second.unions
     )
 

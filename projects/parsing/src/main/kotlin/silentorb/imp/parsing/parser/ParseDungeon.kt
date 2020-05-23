@@ -116,7 +116,6 @@ fun newDefinitionContext(
 
   return parentContext.plus(
       newNamespace().copy(
-//          nodes = nodeRanges.keys,
           nodeTypes = importedFunctions
       )
   )
@@ -143,8 +142,13 @@ fun parseDungeon(parentContext: Context): (TokenizedGraph) -> PartitionedRespons
     { (imports, definitions) ->
       val (rawImportedFunctions, importErrors) = flattenResponses(imports.map(parseImport(parentContext.first())))
       val nodeRanges = definitions.associateBy { PathKey(localPath, it.symbol.value) }
-
-      val context = newDefinitionContext(nodeRanges, rawImportedFunctions, parentContext)
+      val baseContext = listOf(
+          newNamespace()
+              .copy(
+                  typings = parentContext.map { it.typings }.reduce(::mergeTypings)
+              )
+      )
+      val context = newDefinitionContext(nodeRanges, rawImportedFunctions, baseContext)
       val (dungeons, definitionErrors) = parseDefinitions(nodeRanges, context)
       val (dungeon, dungeonErrors) = finalizeDungeons(context, nodeRanges)(dungeons)
       PartitionedResponse(
