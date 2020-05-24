@@ -90,7 +90,7 @@ fun validatePiping(tokens: Tokens, tokenGraph: TokenGraph): ParsingErrors {
       }
   val danglingErrors = pipingParents.flatMap { (_, children) ->
     val dividers = filterIndices(children) { tokens[it].rune == Rune.dot }
-    val groups = split(children, dividers)
+    val groups = split(children, dividers).drop(1)
     groups
         .mapIndexedNotNull { index, group ->
           if (group.none()) {

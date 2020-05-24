@@ -413,6 +413,18 @@ let output = simpleFunction a (simpleFunction 3 3)
   }
 
   @Test
+  fun supportsPipingReferences() {
+    val code = """
+      import silentorb.imp.test.*
+      let first = 1
+      let output = first . simpleFunction 1
+    """.trimIndent()
+    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
+      val graph = result.graph
+    }
+  }
+
+  @Test
   fun preventsDanglingPipeOperators() {
     val code = """
       import silentorb.imp.test.simpleFunction
