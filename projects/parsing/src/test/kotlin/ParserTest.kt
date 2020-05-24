@@ -113,6 +113,15 @@ class ParserTest {
   }
 
   @Test
+  fun preventsEmptyExpressions() {
+    val code = """
+      let first =
+    """.trimIndent()
+    expectError(TextId.missingExpression, parseTextBranching(emptyContext)(code))
+  }
+
+
+  @Test
   fun preventsImportingMissingFunctions() {
     val code = """
       import silentorb.imp.test.simpleFunction

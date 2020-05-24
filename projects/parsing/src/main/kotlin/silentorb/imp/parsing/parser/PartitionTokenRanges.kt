@@ -140,7 +140,7 @@ fun partitionDefinitions(tokens: Tokens): PartitionedResponse<List<DefinitionRan
     val terminatorMatchIndex = nextIndexOf(tokens, expressionStart + 1) { it.rune == Rune.identifier && it.value == "let" }
     val expressionEnd = terminatorMatchIndex ?: tokens.size
 
-    assert(expressionStart < expressionEnd)
+    assert(expressionStart <= expressionEnd)
     val newDefinition = DefinitionRange(
         symbol = step + 1,
         parameters = parameters,

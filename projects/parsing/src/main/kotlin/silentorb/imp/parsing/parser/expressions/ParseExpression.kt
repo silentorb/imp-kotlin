@@ -2,7 +2,9 @@ package silentorb.imp.parsing.parser.expressions
 
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.PartitionedResponse
+import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.Tokens
+import silentorb.imp.parsing.general.newParsingError
 import silentorb.imp.parsing.parser.*
 
 data class IntermediateExpression(
@@ -19,7 +21,6 @@ fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): Partition
   val path = "${root.path}.${root.name}"
   val groupGraph = newGroupingGraph(groupTokens(tokens))
   val tokenGraph = arrangePiping(tokens, groupGraph)
-  assert(tokenGraph.stages.last().size == 1)
   val namedArguments = tokenGraph.parents
       .map { (_, children) -> getNamedArguments(tokens, children) }
       .reduce { a, b -> a.plus(b) }

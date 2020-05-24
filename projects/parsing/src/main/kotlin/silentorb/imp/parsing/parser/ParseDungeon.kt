@@ -1,10 +1,7 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
-import silentorb.imp.parsing.general.PartitionedResponse
-import silentorb.imp.parsing.general.Token
-import silentorb.imp.parsing.general.Tokens
-import silentorb.imp.parsing.general.flattenResponses
+import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.expressions.parseExpression
 
@@ -31,26 +28,35 @@ data class TokenizedGraph(
 fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>) -> PartitionedResponse<Dungeon> =
     { (id, definition) ->
       val tokens = definition.expression.filter { it.rune != Rune.newline }
-      val matchingParenthesesErrors = checkMatchingParentheses(tokens)
-      val path = PathKey(localPath, definition.symbol.value)
-      val (dungeon, expressionErrors) = parseExpression(path, context, tokens)
-      val output = getGraphOutputNode(dungeon.graph)
-      val nextDungeon = if (output != null)
-        dungeon.copy(
-            graph = dungeon.graph.copy(
-                connections = dungeon.graph.connections + Connection(
-                    source = output,
-                    destination = id,
-                    parameter = defaultParameter
-                ),
-                nodeTypes = dungeon.graph.nodeTypes + (path to dungeon.graph.nodeTypes[output]!!)
-            )
+      if (tokens.none()) {
+        PartitionedResponse(
+            Dungeon(
+                graph = newNamespace(),
+                nodeMap = mapOf()
+            ),
+            listOf(newParsingError(TextId.missingExpression, definition.symbol))
         )
-      else
-        dungeon
+      } else {
+        val matchingParenthesesErrors = checkMatchingParentheses(tokens)
+        val path = PathKey(localPath, definition.symbol.value)
+        val (dungeon, expressionErrors) = parseExpression(path, context, tokens)
+        val output = getGraphOutputNode(dungeon.graph)
+        val nextDungeon = if (output != null)
+          dungeon.copy(
+              graph = dungeon.graph.copy(
+                  connections = dungeon.graph.connections + Connection(
+                      source = output,
+                      destination = id,
+                      parameter = defaultParameter
+                  ),
+                  nodeTypes = dungeon.graph.nodeTypes + (path to dungeon.graph.nodeTypes[output]!!)
+              )
+          )
+        else
+          dungeon
 
 //      val outputType = nextDungeon.graph.outputTypes[output]
-      PartitionedResponse(
+        PartitionedResponse(
 //          if (outputType != null)
 //            nextDungeon.copy(
 //                graph = nextDungeon.graph.copy(
@@ -60,9 +66,10 @@ fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>)
 //                )
 //            )
 //          else
-          nextDungeon,
-          matchingParenthesesErrors.plus(expressionErrors)
-      )
+            nextDungeon,
+            matchingParenthesesErrors.plus(expressionErrors)
+        )
+      }
     }
 
 fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinition>): (List<Dungeon>) -> PartitionedResponse<Dungeon> =
