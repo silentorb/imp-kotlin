@@ -15,6 +15,14 @@ data class Parameter(
     val type: TypeHash
 )
 
+// When overriding Kotlin hashCode, no hashing code is auto-generated.
+// HashSignature exists so that Kotlin will still auto-generate hashing code
+// that Signature's custom hashCode function can fall back to.
+data class HashSignature(
+    val parameters: List<Parameter> = listOf(),
+    val output: TypeHash
+)
+
 data class Signature(
     val parameters: List<Parameter> = listOf(),
     val output: TypeHash
@@ -23,8 +31,7 @@ data class Signature(
     return if (parameters.none())
       output
     else
-      super.hashCode()
-
+      HashSignature(parameters, output).hashCode()
   }
 
   override fun equals(other: Any?): Boolean {

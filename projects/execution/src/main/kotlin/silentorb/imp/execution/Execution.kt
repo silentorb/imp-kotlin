@@ -51,7 +51,8 @@ fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: Outp
       assert(arguments.size == 1)
       arguments.values.first()
     } else if (type != null) {
-      val function = functions[FunctionKey(reference, type)]!!
+      val implementationKey = FunctionKey(reference, type)
+      val function = functions[implementationKey]!!
       val arguments = prepareArguments(graph, values, id)
       function(if (additionalArguments != null) arguments.plus(additionalArguments) else arguments)
     } else if (values.containsKey(reference)) {

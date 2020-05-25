@@ -17,7 +17,8 @@ fun newLibrary(functions: List<CompleteFunction>, typeNames: Map<TypeHash, PathK
   val implementation = grouped.entries
       .flatMap { (path, function) ->
         function.map {
-          Pair(FunctionKey(path, it.signature.hashCode()), it.implementation)
+          val signature = convertCompleteSignature(it.signature)
+          Pair(FunctionKey(path, signature.hashCode()), it.implementation)
         }
       }
       .associate { it }
