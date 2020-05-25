@@ -72,6 +72,19 @@ fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>)
       }
     }
 
+fun gatherTypeNames(context: Context, nodeTypes: Map<PathKey, TypeHash>) =
+    nodeTypes
+        .values
+        .distinct()
+        .mapNotNull { type ->
+          val pathKey = getTypeNames(context, type)
+          if (pathKey.none())
+            null
+          else
+            Pair(type, pathKey.first())
+        }
+        .associate { it }
+
 fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinition>): (List<Dungeon>) -> PartitionedResponse<Dungeon> =
     { expressionDungeons ->
       val nodeMap = nodeRanges
@@ -97,17 +110,16 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
               nodeTypes = mergedDungeon.graph.nodeTypes + propagations
           )
       )
-      val namespace = mergeNamespaces(context)
-      val constraintErrors = validateTypeConstraints(dungeon.graph.values, namespace, propagations, dungeon.nodeMap)
+      val constraintErrors = validateTypeConstraints(dungeon.graph.values, context, propagations, dungeon.nodeMap)
+      val typeNames = gatherTypeNames(context, dungeon.graph.nodeTypes)
 
       PartitionedResponse(
           dungeon
-//              .copy(
-//              graph = dungeon.graph.copy(
-//                  references = dungeon.graph.references.mapValues { resolveAlias(context, it.value) }
-//              )
-//          )
-          ,
+              .copy(
+                  graph = dungeon.graph.copy(
+                      typeNames = dungeon.graph.typeNames + typeNames
+                  )
+              ),
           constraintErrors
       )
     }
@@ -160,6 +172,6 @@ fun parseDungeon(parentContext: Context): (TokenizedGraph) -> PartitionedRespons
       val (dungeon, dungeonErrors) = finalizeDungeons(context, nodeRanges)(dungeons)
       PartitionedResponse(
           dungeon,
-          importErrors.plus(definitionErrors).plus(dungeonErrors)
+          importErrors + definitionErrors + dungeonErrors
       )
     }

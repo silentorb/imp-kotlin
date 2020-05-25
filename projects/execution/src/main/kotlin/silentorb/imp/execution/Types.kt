@@ -8,7 +8,7 @@ typealias FunctionImplementationMap = Map<FunctionKey, FunctionImplementation>
 
 data class CompleteFunction(
     val path: PathKey,
-    val signature: Signature,
+    val signature: CompleteSignature,
     val implementation: FunctionImplementation
 )
 
@@ -16,9 +16,4 @@ data class TypeAlias(
     val path: TypeHash,
     val alias: TypeHash? = null,
     val numericConstraint: NumericTypeConstraint? = null
-)
-
-data class Library(
-    val namespace: Namespace,
-    val implementation: FunctionImplementationMap
 )

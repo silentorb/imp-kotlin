@@ -6,6 +6,7 @@ data class Namespace(
     val implementationTypes: Map<PathKey, TypeHash>,
     val nodeTypes: Map<PathKey, TypeHash>,
     val values: Map<PathKey, Any>,
+    val typeNames: Map<TypeHash, PathKey>,
     val typings: Typings
 ) {
   val nodes: Set<PathKey>
@@ -28,6 +29,7 @@ fun newNamespace(): Namespace =
         nodeTypes = mapOf(),
         references = mapOf(),
         values = mapOf(),
+        typeNames = mapOf(),
         typings = newTypings()
     )
 
@@ -38,6 +40,7 @@ fun mergeNamespaces(first: Namespace, second: Namespace): Namespace =
         nodeTypes = first.nodeTypes + second.nodeTypes,
         references = first.references + second.references,
         typings = mergeTypings(first.typings, second.typings),
+        typeNames = first.typeNames + second.typeNames,
         values = first.values + second.values
     )
 
@@ -85,6 +88,20 @@ tailrec fun <K, V> resolveContextFieldGreedy(
 
 fun <K, V> resolveContextFieldGreedy(context: Context, key: K, getter: (Namespace, K) -> List<V>): List<V> =
     resolveContextFieldGreedy(context, key, context.size - 1, getter, listOf())
+
+tailrec fun <K, V> resolveContextFieldGreedySet(
+    context: Context, key: K, index: Int, getter: (Namespace, K) -> Set<V>,
+    accumulator: Set<V>
+): Set<V> =
+    if (index < 0)
+      accumulator
+    else {
+      val next = accumulator + getter(context[index], key)
+      resolveContextFieldGreedySet(context, key, index - 1, getter, next)
+    }
+
+fun <K, V> resolveContextFieldGreedySet(context: Context, key: K, getter: (Namespace, K) -> Set<V>): Set<V> =
+    resolveContextFieldGreedySet(context, key, context.size - 1, getter, setOf())
 
 fun <K, V> resolveContextField(context: Context, key: K, getter: (Namespace, K) -> V?): V? =
     resolveContextField(context, key, context.size - 1, getter)
@@ -137,6 +154,11 @@ fun flattenTypeSignatures(context: Context): (TypeHash) -> List<Signature> = { t
     }
   }
 }
+
+fun getTypeNames(context: Context, type: TypeHash): List<PathKey> =
+    resolveContextFieldGreedy(context, type) { namespace, key ->
+      listOfNotNull(namespace.typeNames[key])
+    }.distinct()
 
 fun getTypeSignatures(context: Context, pathKey: PathKey): List<Signature> {
   val types = getPathKeyTypes(context, pathKey)

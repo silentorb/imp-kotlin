@@ -11,8 +11,8 @@ data class ResolvedLiteral(
 
 fun parseTokenLiteral(type: PathKey, value: String): Any? =
     when (type) {
-      floatKey -> value.toFloat()
-      intKey -> value.toInt()
+      floatType.key -> value.toFloat()
+      intType.key -> value.toInt()
       else -> null
     }
 

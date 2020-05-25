@@ -92,28 +92,30 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): Partitione
       values
   ) = intermediate
 
-  val (signatureOptions, implementationTypes, reducedTypes, typings) = resolveFunctionSignatures(
-      context,
-      stages,
-      parents,
-      initialTypes,
-      nodeMap,
-      namedArguments
-  )
+  val (signatureOptions, implementationTypes, reducedTypes, typings) =
+      resolveFunctionSignatures(
+          context,
+          stages,
+          parents,
+          initialTypes,
+          nodeMap,
+          namedArguments
+      )
   val signatures = signatureOptions
       .filter { it.value.size == 1 }
       .mapValues { it.value.first() }
   val connections = arrangeConnections(parents, signatures)
-  val nonNullaryFunctions = parents.filter { it.value.any() }.keys
+  val nodeTypes = initialTypes + reducedTypes
+  val nonNullaryFunctions = parents.filter { it.value.any() }
   val typeResolutionErrors = validateFunctionTypes(nodeMap.keys, initialTypes, nodeMap)
-  val signatureErrors = validateSignatures(nonNullaryFunctions, signatureOptions, nodeMap)// +
+  val signatureErrors = validateSignatures(context, nodeTypes, nonNullaryFunctions, signatureOptions, nodeMap)// +
   val errors = signatureErrors + typeResolutionErrors + tokenErrors
 
   val dungeon = Dungeon(
       graph = newNamespace().copy(
           connections = connections,
           implementationTypes = implementationTypes,
-          nodeTypes = initialTypes + reducedTypes,
+          nodeTypes = nodeTypes,
           references = references,
           typings = typings,
           values = values

@@ -3,8 +3,15 @@ package silentorb.imp.core
 fun getGraphOutputNodes(graph: Graph): List<PathKey> =
     graph.nodes.filter { node -> graph.connections.none { it.source == node } && graph.nodes.none { graph.references[it] == node } }
 
-fun getGraphOutputNode(graph: Graph): PathKey? =
-    getGraphOutputNodes(graph).firstOrNull()
+fun getGraphOutputNode(graph: Graph): PathKey? {
+  val nodes = getGraphOutputNodes(graph)
+  return if (nodes.size < 2)
+    nodes.firstOrNull()
+  else {
+    val mainNode = nodes.firstOrNull { it.name == "main" }
+    return mainNode ?: nodes.last()
+  }
+}
 
 fun <K, V> associateWithNotNull(collection: Collection<K>, mapper: (K) -> V?): Map<K, V> =
     collection.mapNotNull {

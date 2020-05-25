@@ -12,31 +12,31 @@ val simpleContext = listOf(
         PathKey(testPath, "eight") to listOf(
             Signature(
                 parameters = listOf(),
-                output = intType
+                output = intType.hash
             )
         ),
         PathKey(testPath, "eightPointFive") to listOf(
             Signature(
                 parameters = listOf(),
-                output = floatType
+                output = floatType.hash
             )
         ),
         PathKey(testPath, "simpleFunction") to listOf(
             Signature(
                 parameters = listOf(
-                    Parameter("first", intType),
-                    Parameter("second", intType)
+                    Parameter("first", intType.hash),
+                    Parameter("second", intType.hash)
                 ),
-                output = intType
+                output = intType.hash
             )
         ),
         PathKey(testPath, "simpleFunction2") to listOf(
             Signature(
                 parameters = listOf(
-                    Parameter("first", floatType),
-                    Parameter("second", intType)
+                    Parameter("first", floatType.hash),
+                    Parameter("second", intType.hash)
                 ),
-                output = intType
+                output = intType.hash
             )
         ),
         PathKey(testPath, "something") to listOf(
@@ -52,14 +52,14 @@ val simpleContext = listOf(
                 parameters = listOf(
                     Parameter("value", measurementType)
                 ),
-                output = intType
+                output = intType.hash
             )
         ),
         vector2iKey to listOf(
             Signature(
                 parameters = listOf(
-                    Parameter("x", intType),
-                    Parameter("y", intType)
+                    Parameter("x", intType.hash),
+                    Parameter("y", intType.hash)
                 ),
                 output = vector2iType
             )
@@ -68,7 +68,7 @@ val simpleContext = listOf(
         typings = newTypings()
             .copy(
                 typeAliases = mapOf(
-                    measurementType to floatType
+                    measurementType to floatType.hash
                 ),
                 numericTypeConstraints = mapOf(
                     measurementType to NumericTypeConstraint(-10.0, 10.5)

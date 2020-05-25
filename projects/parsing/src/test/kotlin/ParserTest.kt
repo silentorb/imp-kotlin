@@ -443,6 +443,18 @@ let output = simpleFunction a (simpleFunction 3 3)
     expectError(TextId.missingExpression, parseTextBranching(simpleContext)(code))
   }
 
+//  @Test
+//  fun supportsSelectingTheLastOutput() {
+//    val code = """
+//      import silentorb.imp.test.*
+//      let first = 1
+//      let output = first . simpleFunction 1
+//    """.trimIndent()
+//    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
+//      val graph = result.graph
+//    }
+//  }
+
   @Test
   fun supportsNumericTypeConstraints() {
     val code = """

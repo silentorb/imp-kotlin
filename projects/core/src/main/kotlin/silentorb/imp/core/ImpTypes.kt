@@ -3,12 +3,10 @@ package silentorb.imp.core
 const val standardLibraryPath = "imp"
 
 val intKey = PathKey(standardLibraryPath, "Int")
-val floatKey = PathKey(standardLibraryPath, "Float")
-val doubleKey = PathKey(standardLibraryPath, "Double")
 
-val intType = intKey.hashCode()
-val floatType = floatKey.hashCode()
-val doubleType = doubleKey.hashCode()
+val intType = newTypePair(PathKey(standardLibraryPath, "Int"))
+val floatType = newTypePair(PathKey(standardLibraryPath, "Float"))
+val doubleType = newTypePair(PathKey(standardLibraryPath, "Double"))
 
 val intSignature = Signature(output = intType.hashCode())
 val floatSignature = Signature(output = floatType.hashCode())

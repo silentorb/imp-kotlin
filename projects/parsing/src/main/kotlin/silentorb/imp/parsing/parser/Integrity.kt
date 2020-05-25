@@ -54,30 +54,28 @@ fun validateFunctionTypes(nodes: Set<PathKey>, types: Map<PathKey, TypeHash>, no
       }
 }
 
-fun validateSignatures(parents: Set<PathKey>, signatureOptions: Map<PathKey, List<SignatureMatch>>,
+fun validateSignatures(context: Context, types: Map<PathKey, TypeHash>, parents: Map<PathKey, List<PathKey>>, signatureOptions: Map<PathKey, List<SignatureMatch>>,
                        nodeMap: NodeMap): ParsingErrors {
   return parents
-      .mapNotNull { pathKey ->
+      .mapNotNull { (pathKey, arguments) ->
         val options = signatureOptions[pathKey] ?: listOf()
         if (options.size == 1)
           null
-        else if (options.none())
-          ParsingError(TextId.noMatchingSignature, range = nodeMap[pathKey]!!)
-        else
+        else if (options.none()) {
+          val argumentTypeNames = arguments.map { argumentKey ->
+            assert(types.containsKey(argumentKey))
+            val argumentType = types[argumentKey]!!
+            val typeNames = getTypeNames(context, argumentType)
+            assert(typeNames.any())
+            formatPathKey(typeNames.first())
+          }
+
+          val argumentClause = argumentTypeNames.joinToString(" -> ")
+          ParsingError(TextId.noMatchingSignature, range = nodeMap[pathKey]!!, arguments = listOf(argumentClause))
+        } else
           ParsingError(TextId.ambiguousOverload, range = nodeMap[pathKey]!!)
       }
 }
-
-fun validateMissingSignatures(
-    functionTypes: Map<PathKey, PathKey>,
-    signatures: Map<PathKey, SignatureMatch>,
-    nodeMap: NodeMap
-): ParsingErrors =
-    functionTypes
-        .minus(signatures.keys)
-        .map { (id, _) ->
-          ParsingError(TextId.noMatchingSignature, range = nodeMap[id]!!)
-        }
 
 fun validatePiping(tokens: Tokens, tokenGraph: TokenGraph): ParsingErrors {
   val pipingParents = getPipingParents(tokens, tokenGraph)
@@ -117,11 +115,11 @@ fun isValueWithinConstraint(constraint: NumericTypeConstraint, value: Any): Bool
     doubleValue >= constraint.minimum && doubleValue <= constraint.maximum
 }
 
-fun validateTypeConstraints(values: Map<PathKey, Any>, namespace: Namespace, constraints: ConstrainedLiteralMap, nodeMap: NodeMap): ParsingErrors {
+fun validateTypeConstraints(values: Map<PathKey, Any>, context: Context, constraints: ConstrainedLiteralMap, nodeMap: NodeMap): ParsingErrors {
   return values.mapNotNull { (node, value) ->
     val constraintType = constraints[node]
     if (constraintType != null) {
-      val constraint = namespace.typings.numericTypeConstraints[constraintType]
+      val constraint = resolveNumericTypeConstraint(context, constraintType)
       if (constraint == null || isValueWithinConstraint(constraint, value))
         null
       else

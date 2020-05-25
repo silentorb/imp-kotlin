@@ -57,68 +57,64 @@ fun getPipingParents(tokens: Tokens, tokenGraph: TokenGraph): TokenParents {
 fun arrangePiping(tokens: Tokens, tokenGraph: TokenGraph): TokenGraph {
   val pipingParents = getPipingParents(tokens, tokenGraph)
 
-  val newParentPairs = pipingParents.mapValues { (_, children) ->
-    split(children) { tokens[it].rune == Rune.dot }
-        .filter { it.any() } // Filter out any bad groups.  Bad groups are handled separately by integrity checks.
-        .drop(1)
-  }
+  return if (pipingParents.none())
+    tokenGraph
+  else {
+    val newParentPairs = pipingParents.mapValues { (_, children) ->
+      split(children) { tokens[it].rune == Rune.dot }
+          .filter { it.any() } // Filter out any bad groups.  Bad groups are handled separately by integrity checks.
+          .drop(1)
+    }
 
-  val newParents = newParentPairs
-      .flatMap { (parent, groups) ->
-        groups
-            .mapIndexed { index, indices ->
-              val previous = groups.getOrNull(index - 1)?.first() ?: parent
-              Pair(indices.first(), listOf(previous).plus(indices.drop(1)))
-            }
-      }
-      .associate { it }
-
-//  val newChildToNewParentMap = newParentPairs
-//      .flatMap { (parent, groups) ->
-//        groups.map { group ->
-//          Pair(group.first(), parent)
-//        }
-//      }
-//      .associate { it }
-
-  val truncatedParents: TokenParents = pipingParents.mapValues { (_, children) ->
-    val firstPipeToken = children.indexOfFirst { tokens[it].rune == Rune.dot }
-    children.take(firstPipeToken)
-  }
-
-  val withReplacedChildren = tokenGraph.parents
-      .plus(truncatedParents)
-      .mapValues { (_, children) ->
-        children
-            .map { child ->
-              if (pipingParents.containsKey(child))
-                newParents.entries
-                    .first { it.value.contains(child) }
-                    .key
-              else
-                child
-            }
-      }
-
-  assert(withReplacedChildren.keys.none { newParents.containsKey(it) })
-  val parents = withReplacedChildren.plus(newParents)
-
-  val stages = tokenGraph.stages
-      .flatMap { stage ->
-        val (needsExpanding, unchanged) = stage.partition {
-          pipingParents.containsKey(it)
+    val newParents = newParentPairs
+        .flatMap { (parent, groups) ->
+          groups
+              .mapIndexed { index, indices ->
+                val previous = groups.getOrNull(index - 1)?.first() ?: parent
+                Pair(indices.first(), listOf(previous).plus(indices.drop(1)))
+              }
         }
-        val expanded = needsExpanding.flatMap { parent ->
-          listOf(listOf(parent)).plus(newParentPairs[parent]!!.map { it.take(1) })
-        }
-        if (unchanged.any())
-          expanded.plus(listOf(unchanged))
-        else
-          expanded
-      }
+        .associate { it }
 
-  return TokenGraph(
-      parents = parents,
-      stages = stages
-  )
+    val truncatedParents: TokenParents = pipingParents.mapValues { (_, children) ->
+      val firstPipeToken = children.indexOfFirst { tokens[it].rune == Rune.dot }
+      children.take(firstPipeToken)
+    }
+
+    val withReplacedChildren = tokenGraph.parents
+        .plus(truncatedParents)
+        .mapValues { (_, children) ->
+          children
+              .mapNotNull { child ->
+                if (pipingParents.containsKey(child))
+                  newParents.entries
+                      .firstOrNull { it.value.contains(child) }
+                      ?.key
+                else
+                  child
+              }
+        }
+
+    assert(withReplacedChildren.keys.none { newParents.containsKey(it) })
+    val parents = withReplacedChildren.plus(newParents)
+
+    val stages = tokenGraph.stages
+        .flatMap { stage ->
+          val (needsExpanding, unchanged) = stage.partition {
+            pipingParents.containsKey(it)
+          }
+          val expanded = needsExpanding.flatMap { parent ->
+            listOf(listOf(parent)).plus(newParentPairs[parent]!!.map { it.take(1) })
+          }
+          if (unchanged.any())
+            expanded.plus(listOf(unchanged))
+          else
+            expanded
+        }
+
+    TokenGraph(
+        parents = parents,
+        stages = stages
+    )
+  }
 }

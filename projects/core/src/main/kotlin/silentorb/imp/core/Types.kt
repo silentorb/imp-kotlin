@@ -84,3 +84,27 @@ fun newNumericConstraint(minimum: Int, maximum: Int) =
 
 fun newNumericConstraint(minimum: Float, maximum: Float) =
     NumericTypeConstraint(minimum.toDouble(), maximum.toDouble())
+
+fun formatPathKey(pathKey: PathKey): String =
+    "${pathKey.path}.${pathKey.name}"
+
+data class TypePair(
+    val hash: TypeHash,
+    val key: PathKey
+)
+
+fun newTypePair(key: PathKey) =
+    TypePair(
+        hash = key.hashCode(),
+        key = key
+    )
+
+data class CompleteParameter(
+    val name: String,
+    val type: TypePair
+)
+
+data class CompleteSignature(
+    val parameters: List<CompleteParameter> = listOf(),
+    val output: TypePair
+)

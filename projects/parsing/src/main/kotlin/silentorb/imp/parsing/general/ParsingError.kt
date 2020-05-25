@@ -3,16 +3,18 @@ package silentorb.imp.parsing.general
 data class ParsingError(
     val message: TextId,
     val range: Range,
-    val token: Token? = null
+    val token: Token? = null,
+    val arguments: List<Any> = listOf()
 )
 
 typealias ParsingErrors = List<ParsingError>
 
-fun newParsingError(message: TextId, token: Token) =
+fun newParsingError(message: TextId, token: Token, arguments: List<Any> = listOf()) =
     ParsingError(
         message = message,
         range = token.range,
-        token = token
+        token = token,
+        arguments = arguments
     )
 
 fun newParsingError(message: TextId): (Token) -> ParsingError = { token ->
@@ -41,8 +43,10 @@ fun errorIf(condition: Boolean, message: TextId, range: Range): ParsingError? =
     else
       null
 
-fun formatError(textLibrary: (TextId) -> String, error: ParsingError): String =
-    englishText(error.message) + " at ${rangeString(error.range)}"
+fun formatError(textLibrary: (TextId) -> String, error: ParsingError): String {
+  val initial = textLibrary(error.message) + " at ${rangeString(error.range)}"
+  return String.format(initial, *error.arguments.toTypedArray())
+}
 
 data class PartitionedResponse<T>(
     val value: T,
