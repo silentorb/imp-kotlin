@@ -4,7 +4,6 @@ import org.junit.Ignore
 import org.junit.Test
 import silentorb.imp.core.Connection
 import silentorb.imp.core.PathKey
-import silentorb.imp.core.defaultParameter
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.parser.emptyContext
@@ -414,13 +413,23 @@ let output = simpleFunction a (simpleFunction 3 3)
 
   @Test
   fun supportsPipingReferences() {
-    val code = """
+    val nestedCode = """
+      import silentorb.imp.test.*
+      let first = 1
+      let output = simpleFunction first 1
+    """.trimIndent()
+    handleRoot(errored, parseTextBranching(simpleContext)(nestedCode)) { result ->
+      val first = result.graph
+      val pipingCode = """
       import silentorb.imp.test.*
       let first = 1
       let output = first . simpleFunction 1
     """.trimIndent()
-    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
-      val graph = result.graph
+      handleRoot(errored, parseTextBranching(simpleContext)(pipingCode)) { result ->
+        val second = result.graph
+        assertEquals(first.connections, second.connections)
+        assertEquals(first, second)
+      }
     }
   }
 

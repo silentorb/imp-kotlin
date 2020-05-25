@@ -39,3 +39,14 @@ fun typesToTypeHash(types: List<TypeHash>): TypeHash? {
   else
     types.toSet().hashCode()
 }
+
+fun convertCompleteSignature(completeSignature: CompleteSignature): Signature =
+    Signature(
+        parameters = completeSignature.parameters.map { parameter ->
+          Parameter(
+              parameter.name,
+              parameter.type.hash
+          )
+        },
+        output = completeSignature.output.hash
+    )

@@ -7,13 +7,13 @@ import silentorb.imp.parsing.parser.split
 
 fun getNamedArguments(tokens: Tokens, indices: List<TokenIndex>): Map<Int, String> {
   return (2 until indices.size).mapNotNull { index ->
-        val parameterName = tokens[indices[index - 2]]
-        val equals = tokens[indices[index - 1]]
-        if (equals.rune == Rune.assignment && parameterName.rune == Rune.identifier)
-          Pair(indices[index], parameterName.value)
-        else
-          null
-      }
+    val parameterName = tokens[indices[index - 2]]
+    val equals = tokens[indices[index - 1]]
+    if (equals.rune == Rune.assignment && parameterName.rune == Rune.identifier)
+      Pair(indices[index], parameterName.value)
+    else
+      null
+  }
       .associate { it }
 }
 
@@ -60,11 +60,12 @@ fun arrangePiping(tokens: Tokens, tokenGraph: TokenGraph): TokenGraph {
   return if (pipingParents.none())
     tokenGraph
   else {
-    val newParentPairs = pipingParents.mapValues { (_, children) ->
-      split(children) { tokens[it].rune == Rune.dot }
-          .filter { it.any() } // Filter out any bad groups.  Bad groups are handled separately by integrity checks.
-          .drop(1)
-    }
+    val newParentPairs = pipingParents
+        .mapValues { (_, children) ->
+          split(children) { tokens[it].rune == Rune.dot }
+              .drop(1)
+              .filter { it.any() } // Filter out any bad groups.  Bad groups are handled separately by integrity checks.
+        }
 
     val newParents = newParentPairs
         .flatMap { (parent, groups) ->
@@ -76,10 +77,11 @@ fun arrangePiping(tokens: Tokens, tokenGraph: TokenGraph): TokenGraph {
         }
         .associate { it }
 
-    val truncatedParents: TokenParents = pipingParents.mapValues { (_, children) ->
-      val firstPipeToken = children.indexOfFirst { tokens[it].rune == Rune.dot }
-      children.take(firstPipeToken)
-    }
+    val truncatedParents: TokenParents = pipingParents
+        .mapValues { (_, children) ->
+          val firstPipeToken = children.indexOfFirst { tokens[it].rune == Rune.dot }
+          children.take(firstPipeToken)
+        }
 
     val withReplacedChildren = tokenGraph.parents
         .plus(truncatedParents)
@@ -96,7 +98,7 @@ fun arrangePiping(tokens: Tokens, tokenGraph: TokenGraph): TokenGraph {
         }
 
     assert(withReplacedChildren.keys.none { newParents.containsKey(it) })
-    val parents = withReplacedChildren.plus(newParents)
+    val parents = withReplacedChildren + newParents
 
     val stages = tokenGraph.stages
         .flatMap { stage ->

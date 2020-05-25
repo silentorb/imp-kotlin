@@ -63,14 +63,14 @@ fun validateSignatures(context: Context, types: Map<PathKey, TypeHash>, parents:
           null
         else if (options.none()) {
           val argumentTypeNames = arguments.map { argumentKey ->
-            assert(types.containsKey(argumentKey))
-            val argumentType = types[argumentKey]!!
-            val typeNames = getTypeNames(context, argumentType)
-            assert(typeNames.any())
-            formatPathKey(typeNames.first())
+            val argumentType = types[argumentKey]
+            if (argumentType != null)
+              getTypeNameOrUnknown(context, argumentType).name
+            else
+              unknownSymbol
           }
 
-          val argumentClause = argumentTypeNames.joinToString(" -> ")
+          val argumentClause = argumentTypeNames.joinToString(", ")
           ParsingError(TextId.noMatchingSignature, range = nodeMap[pathKey]!!, arguments = listOf(argumentClause))
         } else
           ParsingError(TextId.ambiguousOverload, range = nodeMap[pathKey]!!)

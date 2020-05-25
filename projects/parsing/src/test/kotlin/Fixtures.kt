@@ -2,64 +2,62 @@ import silentorb.imp.core.*
 
 const val testPath = "silentorb.imp.test"
 const val testPath2 = "silentorb.imp.cat"
-val vector2iKey = PathKey(testPath, "Vector2i")
-val vector2iType = vector2iKey.hashCode()
-val measurementKey = PathKey(testPath, "Measurement")
-val measurementType = measurementKey.hashCode()
+val vector2iType = newTypePair(PathKey(testPath, "Vector2i"))
+val measurementType = newTypePair(PathKey(testPath, "Measurement"))
 
 val simpleContext = listOf(
-    namespaceFromOverloads(mapOf(
+    namespaceFromCompleteOverloads(mapOf(
         PathKey(testPath, "eight") to listOf(
-            Signature(
+            CompleteSignature(
                 parameters = listOf(),
-                output = intType.hash
+                output = intType
             )
         ),
         PathKey(testPath, "eightPointFive") to listOf(
-            Signature(
+            CompleteSignature(
                 parameters = listOf(),
-                output = floatType.hash
+                output = floatType
             )
         ),
         PathKey(testPath, "simpleFunction") to listOf(
-            Signature(
+            CompleteSignature(
                 parameters = listOf(
-                    Parameter("first", intType.hash),
-                    Parameter("second", intType.hash)
+                    CompleteParameter("first", intType),
+                    CompleteParameter("second", intType)
                 ),
-                output = intType.hash
+                output = intType
             )
         ),
         PathKey(testPath, "simpleFunction2") to listOf(
-            Signature(
+            CompleteSignature(
                 parameters = listOf(
-                    Parameter("first", floatType.hash),
-                    Parameter("second", intType.hash)
+                    CompleteParameter("first", floatType),
+                    CompleteParameter("second", intType)
                 ),
-                output = intType.hash
+                output = intType
             )
         ),
         PathKey(testPath, "something") to listOf(
-            Signature(
+            CompleteSignature(
                 parameters = listOf(
-                    Parameter("first", vector2iType)
+                    CompleteParameter("first", vector2iType)
                 ),
                 output = vector2iType
             )
         ),
         PathKey(testPath, "measure") to listOf(
-            Signature(
+            CompleteSignature(
                 parameters = listOf(
-                    Parameter("value", measurementType)
+                    CompleteParameter("value", measurementType)
                 ),
-                output = intType.hash
+                output = intType
             )
         ),
-        vector2iKey to listOf(
-            Signature(
+        vector2iType.key to listOf(
+            CompleteSignature(
                 parameters = listOf(
-                    Parameter("x", intType.hash),
-                    Parameter("y", intType.hash)
+                    CompleteParameter("x", intType),
+                    CompleteParameter("y", intType)
                 ),
                 output = vector2iType
             )
@@ -68,10 +66,10 @@ val simpleContext = listOf(
         typings = newTypings()
             .copy(
                 typeAliases = mapOf(
-                    measurementType to floatType.hash
+                    measurementType.hash to floatType.hash
                 ),
                 numericTypeConstraints = mapOf(
-                    measurementType to NumericTypeConstraint(-10.0, 10.5)
+                    measurementType.hash to NumericTypeConstraint(-10.0, 10.5)
                 )
             )
     )

@@ -17,7 +17,7 @@ fun englishText(text: TextId): String =
       TextId.missingExpression -> "Missing expression"
       TextId.multipleGraphOutputs -> "Multiple graph outputs"
       TextId.noGraphOutput -> "No graph output"
-      TextId.noMatchingSignature -> "No matching function signature for %s"
+      TextId.noMatchingSignature -> "No matching function signature for (%s)"
       TextId.outsideTypeRange -> "Outside type range"
       TextId.unexpectedCharacter -> "Unexpected character"
       TextId.unknownFunction -> "Unknown function"

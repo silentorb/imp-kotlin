@@ -6,7 +6,6 @@ data class Namespace(
     val implementationTypes: Map<PathKey, TypeHash>,
     val nodeTypes: Map<PathKey, TypeHash>,
     val values: Map<PathKey, Any>,
-    val typeNames: Map<TypeHash, PathKey>,
     val typings: Typings
 ) {
   val nodes: Set<PathKey>
@@ -29,7 +28,6 @@ fun newNamespace(): Namespace =
         nodeTypes = mapOf(),
         references = mapOf(),
         values = mapOf(),
-        typeNames = mapOf(),
         typings = newTypings()
     )
 
@@ -40,7 +38,6 @@ fun mergeNamespaces(first: Namespace, second: Namespace): Namespace =
         nodeTypes = first.nodeTypes + second.nodeTypes,
         references = first.references + second.references,
         typings = mergeTypings(first.typings, second.typings),
-        typeNames = first.typeNames + second.typeNames,
         values = first.values + second.values
     )
 
@@ -131,6 +128,9 @@ fun getTypeAlias(context: Context, key: TypeHash): TypeHash? =
 fun getTypeSignature(context: Context, key: TypeHash): Signature? =
     resolveContextField(context, key) { namespace, k -> namespace.typings.signatures[k] }
 
+fun getTypeUnion(context: Context, key: TypeHash): Union? =
+    resolveContextField(context, key) { namespace, k -> namespace.typings.unions[k] }
+
 fun getSymbolType(context: Context, name: String): TypeHash? =
     typesToTypeHash(
         resolveContextFieldGreedy(context, name) { namespace, key ->
@@ -155,11 +155,6 @@ fun flattenTypeSignatures(context: Context): (TypeHash) -> List<Signature> = { t
   }
 }
 
-fun getTypeNames(context: Context, type: TypeHash): List<PathKey> =
-    resolveContextFieldGreedy(context, type) { namespace, key ->
-      listOfNotNull(namespace.typeNames[key])
-    }.distinct()
-
 fun getTypeSignatures(context: Context, pathKey: PathKey): List<Signature> {
   val types = getPathKeyTypes(context, pathKey)
   return types
@@ -176,3 +171,56 @@ fun namespaceFromOverloads(functions: OverloadsMap): Namespace {
       typings = extractTypings(functions.values)
   )
 }
+
+fun namespaceFromCompleteOverloads(signatures: Map<PathKey, List<CompleteSignature>>): Namespace {
+  val namespace = namespaceFromOverloads(signatures.mapValues { it.value.map(::convertCompleteSignature) })
+  val extractedTypings = signatures.values.flatten()
+      .fold(mapOf<TypeHash, PathKey>()) { a, signature ->
+        a + signature.parameters
+            .associate { Pair(it.type.hash, it.type.key) }
+            .plus(signature.output.hash to signature.output.key)
+      }
+  return namespace
+      .copy(
+          typings = namespace.typings.copy(
+              typeNames = namespace.typings.typeNames + extractedTypings
+          )
+      )
+}
+
+fun getTypeNameOrNull(context: Context, type: TypeHash, step: Int = 0): PathKey? {
+  return if (step > 50) {
+    PathKey("", "infinite-recursion")
+  } else {
+    val directName = resolveContextField(context, type) { namespace, key ->
+      namespace.typings.typeNames[key]
+    }
+    if (directName != null)
+      directName
+    else {
+      val signature = getTypeSignature(context, type)
+      if (signature != null) {
+        PathKey("",
+            signature.parameters.map { parameter ->
+              "${parameter.name}: ${getTypeNameOrUnknown(context, parameter.type, step + 1)}"
+            }
+                .plus(listOf(getTypeNameOrUnknown(context, signature.output, step + 1)))
+                .joinToString(" -> ")
+        )
+      } else {
+        val union = getTypeUnion(context, type)
+        if (union != null) {
+          PathKey("",
+              union
+                  .map { option -> getTypeNameOrUnknown(context, option, step + 1) }
+                  .joinToString(" -> ")
+          )
+        } else
+          null
+      }
+    }
+  }
+}
+
+fun getTypeNameOrUnknown(context: Context, type: TypeHash, step: Int = 0): PathKey =
+    getTypeNameOrNull(context, type, step) ?: unknownKey

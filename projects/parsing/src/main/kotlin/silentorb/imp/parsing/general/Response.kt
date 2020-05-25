@@ -1,7 +1,5 @@
 package silentorb.imp.parsing.general
 
-import silentorb.imp.core.Signature
-
 sealed class Response<T> {
   data class Success<T>(val value: T) : Response<T>()
   data class Failure<T>(val errors: List<ParsingError>) : Response<T>()

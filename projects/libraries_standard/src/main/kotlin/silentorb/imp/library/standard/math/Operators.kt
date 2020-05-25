@@ -14,9 +14,9 @@ fun mathOperatorSignature(type: TypeHash) = Signature(
     output = type
 )
 
-val intOperatorSignature = mathOperatorSignature(intSignature.hashCode())
-val floatOperatorSignature = mathOperatorSignature(floatSignature.hashCode())
-val doubleOperatorSignature = mathOperatorSignature(doubleSignature.hashCode())
+val intOperatorSignature = mathOperatorSignature(intType.hash)
+val floatOperatorSignature = mathOperatorSignature(floatType.hash)
+val doubleOperatorSignature = mathOperatorSignature(doubleType.hash)
 
 fun standardMathOperatorDefinition() =
     listOf(

@@ -2,9 +2,7 @@ package silentorb.imp.parsing.parser.expressions
 
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.PartitionedResponse
-import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.Tokens
-import silentorb.imp.parsing.general.newParsingError
 import silentorb.imp.parsing.parser.*
 
 data class IntermediateExpression(

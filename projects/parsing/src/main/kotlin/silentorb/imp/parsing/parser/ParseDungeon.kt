@@ -77,11 +77,11 @@ fun gatherTypeNames(context: Context, nodeTypes: Map<PathKey, TypeHash>) =
         .values
         .distinct()
         .mapNotNull { type ->
-          val pathKey = getTypeNames(context, type)
-          if (pathKey.none())
+          val key = getTypeNameOrNull(context, type)
+          if (key == null)
             null
           else
-            Pair(type, pathKey.first())
+            Pair(type, key)
         }
         .associate { it }
 
@@ -117,7 +117,9 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
           dungeon
               .copy(
                   graph = dungeon.graph.copy(
-                      typeNames = dungeon.graph.typeNames + typeNames
+                      typings = dungeon.graph.typings.copy(
+                          typeNames = dungeon.graph.typings.typeNames + typeNames
+                      )
                   )
               ),
           constraintErrors

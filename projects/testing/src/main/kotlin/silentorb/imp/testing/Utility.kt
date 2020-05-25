@@ -2,12 +2,14 @@ package silentorb.imp.testing
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import silentorb.imp.parsing.general.ParsingError
+import silentorb.imp.parsing.general.formatError
 import silentorb.imp.parsing.general.*
 
 val errored = { errors: List<ParsingError> ->
   val error = errors.firstOrNull()
   val message = if (error != null) {
-    "${error.message} at (${rangeString(error.range)})"
+    "[TextId.${error.message}] ${formatError(::englishText, error)}"
   } else
     ""
   assertEquals(message, 0, errors.size)

@@ -85,8 +85,11 @@ fun newNumericConstraint(minimum: Int, maximum: Int) =
 fun newNumericConstraint(minimum: Float, maximum: Float) =
     NumericTypeConstraint(minimum.toDouble(), maximum.toDouble())
 
-fun formatPathKey(pathKey: PathKey): String =
-    "${pathKey.path}.${pathKey.name}"
+fun formatPathKey(key: PathKey): String =
+    if (key.path.isEmpty())
+      key.name
+    else
+      "${key.path}.${key.name}"
 
 data class TypePair(
     val hash: TypeHash,
@@ -108,3 +111,6 @@ data class CompleteSignature(
     val parameters: List<CompleteParameter> = listOf(),
     val output: TypePair
 )
+
+const val unknownSymbol = "unknown"
+val unknownKey = PathKey("", unknownSymbol)

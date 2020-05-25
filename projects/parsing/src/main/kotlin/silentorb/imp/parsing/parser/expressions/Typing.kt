@@ -6,8 +6,8 @@ import silentorb.imp.parsing.lexer.Rune
 
 fun getLiteralRuneType(rune: Rune): TypeHash? =
     when (rune) {
-      Rune.literalInteger -> intSignature.hashCode()
-      Rune.literalFloat -> floatSignature.hashCode()
+      Rune.literalInteger -> intType.hash
+      Rune.literalFloat -> floatType.hash
       else -> null
     }
 

@@ -1,6 +1,7 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.Context
+import silentorb.imp.parsing.general.PartitionedResponse
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 

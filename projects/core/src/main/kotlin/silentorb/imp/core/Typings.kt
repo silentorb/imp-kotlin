@@ -5,6 +5,7 @@ data class Typings(
     val signatures: Map<TypeHash, Signature>,
     val structures: Map<TypeHash, Structure>,
     val typeAliases: Map<TypeHash, TypeHash>,
+    val typeNames: Map<TypeHash, PathKey>,
     val unions: Map<TypeHash, Union>
 ) {
   operator fun plus(other: Typings): Typings =
@@ -17,6 +18,7 @@ fun newTypings(): Typings =
         signatures = mapOf(),
         structures = mapOf(),
         typeAliases = mapOf(),
+        typeNames = mapOf(),
         unions = mapOf()
     )
 
@@ -26,6 +28,7 @@ fun mergeTypings(first: Typings, second: Typings): Typings =
         signatures = first.signatures + second.signatures,
         structures = first.structures + second.structures,
         typeAliases = first.typeAliases + second.typeAliases,
+        typeNames = first.typeNames + second.typeNames,
         unions = first.unions + second.unions
     )
 
