@@ -32,7 +32,7 @@ fun newParameterNamespace(context: Context, pathKey: PathKey, parameters: List<P
   }
   return newNamespace()
       .copy(
-          nodeTypes = nodeTypes,
+          returnTypes = nodeTypes,
           typings = newTypings()
               .copy(
                   typeNames = nodeTypes.values
@@ -53,7 +53,9 @@ fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>)
         val matchingParenthesesErrors = checkMatchingParentheses(tokens)
         val pathKey = PathKey(localPath, definition.symbol.value)
         val parameters = definition.parameters.map { parameter ->
-          Parameter(parameter.name, getSymbolType(context, parameter.type) ?: unknownType.hash)
+          val type = getImplementationType(context, parameter.type)
+              ?: unknownType.hash
+          Parameter(parameter.name, type)
         }
         val parameterNamespace = if (parameters.any()) {
           newParameterNamespace(context, pathKey, parameters)
@@ -71,7 +73,7 @@ fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>)
           dungeon.graph
 
         val nextDungeon = if (output != null) {
-          val outputType = graph.nodeTypes[output]!!
+          val outputType = graph.returnTypes[output]!!
           if (parameters.any()) {
             val signature = Signature(
                 parameters = parameters,
@@ -87,12 +89,12 @@ fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>)
                     destination = id,
                     parameter = defaultParameter
                 ),
-                nodeTypes = graph.nodeTypes + (pathKey to definitionType),
+                returnTypes = graph.returnTypes + (pathKey to definitionType),
                 typings = typings
             )
             dungeon.copy(
                 graph = newNamespace().copy(
-                    nodeTypes = mapOf(pathKey to definitionType),
+                    returnTypes = mapOf(pathKey to definitionType),
                     typings = typings
                 ),
                 implementationGraphs = mapOf(
@@ -107,7 +109,7 @@ fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>)
                         destination = id,
                         parameter = defaultParameter
                     ),
-                    nodeTypes = graph.nodeTypes + (pathKey to outputType)
+                    returnTypes = graph.returnTypes + (pathKey to outputType)
                 )
             )
           }
@@ -156,11 +158,11 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
       val propagations = propagateLiteralTypeAliases(context, mergedDungeon.graph)
       val dungeon = mergedDungeon.copy(
           graph = mergedDungeon.graph.copy(
-              nodeTypes = mergedDungeon.graph.nodeTypes + propagations
+              returnTypes = mergedDungeon.graph.returnTypes + propagations
           )
       )
       val constraintErrors = validateTypeConstraints(dungeon.graph.values, context, propagations, dungeon.nodeMap)
-      val typeNames = gatherTypeNames(context, dungeon.graph.nodeTypes)
+      val typeNames = gatherTypeNames(context, dungeon.graph.returnTypes)
 
       PartitionedResponse(
           dungeon
@@ -177,16 +179,20 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
 
 fun newDefinitionContext(
     nodeRanges: Map<PathKey, TokenizedDefinition>,
-    rawImportedFunctions: List<Map<PathKey, TypeHash>>,
+    bundles: List<ImportBundle>,
     parentContext: Context): Context {
-  val importedFunctions = if (rawImportedFunctions.any())
-    rawImportedFunctions.reduce { a, b -> a + b }
+  val (returnTypes, implementationTypes) = if (bundles.any())
+    Pair(
+        bundles.map { it.returnTypes }.reduce { a, b -> a + b },
+        bundles.map { it.implementationTypes }.reduce { a, b -> a + b }
+    )
   else
-    mapOf()
+    Pair(mapOf(), mapOf())
 
   return parentContext.plus(
       newNamespace().copy(
-          nodeTypes = importedFunctions
+          returnTypes = returnTypes,
+          implementationTypes = implementationTypes
       )
   )
 }

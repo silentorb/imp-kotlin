@@ -240,9 +240,9 @@ class ParserTest {
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(3, graph.connections.size)
-      val node2 = PathKey("@local.output", "simpleFunction1")
-      val node3 = PathKey("@local.output", "#literal1")
-      val node4 = PathKey("@local.output", "#literal2")
+      val node2 = PathKey("output", "simpleFunction1")
+      val node3 = PathKey("output", "#literal1")
+      val node4 = PathKey("output", "#literal2")
       assertTrue(graph.connections.contains(Connection(destination = node2, source = node3, parameter = "first")))
       assertTrue(graph.connections.contains(Connection(destination = node2, source = node4, parameter = "second")))
     }

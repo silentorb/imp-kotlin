@@ -4,7 +4,7 @@ data class Namespace(
     val connections: Set<Connection>,
     val references: Map<PathKey, PathKey>,
     val implementationTypes: Map<PathKey, TypeHash>,
-    val nodeTypes: Map<PathKey, TypeHash>,
+    val returnTypes: Map<PathKey, TypeHash>,
     val values: Map<PathKey, Any>,
     val typings: Typings
 ) {
@@ -13,7 +13,7 @@ data class Namespace(
       connections
           .flatMap { listOf(it.source, it.destination) }
           .toSet()
-          .plus(nodeTypes.filterValues { !typings.signatures.containsKey(it) }.keys)
+          .plus(returnTypes.filterValues { !typings.signatures.containsKey(it) }.keys)
 
   operator fun plus(other: Namespace): Namespace =
       mergeNamespaces(this, other)
@@ -25,7 +25,7 @@ fun newNamespace(): Namespace =
     Namespace(
         connections = setOf(),
         implementationTypes = mapOf(),
-        nodeTypes = mapOf(),
+        returnTypes = mapOf(),
         references = mapOf(),
         values = mapOf(),
         typings = newTypings()
@@ -35,7 +35,7 @@ fun mergeNamespaces(first: Namespace, second: Namespace): Namespace =
     Namespace(
         connections = first.connections + second.connections,
         implementationTypes = first.implementationTypes + second.implementationTypes,
-        nodeTypes = first.nodeTypes + second.nodeTypes,
+        returnTypes = first.returnTypes + second.returnTypes,
         references = first.references + second.references,
         typings = mergeTypings(first.typings, second.typings),
         values = first.values + second.values
@@ -110,16 +110,21 @@ tailrec fun <K, V> resolveContextFieldGreedySet(
 fun <V> resolveContextField(context: Context, getter: (Namespace) -> V?): V? =
     resolveContextField(context, context.size - 1, getter)
 
-fun getNamespaceContents(context: Context, path: String): Map<PathKey, TypeHash> =
+fun getNamespaceReturnTypes(context: Context, path: String): Map<PathKey, TypeHash> =
     resolveContextFieldMap(context) { namespace ->
-      namespace.nodeTypes.filter { it.key.path == path }
+      namespace.returnTypes.filter { it.key.path == path }
+    }
+
+fun getNamespaceImplementationTypes(context: Context, path: String): Map<PathKey, TypeHash> =
+    resolveContextFieldMap(context) { namespace ->
+      namespace.implementationTypes.filter { it.key.path == path }
     }
 
 tailrec fun resolveReference(context: Context, name: String, index: Int): PathKey? =
     if (index < 0)
       null
     else {
-      val nodes = context[index].nodeTypes.keys.filter { it.name == name }
+      val nodes = context[index].returnTypes.keys.filter { it.name == name }
           .plus(context[index].references.keys.filter { it.name == name })
 
       if (nodes.size > 1)
@@ -146,13 +151,26 @@ fun getTypeUnion(context: Context, key: TypeHash): Union? =
 fun getSymbolType(context: Context, name: String): TypeHash? =
     typesToTypeHash(
         resolveContextFieldGreedy(context) { namespace ->
-          namespace.nodeTypes.filterKeys { it.name == name }.values.toList()
+          namespace.returnTypes.filterKeys { it.name == name }.values.toList()
+        }
+    )
+
+fun getImplementationType(context: Context, name: String): TypeHash? =
+    typesToTypeHash(
+        resolveContextFieldGreedy(context) { namespace ->
+          namespace.implementationTypes.filterKeys { it.name == name }.values.toList()
         }
     )
 
 fun getPathKeyTypes(context: Context, key: PathKey): List<TypeHash> {
   return resolveContextFieldGreedy(context) { namespace ->
-    listOfNotNull(namespace.nodeTypes[key])
+    listOfNotNull(namespace.returnTypes[key])
+  }
+}
+
+fun getPathKeyImplementationTypes(context: Context, key: PathKey): List<TypeHash> {
+  return resolveContextFieldGreedy(context) { namespace ->
+    listOfNotNull(namespace.implementationTypes[key])
   }
 }
 
@@ -180,14 +198,15 @@ fun resolveNumericTypeConstraint(key: TypeHash) =
 
 fun namespaceFromOverloads(functions: OverloadsMap): Namespace {
   return newNamespace().copy(
-      nodeTypes = functions.mapValues { signaturesToTypeHash(it.value) },
+      returnTypes = functions.mapValues { signaturesToTypeHash(it.value) },
       typings = extractTypings(functions.values)
   )
 }
 
 fun namespaceFromCompleteOverloads(signatures: Map<PathKey, List<CompleteSignature>>): Namespace {
   val namespace = namespaceFromOverloads(signatures.mapValues { it.value.map(::convertCompleteSignature) })
-  val extractedTypings = signatures.values.flatten()
+  val extractedTypings = signatures.values
+      .flatten()
       .fold(mapOf<TypeHash, PathKey>()) { a, signature ->
         a + signature.parameters
             .associate { Pair(it.type.hash, it.type.key) }
@@ -195,7 +214,7 @@ fun namespaceFromCompleteOverloads(signatures: Map<PathKey, List<CompleteSignatu
       }
   return namespace
       .copy(
-          nodeTypes = namespace.nodeTypes + extractedTypings.entries.associate { Pair(it.value, it.key) },
+          implementationTypes = namespace.implementationTypes + extractedTypings.entries.associate { Pair(it.value, it.key) },
           typings = namespace.typings.copy(
               typeNames = namespace.typings.typeNames + extractedTypings
           )

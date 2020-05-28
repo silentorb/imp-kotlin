@@ -113,7 +113,7 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): Partitione
       graph = newNamespace().copy(
           connections = connections,
           implementationTypes = implementationTypes,
-          nodeTypes = nodeTypes,
+          returnTypes = nodeTypes,
           references = references,
           typings = typings,
           values = values
