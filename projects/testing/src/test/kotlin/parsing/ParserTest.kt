@@ -2,7 +2,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import silentorb.imp.core.Connection
+import silentorb.imp.core.Input
 import silentorb.imp.core.PathKey
 import silentorb.imp.core.joinPaths
 import silentorb.imp.parsing.general.TextId
@@ -243,8 +243,8 @@ class ParserTest {
       val node2 = PathKey("output", "simpleFunction1")
       val node3 = PathKey("output", "#literal1")
       val node4 = PathKey("output", "#literal2")
-      assertTrue(graph.connections.contains(Connection(destination = node2, source = node3, parameter = "first")))
-      assertTrue(graph.connections.contains(Connection(destination = node2, source = node4, parameter = "second")))
+      assertTrue(graph.connections[Input(destination = node2, parameter = "first")] == node3)
+      assertTrue(graph.connections[Input(destination = node2, parameter = "second")] == node4)
     }
   }
 
@@ -319,8 +319,8 @@ let output = value
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(3, graph.connections.size)
-      assertEquals(1, graph.values[graph.connections.first { it.parameter == "second" }.source])
-      assertEquals(2.1f, graph.values[graph.connections.first { it.parameter == "first" }.source])
+      assertEquals(1, graph.values[graph.connections.entries.first { it.key.parameter == "second" }.value])
+      assertEquals(2.1f, graph.values[graph.connections.entries.first { it.key.parameter == "first" }.value])
     }
   }
 
@@ -335,8 +335,8 @@ let output = value
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(3, graph.connections.size)
-      assertEquals(1, graph.values[graph.connections.first { it.parameter == "second" }.source])
-      assertEquals(2.1f, graph.values[graph.connections.first { it.parameter == "first" }.source])
+      assertEquals(1, graph.values[graph.connections.entries.first { it.key.parameter == "second" }.value])
+      assertEquals(2.1f, graph.values[graph.connections.entries.first { it.key.parameter == "first" }.value])
     }
   }
 
@@ -354,8 +354,8 @@ let output = simpleFunction2
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(3, graph.connections.size)
-      assertEquals(1, graph.values[graph.connections.first { it.parameter == "second" }.source])
-      assertEquals(2.1f, graph.values[graph.connections.first { it.parameter == "first" }.source])
+      assertEquals(1, graph.values[graph.connections.entries.first { it.key.parameter == "second" }.value])
+      assertEquals(2.1f, graph.values[graph.connections.entries.first { it.key.parameter == "first" }.value])
     }
   }
 

@@ -6,8 +6,8 @@ import silentorb.imp.parsing.parser.Dungeon
 typealias OutputValues = Map<PathKey, Any>
 typealias Arguments = Map<String, Any>
 
-fun nextStage(nodes: Set<PathKey>, connections: Collection<Connection>, references: Map<PathKey, PathKey>): List<PathKey> {
-  return nodes.filter { node -> connections.none { it.destination == node } && nodes.none { references[node] == it } }
+fun nextStage(nodes: Set<PathKey>, connections: Connections, references: Map<PathKey, PathKey>): List<PathKey> {
+  return nodes.filter { node -> connections.none { it.key.destination == node } && nodes.none { references[node] == it } }
       .map { it }
 }
 
@@ -21,7 +21,7 @@ fun arrangeGraphStages(graph: Graph): List<List<PathKey>> {
     val nextNodes = nextStage(nodes, connections, references)
     result = result.plusElement(nextNodes)
     nodes = nodes.minus(nextNodes)
-    connections = connections.filter { !nextNodes.contains(it.source) }.toSet()
+    connections = connections.filter { !nextNodes.contains(it.value) }
     references = references.filter { !nextNodes.contains(it.value) }
   }
 
@@ -33,10 +33,11 @@ fun arrangeGraphSequence(graph: Graph): List<PathKey> =
 
 fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: PathKey): Arguments {
   return graph.connections
-      .filter { it.destination == destination }
+      .filter { it.key.destination == destination }
+      .entries
       .associate {
-        val value = outputValues[it.source]!!
-        Pair(it.parameter, value)
+        val value = outputValues[it.value]!!
+        Pair(it.key.parameter, value)
       }
 }
 

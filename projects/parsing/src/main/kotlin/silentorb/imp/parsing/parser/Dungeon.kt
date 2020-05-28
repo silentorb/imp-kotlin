@@ -16,7 +16,7 @@ data class Dungeon(
 val emptyDungeon =
     Dungeon(
         graph = newNamespace().copy(
-            connections = setOf(),
+            connections = mapOf(),
             values = mapOf()
         ),
         nodeMap = mapOf(),

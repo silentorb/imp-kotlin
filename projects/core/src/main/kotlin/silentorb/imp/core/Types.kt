@@ -66,11 +66,12 @@ data class FunctionKey(
     val type: TypeHash
 )
 
-data class Connection(
+data class Input(
     val destination: PathKey,
-    val source: PathKey,
     val parameter: Key
 )
+
+typealias Connections = Map<Input, PathKey>
 
 data class Structure(
     val signature: Signature,

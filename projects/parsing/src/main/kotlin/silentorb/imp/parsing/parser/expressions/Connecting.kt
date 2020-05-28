@@ -2,7 +2,7 @@ package silentorb.imp.parsing.parser.expressions
 
 import silentorb.imp.core.*
 
-fun arrangeConnections(parents: Map<PathKey, List<PathKey>>, signatures: Map<PathKey, SignatureMatch>): Set<Connection> {
+fun arrangeConnections(parents: Map<PathKey, List<PathKey>>, signatures: Map<PathKey, SignatureMatch>): Connections {
   return parents
       .flatMap { (functionNode, _) ->
         val signatureMatch = signatures[functionNode]
@@ -10,12 +10,11 @@ fun arrangeConnections(parents: Map<PathKey, List<PathKey>>, signatures: Map<Pat
           listOf()
         else
           signatureMatch.alignment.map { (parameter, sourceNode) ->
-            Connection(
+            (Input(
                 destination = functionNode,
-                source = sourceNode,
                 parameter = parameter
-            )
+            ) to sourceNode)
           }
       }
-      .toSet()
+      .associate { it }
 }

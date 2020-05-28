@@ -84,11 +84,10 @@ fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>)
                 signatures = graph.typings.signatures + (signature.hashCode() to signature)
             )
             val implementation = graph.copy(
-                connections = graph.connections + Connection(
-                    source = output,
+                connections = graph.connections + (Input(
                     destination = id,
                     parameter = defaultParameter
-                ),
+                ) to output),
                 returnTypes = graph.returnTypes + (pathKey to definitionType),
                 typings = typings
             )
@@ -104,11 +103,10 @@ fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>)
           } else {
             dungeon.copy(
                 graph = graph.copy(
-                    connections = graph.connections + Connection(
-                        source = output,
+                    connections = graph.connections + (Input(
                         destination = id,
                         parameter = defaultParameter
-                    ),
+                    ) to output),
                     returnTypes = graph.returnTypes + (pathKey to outputType)
                 )
             )
@@ -143,7 +141,7 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
 
       val initialGraph = newNamespace().copy(
 //          nodes = nodeRanges.keys,
-          connections = setOf(),
+          connections = mapOf(),
           values = mapOf()
       )
 

@@ -1,7 +1,7 @@
 package silentorb.imp.core
 
 data class Namespace(
-    val connections: Set<Connection>,
+    val connections: Connections,
     val references: Map<PathKey, PathKey>,
     val implementationTypes: Map<PathKey, TypeHash>,
     val returnTypes: Map<PathKey, TypeHash>,
@@ -11,7 +11,7 @@ data class Namespace(
   val nodes: Set<PathKey>
     get() =
       connections
-          .flatMap { listOf(it.source, it.destination) }
+          .flatMap { listOf(it.value, it.key.destination) }
           .toSet()
           .plus(returnTypes.filterValues { !typings.signatures.containsKey(it) }.keys)
 
@@ -23,7 +23,7 @@ typealias Graph = Namespace
 
 fun newNamespace(): Namespace =
     Namespace(
-        connections = setOf(),
+        connections = mapOf(),
         implementationTypes = mapOf(),
         returnTypes = mapOf(),
         references = mapOf(),

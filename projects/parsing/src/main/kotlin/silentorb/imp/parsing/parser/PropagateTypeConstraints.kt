@@ -7,12 +7,12 @@ import silentorb.imp.core.*
 fun propagateLiteralTypeAliases(context: Context, graph: Graph): Map<PathKey, TypeHash> {
   val propagations = graph.values.keys
       .mapNotNull { id ->
-        val connections = graph.connections.filter { it.source == id }
+        val connections = graph.connections.filter { it.value == id }
         val types = connections
             .mapNotNull { connection ->
-              val functionType = graph.implementationTypes[connection.destination]
+              val functionType = graph.implementationTypes[connection.key.destination]
               if (functionType != null)
-                getTypeSignature(context, functionType)?.parameters?.firstOrNull { it.name == connection.parameter }?.type
+                getTypeSignature(context, functionType)?.parameters?.firstOrNull { it.name == connection.key.parameter }?.type
               else
                 null
             }
