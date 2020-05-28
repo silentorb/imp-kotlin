@@ -13,7 +13,7 @@ data class Namespace(
       connections
           .flatMap { listOf(it.source, it.destination) }
           .toSet()
-          .plus(nodeTypes.keys)
+          .plus(nodeTypes.filterValues { !typings.signatures.containsKey(it) }.keys)
 
   operator fun plus(other: Namespace): Namespace =
       mergeNamespaces(this, other)
@@ -55,36 +55,46 @@ fun toPathString(list: List<String>) =
 fun toPathKey(list: List<String>) =
     PathKey(toPathString(list.dropLast(1)), list.takeLast(1).first())
 
-fun getDirectoryContents(namespace: Namespace, path: String): Map<PathKey, TypeHash> =
-    namespace.nodeTypes
-        .filter { it.key.path == path }
-
 typealias ContextIterator<K, V> = (Context, K) -> V?
 
-tailrec fun <K, V> resolveContextField(context: Context, key: K, index: Int, getter: (Namespace, K) -> V?): V? =
+tailrec fun <V> resolveContextField(context: Context, index: Int, getter: (Namespace) -> V?): V? =
     if (index < 0)
       null
     else
-      getter(context[index], key)
-          ?: resolveContextField(context, key, index - 1, getter)
+      getter(context[index])
+          ?: resolveContextField(context, index - 1, getter)
 
-fun <K, V> resolveContextField(getter: (Namespace, K) -> V?): (Context, K) -> V? = { context, key ->
-  resolveContextField(context, key, context.size - 1, getter)
+fun <V> resolveContextField(getter: (Namespace) -> V?): (Context) -> V? = { context ->
+  resolveContextField(context, context.size - 1, getter)
 }
 
-tailrec fun <K, V> resolveContextFieldGreedy(
-    context: Context, key: K, index: Int, getter: (Namespace, K) -> List<V>,
+tailrec fun <V> resolveContextFieldGreedy(
+    context: Context, index: Int, getter: (Namespace) -> List<V>,
     accumulator: List<V>
 ): List<V> =
     if (index < 0)
       accumulator
     else {
-      val next = accumulator + getter(context[index], key)
-      resolveContextFieldGreedy(context, key, index - 1, getter, next)
+      val next = accumulator + getter(context[index])
+      resolveContextFieldGreedy(context, index - 1, getter, next)
     }
 
-fun <K, V> resolveContextFieldGreedy(context: Context, key: K, getter: (Namespace, K) -> List<V>): List<V> =
-    resolveContextFieldGreedy(context, key, context.size - 1, getter, listOf())
+fun <V> resolveContextFieldGreedy(context: Context, getter: (Namespace) -> List<V>): List<V> =
+    resolveContextFieldGreedy(context, context.size - 1, getter, listOf())
+
+tailrec fun <K, V> resolveContextFieldMap(
+    context: Context, index: Int, getter: (Namespace) -> Map<K, V>,
+    accumulator: Map<K, V>
+): Map<K, V> =
+    if (index < 0)
+      accumulator
+    else {
+      val next = accumulator + getter(context[index])
+      resolveContextFieldMap(context, index - 1, getter, next)
+    }
+
+fun <K, V> resolveContextFieldMap(context: Context, getter: (Namespace) -> Map<K, V>): Map<K, V> =
+    resolveContextFieldMap(context, context.size - 1, getter, mapOf())
 
 tailrec fun <K, V> resolveContextFieldGreedySet(
     context: Context, key: K, index: Int, getter: (Namespace, K) -> Set<V>,
@@ -97,11 +107,13 @@ tailrec fun <K, V> resolveContextFieldGreedySet(
       resolveContextFieldGreedySet(context, key, index - 1, getter, next)
     }
 
-fun <K, V> resolveContextFieldGreedySet(context: Context, key: K, getter: (Namespace, K) -> Set<V>): Set<V> =
-    resolveContextFieldGreedySet(context, key, context.size - 1, getter, setOf())
+fun <V> resolveContextField(context: Context, getter: (Namespace) -> V?): V? =
+    resolveContextField(context, context.size - 1, getter)
 
-fun <K, V> resolveContextField(context: Context, key: K, getter: (Namespace, K) -> V?): V? =
-    resolveContextField(context, key, context.size - 1, getter)
+fun getNamespaceContents(context: Context, path: String): Map<PathKey, TypeHash> =
+    resolveContextFieldMap(context) { namespace ->
+      namespace.nodeTypes.filter { it.key.path == path }
+    }
 
 tailrec fun resolveReference(context: Context, name: String, index: Int): PathKey? =
     if (index < 0)
@@ -120,36 +132,37 @@ fun resolveReference(context: Context, name: String): PathKey? =
     resolveReference(context, name, context.size - 1)
 
 fun resolveAlias(context: Context, key: PathKey): PathKey? =
-    resolveContextField(context, key) { namespace, k -> namespace.references[k] }
+    resolveContextField(context) { namespace -> namespace.references[key] }
 
 fun getTypeAlias(context: Context, key: TypeHash): TypeHash? =
-    resolveContextField(context, key) { namespace, k -> namespace.typings.typeAliases[k] }
+    resolveContextField(context) { namespace -> namespace.typings.typeAliases[key] }
 
 fun getTypeSignature(context: Context, key: TypeHash): Signature? =
-    resolveContextField(context, key) { namespace, k -> namespace.typings.signatures[k] }
+    resolveContextField(context) { namespace -> namespace.typings.signatures[key] }
 
 fun getTypeUnion(context: Context, key: TypeHash): Union? =
-    resolveContextField(context, key) { namespace, k -> namespace.typings.unions[k] }
+    resolveContextField(context) { namespace -> namespace.typings.unions[key] }
 
 fun getSymbolType(context: Context, name: String): TypeHash? =
     typesToTypeHash(
-        resolveContextFieldGreedy(context, name) { namespace, key ->
+        resolveContextFieldGreedy(context) { namespace ->
           namespace.nodeTypes.filterKeys { it.name == name }.values.toList()
         }
     )
 
-fun getPathKeyTypes(context: Context, pathKey: PathKey): List<TypeHash> =
-    resolveContextFieldGreedy(context, resolveAlias(context, pathKey)) { namespace, key ->
-      listOfNotNull(namespace.nodeTypes[key])
-    }
+fun getPathKeyTypes(context: Context, key: PathKey): List<TypeHash> {
+  return resolveContextFieldGreedy(context) { namespace ->
+    listOfNotNull(namespace.nodeTypes[key])
+  }
+}
 
 fun flattenTypeSignatures(context: Context): (TypeHash) -> List<Signature> = { type ->
-  resolveContextFieldGreedy(context, type) { namespace, key ->
-    val signature = namespace.typings.signatures[key]
+  resolveContextFieldGreedy(context) { namespace ->
+    val signature = namespace.typings.signatures[type]
     if (signature != null)
       listOf(signature)
     else {
-      val union = namespace.typings.unions[key]
+      val union = namespace.typings.unions[type]
       union?.flatMap(flattenTypeSignatures(context)) ?: listOf()
     }
   }
@@ -162,8 +175,8 @@ fun getTypeSignatures(context: Context, pathKey: PathKey): List<Signature> {
       .distinct()
 }
 
-val resolveNumericTypeConstraint: ContextIterator<TypeHash, NumericTypeConstraint> =
-    resolveContextField { namespace, key -> namespace.typings.numericTypeConstraints[key] }
+fun resolveNumericTypeConstraint(key: TypeHash) =
+    resolveContextField { namespace -> namespace.typings.numericTypeConstraints[key] }
 
 fun namespaceFromOverloads(functions: OverloadsMap): Namespace {
   return newNamespace().copy(
@@ -182,6 +195,7 @@ fun namespaceFromCompleteOverloads(signatures: Map<PathKey, List<CompleteSignatu
       }
   return namespace
       .copy(
+          nodeTypes = namespace.nodeTypes + extractedTypings.entries.associate { Pair(it.value, it.key) },
           typings = namespace.typings.copy(
               typeNames = namespace.typings.typeNames + extractedTypings
           )
@@ -192,8 +206,8 @@ fun getTypeNameOrNull(context: Context, type: TypeHash, step: Int = 0): PathKey?
   return if (step > 50) {
     PathKey("", "infinite-recursion")
   } else {
-    val directName = resolveContextField(context, type) { namespace, key ->
-      namespace.typings.typeNames[key]
+    val directName = resolveContextField(context) { namespace ->
+      namespace.typings.typeNames[type]
     }
     if (directName != null)
       directName
@@ -223,4 +237,4 @@ fun getTypeNameOrNull(context: Context, type: TypeHash, step: Int = 0): PathKey?
 }
 
 fun getTypeNameOrUnknown(context: Context, type: TypeHash, step: Int = 0): PathKey =
-    getTypeNameOrNull(context, type, step) ?: unknownKey
+    getTypeNameOrNull(context, type, step) ?: unknownType.key

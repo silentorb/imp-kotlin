@@ -25,47 +25,96 @@ data class TokenizedGraph(
     val definitions: List<TokenizedDefinition>
 )
 
+fun newParameterNamespace(context: Context, pathKey: PathKey, parameters: List<Parameter>): Namespace {
+  val pathString = pathKeyToString(pathKey)
+  val nodeTypes = parameters.associate { parameter ->
+    Pair(PathKey(pathString, parameter.name), parameter.type)
+  }
+  return newNamespace()
+      .copy(
+          nodeTypes = nodeTypes,
+          typings = newTypings()
+              .copy(
+                  typeNames = nodeTypes.values
+                      .associateWith { getTypeNameOrUnknown(context, it) }
+              )
+      )
+}
+
 fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>) -> PartitionedResponse<Dungeon> =
     { (id, definition) ->
       val tokens = definition.expression.filter { it.rune != Rune.newline }
       if (tokens.none()) {
         PartitionedResponse(
-            Dungeon(
-                graph = newNamespace(),
-                nodeMap = mapOf()
-            ),
+            emptyDungeon,
             listOf(newParsingError(TextId.missingExpression, definition.symbol))
         )
       } else {
         val matchingParenthesesErrors = checkMatchingParentheses(tokens)
-        val path = PathKey(localPath, definition.symbol.value)
-        val (dungeon, expressionErrors) = parseExpression(path, context, tokens)
+        val pathKey = PathKey(localPath, definition.symbol.value)
+        val parameters = definition.parameters.map { parameter ->
+          Parameter(parameter.name, getSymbolType(context, parameter.type) ?: unknownType.hash)
+        }
+        val parameterNamespace = if (parameters.any()) {
+          newParameterNamespace(context, pathKey, parameters)
+        } else
+          null
+
+        val localContext = context + listOfNotNull(parameterNamespace)
+
+        val (dungeon, expressionErrors) = parseExpression(pathKey, localContext, tokens)
+
         val output = getGraphOutputNode(dungeon.graph)
-        val nextDungeon = if (output != null)
-          dungeon.copy(
-              graph = dungeon.graph.copy(
-                  connections = dungeon.graph.connections + Connection(
-                      source = output,
-                      destination = id,
-                      parameter = defaultParameter
-                  ),
-                  nodeTypes = dungeon.graph.nodeTypes + (path to dungeon.graph.nodeTypes[output]!!)
-              )
-          )
+        val graph = if (parameterNamespace != null)
+          parameterNamespace + dungeon.graph
         else
+          dungeon.graph
+
+        val nextDungeon = if (output != null) {
+          val outputType = graph.nodeTypes[output]!!
+          if (parameters.any()) {
+            val signature = Signature(
+                parameters = parameters,
+                output = outputType
+            )
+            val definitionType = signature.hashCode()
+            val typings = graph.typings.copy(
+                signatures = graph.typings.signatures + (signature.hashCode() to signature)
+            )
+            val implementation = graph.copy(
+                connections = graph.connections + Connection(
+                    source = output,
+                    destination = id,
+                    parameter = defaultParameter
+                ),
+                nodeTypes = graph.nodeTypes + (pathKey to definitionType),
+                typings = typings
+            )
+            dungeon.copy(
+                graph = newNamespace().copy(
+                    nodeTypes = mapOf(pathKey to definitionType),
+                    typings = typings
+                ),
+                implementationGraphs = mapOf(
+                    FunctionKey(pathKey, definitionType) to implementation
+                )
+            )
+          } else {
+            dungeon.copy(
+                graph = graph.copy(
+                    connections = graph.connections + Connection(
+                        source = output,
+                        destination = id,
+                        parameter = defaultParameter
+                    ),
+                    nodeTypes = graph.nodeTypes + (pathKey to outputType)
+                )
+            )
+          }
+        } else
           dungeon
 
-//      val outputType = nextDungeon.graph.outputTypes[output]
         PartitionedResponse(
-//          if (outputType != null)
-//            nextDungeon.copy(
-//                graph = nextDungeon.graph.copy(
-//                    outputTypes = nextDungeon.graph.outputTypes
-//                        .plus(id to outputType)
-//
-//                )
-//            )
-//          else
             nextDungeon,
             matchingParenthesesErrors.plus(expressionErrors)
         )
@@ -96,13 +145,13 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
           values = mapOf()
       )
 
-      val initialDungeon = Dungeon(
+      val initialDungeon = emptyDungeon.copy(
           graph = initialGraph,
           nodeMap = nodeMap
       )
 
       val mergedDungeon = expressionDungeons.fold(initialDungeon) { a, expressionDungeon ->
-        mergeDistinctDungeons(a, expressionDungeon)
+        mergeDungeons(a, expressionDungeon)
       }
       val propagations = propagateLiteralTypeAliases(context, mergedDungeon.graph)
       val dungeon = mergedDungeon.copy(
@@ -161,7 +210,7 @@ fun parseDefinitions(nodeRanges: Map<PathKey, TokenizedDefinition>, initialConte
 
 fun parseDungeon(parentContext: Context): (TokenizedGraph) -> PartitionedResponse<Dungeon> =
     { (imports, definitions) ->
-      val (rawImportedFunctions, importErrors) = flattenResponses(imports.map(parseImport(parentContext.first())))
+      val (rawImportedFunctions, importErrors) = flattenResponses(imports.map(parseImport(parentContext)))
       val nodeRanges = definitions.associateBy { PathKey(localPath, it.symbol.value) }
       val baseContext = listOf(
           newNamespace()

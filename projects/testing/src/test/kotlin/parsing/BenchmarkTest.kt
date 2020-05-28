@@ -1,4 +1,5 @@
-import org.junit.Test
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 import java.util.*
 
 val random = Random(100)
@@ -63,6 +64,7 @@ fun mergedNamespaces() {
 }
 
 class BenchmarkTest {
+  @Disabled
   @Test
   fun stackResolutionComparison() {
     namespaceStack()

@@ -9,41 +9,16 @@ typealias ConstrainedLiteralMap = Map<PathKey, TypeHash>
 
 data class Dungeon(
     val graph: Graph,
-    val nodeMap: NodeMap
-) {
-  fun addConnection(connection: Connection) =
-      modifyGraph(this) { graph ->
-        graph.copy(
-            connections = graph.connections.plus(connection)
-        )
-      }
-
-//  fun addSignature(id: PathKey, signature: SignatureMatch) =
-//      modifyGraph(this) { graph ->
-//        graph.copy(
-//            signatureMatches = graph.signatureMatches.plus(Pair(id, signature))
-//        )
-//      }
-}
+    val nodeMap: NodeMap,
+    val implementationGraphs: Map<FunctionKey, Graph>
+)
 
 val emptyDungeon =
     Dungeon(
         graph = newNamespace().copy(
-//            nodes = setOf(),
             connections = setOf(),
             values = mapOf()
         ),
-        nodeMap = mapOf()
+        nodeMap = mapOf(),
+        implementationGraphs = mapOf()
     )
-
-fun modifyGraph(dungeon: Dungeon, transform: (Graph) -> Graph) =
-    dungeon.copy(
-        graph = transform(dungeon.graph)
-    )
-
-fun addConnection(dungeon: Dungeon, connection: Connection) =
-    modifyGraph(dungeon) { graph ->
-      graph.copy(
-          connections = graph.connections.plus(connection)
-      )
-    }

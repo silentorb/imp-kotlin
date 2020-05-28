@@ -50,3 +50,12 @@ fun convertCompleteSignature(completeSignature: CompleteSignature): Signature =
         },
         output = completeSignature.output.hash
     )
+
+fun joinPaths(vararg tokens: String): String =
+    tokens
+        .flatMap { it.split(".") }
+        .filter { it.isNotEmpty() }
+        .joinToString(".")
+
+fun pathKeyToString(key: PathKey): String =
+    joinPaths(key.path, key.name)

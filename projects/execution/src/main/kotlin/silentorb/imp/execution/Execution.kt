@@ -1,6 +1,7 @@
 package silentorb.imp.execution
 
 import silentorb.imp.core.*
+import silentorb.imp.parsing.parser.Dungeon
 
 typealias OutputValues = Map<PathKey, Any>
 typealias Arguments = Map<String, Any>
@@ -39,26 +40,26 @@ fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: Path
       }
 }
 
-fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: OutputValues, id: PathKey,
+fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: OutputValues, node: PathKey,
                 additionalArguments: Arguments? = null): Any {
-  return if (graph.values.containsKey(id)) {
-    graph.values[id]!!
+  return if (graph.values.containsKey(node)) {
+    graph.values[node]!!
   } else {
-    val reference = graph.references[id]
-    val type = graph.implementationTypes[id]
+    val reference = graph.references[node]
+    val type = graph.implementationTypes[node]
     if (reference == null) {
-      val arguments = prepareArguments(graph, values, id)
+      val arguments = prepareArguments(graph, values, node)
       assert(arguments.size == 1)
       arguments.values.first()
     } else if (type != null) {
       val implementationKey = FunctionKey(reference, type)
       val function = functions[implementationKey]!!
-      val arguments = prepareArguments(graph, values, id)
-      function(if (additionalArguments != null) arguments.plus(additionalArguments) else arguments)
+      val arguments = prepareArguments(graph, values, node)
+      function(if (additionalArguments != null) arguments + additionalArguments else arguments)
     } else if (values.containsKey(reference)) {
       values[reference]!!
     } else
-      throw Error("Insufficient data to execute node $id")
+      throw Error("Insufficient data to execute node $node")
   }
 }
 
@@ -69,17 +70,17 @@ fun executeStep(functions: FunctionImplementationMap, graph: Graph): (OutputValu
 fun executeStep(functions: FunctionImplementationMap, graph: Graph, values: OutputValues, node: PathKey, additionalArguments: Arguments) =
     values.plus(node to executeNode(graph, functions, values, node, additionalArguments))
 
-fun execute(functions: FunctionImplementationMap, graph: Graph, steps: List<PathKey>): OutputValues {
-  return steps.fold(mapOf(), executeStep(functions, graph))
+fun execute(functions: FunctionImplementationMap, graph: Graph, steps: List<PathKey>, values: OutputValues): OutputValues {
+  return steps.fold(values, executeStep(functions, graph))
 }
 
-fun execute(functions: FunctionImplementationMap, graph: Graph): OutputValues {
+fun execute(functions: FunctionImplementationMap, graph: Graph, values: OutputValues): OutputValues {
   val steps = arrangeGraphSequence(graph)
-  return execute(functions, graph, steps)
+  return execute(functions, graph, steps, values)
 }
 
-fun executeToSingleValue(functions: FunctionImplementationMap, graph: Graph): Any? {
-  val result = execute(functions, graph)
+fun executeToSingleValue(functions: FunctionImplementationMap, graph: Graph, values: OutputValues = mapOf()): Any? {
+  val result = execute(functions, graph, values)
   val output = getGraphOutputNode(graph)
   return if (output == null)
     null
@@ -87,15 +88,21 @@ fun executeToSingleValue(functions: FunctionImplementationMap, graph: Graph): An
     result[output]
 }
 
-//fun getGraphOutput(graph: Graph, values: OutputValues): Map<PathKey, Any> {
-//  val outputNode = getGraphOutputNode(graph)
-//  return graph.connections
-//      .filter { it.destination == outputNode }
-//      .associate { Pair(it.parameter, values[it.source]!!) }
-//}
+fun getImplementationFunctions(dungeon: Dungeon, functions: FunctionImplementationMap): FunctionImplementationMap {
+  val graph = dungeon.graph
+  return dungeon.implementationGraphs.mapValues { (key, functionGraph) ->
+    val signature = graph.typings.signatures[key.type]!!
+    val parameters = signature.parameters
+    { arguments: Arguments ->
+      val values = parameters.associate {
+        Pair(PathKey(pathKeyToString(key.key), it.name), arguments[it.name]!!)
+      }
+      executeToSingleValue(functions, functionGraph, values)!!
+    }
+  }
+}
 
-//fun executeAndFormat(functions: FunctionImplementationMap, graph: Graph): Any {
-//  val values = execute(functions, graph)
-//
-//  return getGraphOutput(graph, values)
-//}
+fun executeToSingleValue(functions: FunctionImplementationMap, dungeon: Dungeon): Any? {
+  val newFunctions = getImplementationFunctions(dungeon, functions)
+  return executeToSingleValue(functions + newFunctions, dungeon.graph)
+}

@@ -119,7 +119,7 @@ fun validateTypeConstraints(values: Map<PathKey, Any>, context: Context, constra
   return values.mapNotNull { (node, value) ->
     val constraintType = constraints[node]
     if (constraintType != null) {
-      val constraint = resolveNumericTypeConstraint(context, constraintType)
+      val constraint = resolveNumericTypeConstraint(constraintType)(context)
       if (constraint == null || isValueWithinConstraint(constraint, value))
         null
       else

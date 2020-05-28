@@ -4,7 +4,7 @@ import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 
-fun parseImport(namespace: Namespace): (TokenizedImport) -> PartitionedResponse<Map<PathKey, TypeHash>> = { import ->
+fun parseImport(context: Context): (TokenizedImport) -> PartitionedResponse<Map<PathKey, TypeHash>> = { import ->
   val path = import.path
       .filter { it.rune == Rune.identifier }
       .map { it.value }
@@ -12,7 +12,7 @@ fun parseImport(namespace: Namespace): (TokenizedImport) -> PartitionedResponse<
   val hasWildcard = import.path.last().rune == Rune.operator
 
   if (hasWildcard) {
-    val contents = getDirectoryContents(namespace, toPathString(path))
+    val contents = getNamespaceContents(context, toPathString(path))
     if (contents.none()) {
       PartitionedResponse(mapOf(), listOf(ParsingError(TextId.importNotFound, range = tokensToRange(import.path))))
     } else {
@@ -20,7 +20,7 @@ fun parseImport(namespace: Namespace): (TokenizedImport) -> PartitionedResponse<
     }
   } else {
     val pathKey = toPathKey(path)
-    val type = namespace.nodeTypes[pathKey]
+    val type = getPathKeyTypes(context, pathKey).firstOrNull()
     if (type == null)
       PartitionedResponse(mapOf(), listOf(ParsingError(TextId.importNotFound, range = tokensToRange(import.path))))
     else

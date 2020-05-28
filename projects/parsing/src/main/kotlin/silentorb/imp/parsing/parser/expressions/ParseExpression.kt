@@ -16,7 +16,7 @@ data class IntermediateExpression(
 )
 
 fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): PartitionedResponse<IntermediateExpression> {
-  val path = "${root.path}.${root.name}"
+  val path = pathKeyToString(root)
   val groupGraph = newGroupingGraph(groupTokens(tokens))
   val tokenGraph = arrangePiping(tokens, groupGraph)
   val namedArguments = tokenGraph.parents
@@ -109,7 +109,7 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): Partitione
   val signatureErrors = validateSignatures(context, nodeTypes, nonNullaryFunctions, signatureOptions, nodeMap)// +
   val errors = signatureErrors + typeResolutionErrors + tokenErrors
 
-  val dungeon = Dungeon(
+  val dungeon = emptyDungeon.copy(
       graph = newNamespace().copy(
           connections = connections,
           implementationTypes = implementationTypes,

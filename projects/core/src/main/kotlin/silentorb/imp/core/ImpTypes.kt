@@ -1,6 +1,6 @@
 package silentorb.imp.core
 
-const val standardLibraryPath = "imp"
+const val standardLibraryPath = "imp.standard"
 
 val intKey = PathKey(standardLibraryPath, "Int")
 

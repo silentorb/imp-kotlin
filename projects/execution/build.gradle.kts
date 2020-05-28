@@ -1,10 +1,4 @@
 
 dependencies {
-
-  testImplementation("junit:junit:4.13")
-  testImplementation(project(":libraries_standard"))
-  testImplementation(project(":libraries_standard_implementation"))
-  testImplementation(project(":testing"))
+  api(project(":parsing"))
 }
-
-requires(project, "core")

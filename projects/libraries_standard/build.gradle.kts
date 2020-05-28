@@ -1,6 +1,3 @@
-
 dependencies {
-
+  implementation(project(":execution"))
 }
-
-requires(project, "core")

@@ -5,15 +5,6 @@ import silentorb.imp.parsing.general.*
 
 val emptyContext: Context = listOf(newNamespace())
 
-//fun <T> filterIndicies(collection: Collection<T>, filter: (T) -> Boolean) =
-//    collection
-//        .foldIndexed(listOf<Int>()) { i, a, b ->
-//          if (filter(b))
-//            a.plus(i)
-//          else
-//            a
-//        }
-
 fun <T> filterIndices(list: List<T>, filter: (T) -> Boolean): List<Int> {
   val iterator = list.iterator()
   return list.indices.filter { filter(iterator.next()) }
@@ -49,22 +40,11 @@ fun <T> untilIndex(list: List<T>, filter: (T) -> Boolean): Int {
 fun <T> until(list: List<T>, filter: (T) -> Boolean): List<T> =
     list.take(untilIndex(list, filter))
 
-//fun flattenDungeon(parent: Dungeon, child: Dungeon): Dungeon {
-//  val mapId = newChildMap(parent.graph.nodes, child.graph.nodes)
-//  val graph = flattenGraph(parent.graph, child.graph, mapId)
-//  val newNodeMap = child.nodeMap
-//      .mapKeys { (id, _) -> mapId(id) }
-//
-//  return Dungeon(
-//      graph = graph,
-//      nodeMap = parent.nodeMap.plus(newNodeMap)
-//  )
-//}
-
-fun mergeDistinctDungeons(parent: Dungeon, child: Dungeon): Dungeon {
+fun mergeDungeons(parent: Dungeon, child: Dungeon): Dungeon {
   return Dungeon(
-      graph = mergeNamespaces(parent.graph, child.graph),
-      nodeMap = parent.nodeMap.plus(child.nodeMap)
+      graph = parent.graph + child.graph,
+      nodeMap = parent.nodeMap + child.nodeMap,
+      implementationGraphs = parent.implementationGraphs + child.implementationGraphs
   )
 }
 

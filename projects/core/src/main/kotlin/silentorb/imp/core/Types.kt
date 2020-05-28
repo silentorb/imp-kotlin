@@ -6,7 +6,11 @@ typealias TypeHash = Int
 data class PathKey(
     val path: String,
     val name: String
-)
+) {
+  init {
+    assert(path.firstOrNull() != '.')
+  }
+}
 
 typealias Union = Set<TypeHash>
 
@@ -120,4 +124,7 @@ data class CompleteSignature(
 )
 
 const val unknownSymbol = "unknown"
-val unknownKey = PathKey("", unknownSymbol)
+val unknownType = newTypePair(PathKey("", unknownSymbol))
+
+typealias FunctionImplementation = (Map<Key, Any>) -> Any
+typealias FunctionImplementationMap = Map<FunctionKey, FunctionImplementation>

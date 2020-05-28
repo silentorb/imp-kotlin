@@ -1,9 +1,6 @@
 dependencies {
-
-
-  // Even though junit is a test library, this is also a test library
-  // so junit should be included as implementation, not testImplementation
-  implementation("junit:junit:4.13")
+  implementation("org.junit.jupiter:junit-jupiter:5.6.1")
+  implementation(project(":parsing"))
+  testImplementation(project(":execution"))
+  testImplementation(project(":libraries_standard"))
 }
-
-requires(project, "parsing")

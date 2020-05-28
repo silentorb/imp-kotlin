@@ -1,7 +1,7 @@
 package silentorb.imp.testing
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import silentorb.imp.parsing.general.ParsingError
 import silentorb.imp.parsing.general.formatError
 import silentorb.imp.parsing.general.*
@@ -12,7 +12,7 @@ val errored = { errors: List<ParsingError> ->
     "[TextId.${error.message}] ${formatError(::englishText, error)}"
   } else
     ""
-  assertEquals(message, 0, errors.size)
+  assertEquals(0, errors.size, message)
 }
 
 val shouldHaveErrored = { ->

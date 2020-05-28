@@ -18,21 +18,24 @@ fun narrowTypeByArguments(
 ): (Map.Entry<PathKey, List<PathKey>>) -> Pair<PathKey, List<SignatureMatch>>? = { (pathKey, children) ->
   val functionType = argumentTypes[pathKey]
   if (functionType != null) {
-    val arguments = children
-        .filter { argumentTypes.containsKey(it) }
-        .map { childNode ->
-          Argument(
-              name = childNode.name,
-              type = argumentTypes[childNode]!!,
-              node = childNode
-          )
-        }
-    val functionOverloads = flattenTypeSignatures(context)(functionType)
-    val signatureMatches = overloadMatches(context, arguments, functionOverloads)
-    if (signatureMatches.any())
-      Pair(pathKey, signatureMatches)
-    else
+    if (children.any { !argumentTypes.containsKey(it)})
       null
+    else {
+      val arguments = children
+          .map { childNode ->
+            Argument(
+                name = childNode.name,
+                type = argumentTypes[childNode]!!,
+                node = childNode
+            )
+          }
+      val functionOverloads = flattenTypeSignatures(context)(functionType)
+      val signatureMatches = overloadMatches(context, arguments, functionOverloads)
+      if (signatureMatches.any())
+        Pair(pathKey, signatureMatches)
+      else
+        null
+    }
   } else
     null
 }
@@ -54,9 +57,6 @@ fun resolveFunctionSignatures(
     nodeMap: NodeMap,
     namedArguments: Map<PathKey, String>
 ): SignatureOptionsAndTypes {
-//  val endpointFunctions = references.keys.minus(parents.keys).map { i -> tokenNodes.entries.first { it.value == i }.key }
-//  val stages = //listOf(endpointFunctions) +
-//      stages
   return stages
       .fold(SignatureOptionsAndTypes()) { accumulator, stage ->
         val stageParents = stage

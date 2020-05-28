@@ -1,9 +1,10 @@
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 import silentorb.imp.core.Connection
 import silentorb.imp.core.PathKey
+import silentorb.imp.core.joinPaths
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.parser.emptyContext
@@ -74,14 +75,14 @@ class ParserTest {
     handleRoot(errored, parseTextBranching(emptyContext)(code)) { result ->
       val graph = result.graph
       val intermediate = PathKey(localPath, "intermediate")
-      val intermediateReference = PathKey(localPath + ".output", "intermediate1")
+      val intermediateReference = PathKey(joinPaths(localPath, "output"), "intermediate1")
       assertEquals(4, graph.nodes.size)
       assertEquals(1, graph.values.size)
       assertEquals(2, graph.connections.size)
       assertEquals(10, graph.values.values.first())
       assertTrue(graph.nodes.contains(intermediate))
       assertTrue(graph.nodes.contains(PathKey(localPath, "output")))
-      assertTrue(graph.nodes.contains(PathKey(localPath + ".intermediate", "#literal1")))
+      assertTrue(graph.nodes.contains(PathKey(joinPaths(localPath, "intermediate"), "#literal1")))
       assertTrue(graph.references.containsKey(intermediateReference))
     }
   }
@@ -101,7 +102,7 @@ class ParserTest {
     expectError(TextId.duplicateSymbol, parseTextBranching(emptyContext)(code))
   }
 
-  @Ignore
+  @Disabled
   @Test
   fun preventsMultipleGraphOutputs() {
     val code = """
@@ -512,20 +513,6 @@ let output = simpleFunction a (simpleFunction 3 3)
     handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
-    }
-  }
-
-  @Ignore()
-  @Test
-  fun supportsCustomFunctions() {
-    val code = """
-      import silentorb.imp.test.*
-      let add a:Int b:Int = a + b
-      let output = add 1 2
-    """.trimIndent()
-    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
-      val graph = result.graph
-      assertEquals(7, graph.nodes.size)
     }
   }
 }

@@ -1,20 +1,19 @@
+package execution
+
 import silentorb.imp.core.*
 import silentorb.imp.execution.CompleteFunction
 import silentorb.imp.execution.newLibrary
-import silentorb.imp.library.implementation.standard.standardLibraryImplementation
-import silentorb.imp.library.standard.standardLibraryNamespace
-
-fun standardLibrary() = standardLibraryImplementation()
+import silentorb.imp.library.standard.standardLibrary
 
 fun simpleContext() = listOf(
-    standardLibraryNamespace()
+    standardLibrary().namespace
 )
 
 const val customPath = "imp.test.custom"
 
 val monkeyType = newTypePair(PathKey(customPath, "Monkey"))
 
-val customLibrary = newLibrary(
+fun customLibrary() = newLibrary(
     listOf(
         CompleteFunction(
             path = PathKey(customPath, "newMonkey"),
@@ -31,4 +30,4 @@ val customLibrary = newLibrary(
     )
 )
 
-val customLibraryContext = listOf(customLibrary.namespace)
+fun customLibraryContext() = listOf(customLibrary().namespace)
