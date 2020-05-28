@@ -6,23 +6,21 @@ import silentorb.imp.parsing.parser.Dungeon
 typealias OutputValues = Map<PathKey, Any>
 typealias Arguments = Map<String, Any>
 
-fun nextStage(nodes: Set<PathKey>, connections: Connections, references: Map<PathKey, PathKey>): List<PathKey> {
-  return nodes.filter { node -> connections.none { it.key.destination == node } && nodes.none { references[node] == it } }
-      .map { it }
-}
+fun nextStage(nodes: Set<PathKey>, connections: Connections): List<PathKey> =
+    nodes
+        .filter { node -> connections.none { it.key.destination == node } }
+        .map { it }
 
 fun arrangeGraphStages(graph: Graph): List<List<PathKey>> {
   var nodes = graph.nodes
   var connections = graph.connections
-  var references = graph.references
   var result = listOf<List<PathKey>>()
 
   while (nodes.any()) {
-    val nextNodes = nextStage(nodes, connections, references)
+    val nextNodes = nextStage(nodes, connections)
     result = result.plusElement(nextNodes)
     nodes = nodes.minus(nextNodes)
     connections = connections.filter { !nextNodes.contains(it.value) }
-    references = references.filter { !nextNodes.contains(it.value) }
   }
 
   return result
@@ -33,7 +31,7 @@ fun arrangeGraphSequence(graph: Graph): List<PathKey> =
 
 fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: PathKey): Arguments {
   return graph.connections
-      .filter { it.key.destination == destination }
+      .filter { it.key.destination == destination && it.key.parameter != defaultParameter }
       .entries
       .associate {
         val value = outputValues[it.value]!!
@@ -43,25 +41,25 @@ fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: Path
 
 fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: OutputValues, node: PathKey,
                 additionalArguments: Arguments? = null): Any {
-  return if (graph.values.containsKey(node)) {
-    graph.values[node]!!
-  } else {
-    val reference = graph.references[node]
-    val type = graph.implementationTypes[node]
-    if (reference == null) {
-      val arguments = prepareArguments(graph, values, node)
-      assert(arguments.size == 1)
-      arguments.values.first()
-    } else if (type != null) {
-      val implementationKey = FunctionKey(reference, type)
-      val function = functions[implementationKey]!!
-      val arguments = prepareArguments(graph, values, node)
-      function(if (additionalArguments != null) arguments + additionalArguments else arguments)
-    } else if (values.containsKey(reference)) {
-      values[reference]!!
-    } else
-      throw Error("Insufficient data to execute node $node")
-  }
+//  return if (graph.values.containsKey(node)) {
+//    graph.values[node]!!
+//  } else {
+  val reference = graph.connections[Input(node, defaultParameter)]
+  val type = graph.implementationTypes[node]
+  return if (reference == null) {
+    val arguments = prepareArguments(graph, values, node)
+    assert(arguments.size == 1)
+    arguments.values.first()
+  } else if (type != null) {
+    val implementationKey = FunctionKey(reference, type)
+    val function = functions[implementationKey]!!
+    val arguments = prepareArguments(graph, values, node)
+    function(if (additionalArguments != null) arguments + additionalArguments else arguments)
+  } else if (values.containsKey(reference)) {
+    values[reference]!!
+  } else
+    throw Error("Insufficient data to execute node $node")
+//  }
 }
 
 fun executeStep(functions: FunctionImplementationMap, graph: Graph): (OutputValues, PathKey) -> OutputValues = { values, node ->
@@ -77,7 +75,7 @@ fun execute(functions: FunctionImplementationMap, graph: Graph, steps: List<Path
 
 fun execute(functions: FunctionImplementationMap, graph: Graph, values: OutputValues): OutputValues {
   val steps = arrangeGraphSequence(graph)
-  return execute(functions, graph, steps, values)
+  return execute(functions, graph, steps, graph.values + values)
 }
 
 fun executeToSingleValue(functions: FunctionImplementationMap, graph: Graph, values: OutputValues = mapOf()): Any? {

@@ -2,7 +2,6 @@ package silentorb.imp.core
 
 data class Namespace(
     val connections: Connections,
-    val references: Map<PathKey, PathKey>,
     val implementationTypes: Map<PathKey, TypeHash>,
     val returnTypes: Map<PathKey, TypeHash>,
     val values: Map<PathKey, Any>,
@@ -10,10 +9,13 @@ data class Namespace(
 ) {
   val nodes: Set<PathKey>
     get() =
-      connections
-          .flatMap { listOf(it.value, it.key.destination) }
+//      connections
+//          .flatMap { listOf(it.value, it.key.destination) }
+      implementationTypes.keys
+          .plus(returnTypes.keys)
+          .minus(values.keys)
+//          .filter { !typings.signatures.containsKey(returnTypes[it]) }
           .toSet()
-          .plus(returnTypes.filterValues { !typings.signatures.containsKey(it) }.keys)
 
   operator fun plus(other: Namespace): Namespace =
       mergeNamespaces(this, other)
@@ -26,7 +28,6 @@ fun newNamespace(): Namespace =
         connections = mapOf(),
         implementationTypes = mapOf(),
         returnTypes = mapOf(),
-        references = mapOf(),
         values = mapOf(),
         typings = newTypings()
     )
@@ -36,7 +37,6 @@ fun mergeNamespaces(first: Namespace, second: Namespace): Namespace =
         connections = first.connections + second.connections,
         implementationTypes = first.implementationTypes + second.implementationTypes,
         returnTypes = first.returnTypes + second.returnTypes,
-        references = first.references + second.references,
         typings = mergeTypings(first.typings, second.typings),
         values = first.values + second.values
     )
@@ -125,7 +125,7 @@ tailrec fun resolveReference(context: Context, name: String, index: Int): PathKe
       null
     else {
       val nodes = context[index].returnTypes.keys.filter { it.name == name }
-          .plus(context[index].references.keys.filter { it.name == name })
+          .plus(context[index].connections.keys.filter { it.destination.name == name }.map { it.destination })
 
       if (nodes.size > 1)
         throw Error("Not yet supported")
@@ -135,9 +135,6 @@ tailrec fun resolveReference(context: Context, name: String, index: Int): PathKe
 
 fun resolveReference(context: Context, name: String): PathKey? =
     resolveReference(context, name, context.size - 1)
-
-fun resolveAlias(context: Context, key: PathKey): PathKey? =
-    resolveContextField(context) { namespace -> namespace.references[key] }
 
 fun getTypeAlias(context: Context, key: TypeHash): TypeHash? =
     resolveContextField(context) { namespace -> namespace.typings.typeAliases[key] }

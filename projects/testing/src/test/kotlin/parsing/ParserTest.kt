@@ -83,7 +83,6 @@ class ParserTest {
       assertTrue(graph.nodes.contains(intermediate))
       assertTrue(graph.nodes.contains(PathKey(localPath, "output")))
       assertTrue(graph.nodes.contains(PathKey(joinPaths(localPath, "intermediate"), "#literal1")))
-      assertTrue(graph.references.containsKey(intermediateReference))
     }
   }
 

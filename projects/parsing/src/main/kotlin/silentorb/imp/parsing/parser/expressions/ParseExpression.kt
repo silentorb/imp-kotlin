@@ -111,10 +111,9 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): Partitione
 
   val dungeon = emptyDungeon.copy(
       graph = newNamespace().copy(
-          connections = connections,
+          connections = connections + references.entries.associate { Input(it.key, defaultParameter) to it.value },
           implementationTypes = implementationTypes,
           returnTypes = nodeTypes,
-          references = references,
           typings = typings,
           values = values
       ),
