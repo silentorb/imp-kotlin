@@ -78,7 +78,7 @@ class ParserTest {
       val intermediateReference = PathKey(joinPaths(localPath, "output"), "intermediate1")
       assertEquals(4, graph.nodes.size)
       assertEquals(1, graph.values.size)
-      assertEquals(2, graph.connections.size)
+      assertEquals(3, graph.connections.size)
       assertEquals(10, graph.values.values.first())
       assertTrue(graph.nodes.contains(intermediate))
       assertTrue(graph.nodes.contains(PathKey(localPath, "output")))
@@ -238,7 +238,7 @@ class ParserTest {
     handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
-      assertEquals(3, graph.connections.size)
+      assertEquals(4, graph.connections.size)
       val node2 = PathKey("output", "simpleFunction1")
       val node3 = PathKey("output", "#literal1")
       val node4 = PathKey("output", "#literal2")
@@ -270,7 +270,7 @@ class ParserTest {
     handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(5, graph.nodes.size)
-      assertEquals(4, graph.connections.size)
+      assertEquals(6, graph.connections.size)
     }
   }
 
@@ -285,7 +285,7 @@ class ParserTest {
     handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(6, graph.nodes.size)
-      assertEquals(4, graph.connections.size)
+      assertEquals(6, graph.connections.size)
     }
   }
 
@@ -302,7 +302,7 @@ let output = value
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
       assertEquals(1, graph.values.size)
-      assertEquals(2, graph.connections.size)
+      assertEquals(3, graph.connections.size)
       assertEquals(10, graph.values.values.first())
     }
   }
@@ -317,7 +317,7 @@ let output = value
     handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
-      assertEquals(3, graph.connections.size)
+      assertEquals(4, graph.connections.size)
       assertEquals(1, graph.values[graph.connections.entries.first { it.key.parameter == "second" }.value])
       assertEquals(2.1f, graph.values[graph.connections.entries.first { it.key.parameter == "first" }.value])
     }
@@ -333,7 +333,7 @@ let output = value
     handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
-      assertEquals(3, graph.connections.size)
+      assertEquals(4, graph.connections.size)
       assertEquals(1, graph.values[graph.connections.entries.first { it.key.parameter == "second" }.value])
       assertEquals(2.1f, graph.values[graph.connections.entries.first { it.key.parameter == "first" }.value])
     }
@@ -352,7 +352,7 @@ let output = simpleFunction2
     handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
-      assertEquals(3, graph.connections.size)
+      assertEquals(4, graph.connections.size)
       assertEquals(1, graph.values[graph.connections.entries.first { it.key.parameter == "second" }.value])
       assertEquals(2.1f, graph.values[graph.connections.entries.first { it.key.parameter == "first" }.value])
     }

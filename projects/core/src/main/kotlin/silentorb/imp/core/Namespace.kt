@@ -13,7 +13,6 @@ data class Namespace(
 //          .flatMap { listOf(it.value, it.key.destination) }
       implementationTypes.keys
           .plus(returnTypes.keys)
-          .minus(values.keys)
 //          .filter { !typings.signatures.containsKey(returnTypes[it]) }
           .toSet()
 
@@ -126,6 +125,7 @@ tailrec fun resolveReference(context: Context, name: String, index: Int): PathKe
     else {
       val nodes = context[index].returnTypes.keys.filter { it.name == name }
           .plus(context[index].connections.keys.filter { it.destination.name == name }.map { it.destination })
+          .distinct()
 
       if (nodes.size > 1)
         throw Error("Not yet supported")

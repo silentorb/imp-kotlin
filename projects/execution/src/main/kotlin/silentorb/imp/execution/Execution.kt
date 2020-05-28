@@ -11,9 +11,16 @@ fun nextStage(nodes: Set<PathKey>, connections: Connections): List<PathKey> =
         .filter { node -> connections.none { it.key.destination == node } }
         .map { it }
 
-fun arrangeGraphStages(graph: Graph): List<List<PathKey>> {
+fun arrangeGraphStages(graph: Graph, values: OutputValues): List<List<PathKey>> {
   var nodes = graph.nodes
+      .minus(graph.values.keys)
+      .minus(values.keys)
+      .filter { graph.typings.signatures[graph.returnTypes[it]]?.parameters?.none() ?: true }
+      .toSet()
+
+  // Only grab connections that connect the filtered pool of execution nodes
   var connections = graph.connections
+      .filter { nodes.contains(it.key.destination) && nodes.contains(it.value) }
   var result = listOf<List<PathKey>>()
 
   while (nodes.any()) {
@@ -26,8 +33,8 @@ fun arrangeGraphStages(graph: Graph): List<List<PathKey>> {
   return result
 }
 
-fun arrangeGraphSequence(graph: Graph): List<PathKey> =
-    arrangeGraphStages(graph).flatten()
+fun arrangeGraphSequence(graph: Graph, values: OutputValues): List<PathKey> =
+    arrangeGraphStages(graph, values).flatten()
 
 fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: PathKey): Arguments {
   return graph.connections
@@ -41,9 +48,6 @@ fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: Path
 
 fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: OutputValues, node: PathKey,
                 additionalArguments: Arguments? = null): Any {
-//  return if (graph.values.containsKey(node)) {
-//    graph.values[node]!!
-//  } else {
   val reference = graph.connections[Input(node, defaultParameter)]
   val type = graph.implementationTypes[node]
   return if (reference == null) {
@@ -59,7 +63,6 @@ fun executeNode(graph: Graph, functions: FunctionImplementationMap, values: Outp
     values[reference]!!
   } else
     throw Error("Insufficient data to execute node $node")
-//  }
 }
 
 fun executeStep(functions: FunctionImplementationMap, graph: Graph): (OutputValues, PathKey) -> OutputValues = { values, node ->
@@ -74,7 +77,7 @@ fun execute(functions: FunctionImplementationMap, graph: Graph, steps: List<Path
 }
 
 fun execute(functions: FunctionImplementationMap, graph: Graph, values: OutputValues): OutputValues {
-  val steps = arrangeGraphSequence(graph)
+  val steps = arrangeGraphSequence(graph, values)
   return execute(functions, graph, steps, graph.values + values)
 }
 
