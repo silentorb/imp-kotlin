@@ -1,18 +1,18 @@
 package silentorb.imp.campaign
 
 import silentorb.imp.core.Dungeon
-import silentorb.imp.core.Range
-import silentorb.imp.parsing.general.TextId
 
 typealias ModuleId = String
 typealias DungeonId = String
 
 data class Module(
-    val dungeons: Map<DungeonId, Dungeon>
+    val dungeons: Map<DungeonId, Dungeon>,
+    val fileNamespaces: Boolean
 )
 
 val emptyModule = Module(
-    dungeons = mapOf()
+    dungeons = mapOf(),
+    fileNamespaces = false
 )
 
 data class Dependency(

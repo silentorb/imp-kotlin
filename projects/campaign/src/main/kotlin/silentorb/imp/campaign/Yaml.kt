@@ -40,8 +40,12 @@ fun getYamlObjectMapper(): YAMLMapper {
 inline fun <reified T> loadYamlFile(path: Path): T? {
   if (Files.isRegularFile(path)) {
     val mapper = getYamlObjectMapper()
-    return Files.newBufferedReader(path).use {
-      mapper.readValue(it, T::class.java)
+    return Files.newBufferedReader(path).use { buffer ->
+      val text = buffer.readText()
+      if (text.matches(Regex("^\\s*$")))
+        null
+      else
+        mapper.readValue(text, T::class.java)
     }
   }
 
