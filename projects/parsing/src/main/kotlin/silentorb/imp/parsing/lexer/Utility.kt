@@ -1,8 +1,8 @@
 package silentorb.imp.parsing.lexer
 
 import silentorb.imp.parsing.general.CodeBuffer
-import silentorb.imp.parsing.general.Position
-import silentorb.imp.parsing.general.Range
+import silentorb.imp.core.Position
+import silentorb.imp.core.Range
 import silentorb.imp.parsing.general.Token
 
 typealias CharPattern = (Char) -> Boolean

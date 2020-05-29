@@ -1,6 +1,6 @@
 package silentorb.imp.parsing.lexer
 
-import silentorb.imp.parsing.general.Position
+import silentorb.imp.core.Position
 
 fun nextPosition(character: Char?, position: Position): Position =
     when (character) {

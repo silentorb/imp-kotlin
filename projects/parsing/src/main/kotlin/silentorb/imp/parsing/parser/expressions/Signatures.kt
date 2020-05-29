@@ -1,8 +1,8 @@
 package silentorb.imp.parsing.parser.expressions
 
 import silentorb.imp.core.*
-import silentorb.imp.parsing.general.Range
-import silentorb.imp.parsing.parser.NodeMap
+import silentorb.imp.core.Range
+import silentorb.imp.core.NodeMap
 
 data class FunctionInvocation(
     val type: TypeHash,

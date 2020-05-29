@@ -101,16 +101,6 @@ class ParserTest {
     expectError(TextId.duplicateSymbol, parseTextBranching(emptyContext)(code))
   }
 
-  @Disabled
-  @Test
-  fun preventsMultipleGraphOutputs() {
-    val code = """
-      let first = 10
-      let second = 10
-    """.trimIndent()
-    expectError(TextId.multipleGraphOutputs, parseTextBranching(emptyContext)(code))
-  }
-
   @Test
   fun preventsEmptyExpressions() {
     val code = """
@@ -118,7 +108,6 @@ class ParserTest {
     """.trimIndent()
     expectError(TextId.missingExpression, parseTextBranching(emptyContext)(code))
   }
-
 
   @Test
   fun preventsImportingMissingFunctions() {

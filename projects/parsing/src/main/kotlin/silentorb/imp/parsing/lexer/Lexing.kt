@@ -1,5 +1,9 @@
 package silentorb.imp.parsing.lexer
 
+import silentorb.imp.core.CodeInt
+import silentorb.imp.core.Position
+import silentorb.imp.core.Range
+import silentorb.imp.core.newPosition
 import silentorb.imp.parsing.general.*
 
 fun nextCharacter(code: CodeBuffer, index: CodeInt): Char? {

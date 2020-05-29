@@ -1,0 +1,4 @@
+import lib.*
+
+let base = 10
+let main = render base

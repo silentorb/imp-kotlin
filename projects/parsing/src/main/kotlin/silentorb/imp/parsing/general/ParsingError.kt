@@ -1,5 +1,8 @@
 package silentorb.imp.parsing.general
 
+import silentorb.imp.core.Range
+import silentorb.imp.core.rangeString
+
 data class ParsingError(
     val message: TextId,
     val range: Range,

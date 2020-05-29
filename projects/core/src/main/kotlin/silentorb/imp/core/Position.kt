@@ -1,4 +1,7 @@
-package silentorb.imp.parsing.general
+package silentorb.imp.core
+
+// Could be later changed to Long
+typealias CodeInt = Int
 
 data class Position(
     val index: CodeInt,

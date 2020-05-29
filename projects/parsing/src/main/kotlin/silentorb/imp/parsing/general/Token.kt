@@ -1,5 +1,6 @@
 package silentorb.imp.parsing.general
 
+import silentorb.imp.core.Range
 import silentorb.imp.parsing.lexer.Rune
 
 data class Token(

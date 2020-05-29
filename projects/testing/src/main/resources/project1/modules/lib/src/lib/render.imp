@@ -1,0 +1,3 @@
+import imp.math.*
+
+let render value: Int = + value defaultValue

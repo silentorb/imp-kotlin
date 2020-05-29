@@ -1,7 +1,4 @@
-package silentorb.imp.parsing.parser
-
-import silentorb.imp.core.*
-import silentorb.imp.parsing.general.Range
+package silentorb.imp.core
 
 typealias NodeMap = Map<PathKey, Range>
 
@@ -15,10 +12,7 @@ data class Dungeon(
 
 val emptyDungeon =
     Dungeon(
-        graph = newNamespace().copy(
-            connections = mapOf(),
-            values = mapOf()
-        ),
+        graph = newNamespace(),
         nodeMap = mapOf(),
         implementationGraphs = mapOf()
     )

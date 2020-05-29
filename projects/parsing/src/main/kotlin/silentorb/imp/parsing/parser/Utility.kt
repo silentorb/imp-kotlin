@@ -1,7 +1,6 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
-import silentorb.imp.parsing.general.*
 
 val emptyContext: Context = listOf(newNamespace())
 

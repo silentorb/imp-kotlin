@@ -1,7 +1,7 @@
 package silentorb.imp.execution
 
 import silentorb.imp.core.*
-import silentorb.imp.parsing.parser.Dungeon
+import silentorb.imp.core.Dungeon
 
 typealias OutputValues = Map<PathKey, Any>
 typealias Arguments = Map<String, Any>
