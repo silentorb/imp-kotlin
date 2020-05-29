@@ -7,7 +7,9 @@ import com.fasterxml.jackson.module.afterburner.AfterburnerModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import java.io.File
 import java.io.InputStream
+import java.net.URI
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 
 private var globalYamlMapper: YAMLMapper? = null
@@ -35,10 +37,10 @@ fun getYamlObjectMapper(): YAMLMapper {
   return globalYamlMapper!!
 }
 
-inline fun <reified T> loadYamlFile(path: String): T? {
-  if (File(path).isFile) {
+inline fun <reified T> loadYamlFile(path: Path): T? {
+  if (Files.isRegularFile(path)) {
     val mapper = getYamlObjectMapper()
-    return Files.newBufferedReader(Paths.get(path)).use {
+    return Files.newBufferedReader(path).use {
       mapper.readValue(it, T::class.java)
     }
   }
