@@ -2,6 +2,7 @@ package silentorb.imp.campaign
 
 import silentorb.imp.core.Dungeon
 import silentorb.imp.parsing.general.ParsingErrors
+import java.nio.file.Path
 
 typealias ModuleId = String
 typealias DungeonId = String
@@ -51,4 +52,9 @@ data class CampaignResponse<T>(
     val value: T,
     val campaignErrors: CampaignErrors,
     val parsingErrors: ParsingErrors
+)
+
+data class ModuleInfo(
+    val config: ModuleConfig,
+    val sourceFiles: List<Path>
 )

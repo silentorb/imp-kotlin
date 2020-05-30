@@ -1,8 +1,10 @@
 package silentorb.imp.campaign
 
 import java.io.File
+import java.net.URI
 import java.nio.file.FileSystems
 import java.nio.file.Path
+import java.nio.file.Paths
 
 typealias PathFilter = (Path) -> Boolean
 
@@ -29,6 +31,9 @@ fun glob(filter: PathFilter, path: Path): List<Path> {
 
 fun glob(pattern: String, path: Path): List<Path> =
     glob(newGlobMatcher(pattern, path), path)
+
+fun glob(pattern: String, uri: URI): List<Path> =
+    glob(pattern, Paths.get(uri))
 
 fun baseName(path: Path) =
     path.fileName.toString().split(".").first()

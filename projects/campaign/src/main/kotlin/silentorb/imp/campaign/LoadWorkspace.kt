@@ -25,33 +25,36 @@ fun loadSourceFiles(root: URI, library: Library, moduleConfig: ModuleConfig, sou
   )
 }
 
-fun loadModule(root: URI, library: Library, path: Path): ParsingResponse<Module> {
-  val sourceFiles = glob("src/**/*.imp", path)
-  val moduleConfig = loadYamlFile<ModuleConfig>(path.resolve(moduleFileName)) ?: ModuleConfig()
-  val (dungeons, errors) = loadSourceFiles(root, library, moduleConfig, sourceFiles)
+fun loadModuleInfo(path: Path): ModuleInfo {
+  return ModuleInfo(
+      config = loadYamlFile<ModuleConfig>(path.resolve(moduleFileName)) ?: ModuleConfig(),
+      sourceFiles = glob("src/**/*.imp", path)
+  )
+}
+
+fun loadModule(root: URI, library: Library, info: ModuleInfo): ParsingResponse<Module> {
+  val config = info.config
+  val sourceFiles = info.sourceFiles
+  val (dungeons, errors) = loadSourceFiles(root, library, config, sourceFiles)
   return ParsingResponse(
       Module(
           dungeons = dungeons,
-          fileNamespaces = moduleConfig.fileNamespaces ?: false
+          fileNamespaces = config.fileNamespaces ?: false
       ),
       errors
   )
 }
 
-fun loadModules(library: Library, root: Path, globPattern: String): ParsingResponse<Map<ModuleId, Module>> {
+fun loadModuleInfos(root: URI, globPattern: String): Map<ModuleId, ModuleInfo> {
   val moduleDirectories = glob(globPattern, root)
       .filter { Files.isDirectory(it) }
       .filter { Files.exists(it.resolve(moduleFileName)) }
 
-  val modulePairs = moduleDirectories
-      .map { path ->
-        val (module, errors) = loadModule(root.toUri(), library, path)
-        Pair(Pair(baseName(path), module), errors)
+  return moduleDirectories
+      .associate { path ->
+        val info = loadModuleInfo(path)
+        Pair(baseName(path), info)
       }
-  return ParsingResponse(
-      modulePairs.associate { it.first },
-      modulePairs.flatMap { it.second }
-  )
 }
 
 fun loadWorkspace(library: Library, root: Path): CampaignResponse<Workspace> {
@@ -64,20 +67,41 @@ fun loadWorkspace(library: Library, root: Path): CampaignResponse<Workspace> {
         parsingErrors = listOf()
     )
   else {
-    val modulePairs = workspaceConfig.modules
-        .map { loadModules(library, root, it) }
+    val infos = workspaceConfig.modules
+        .map { loadModuleInfos(root.toUri(), it) }
+        .reduce { a, b -> a + b }
+
+    val dependencies = infos
+        .flatMap { (name, info) ->
+          info.config.dependencies
+              .map { provider ->
+                Dependency(
+                    dependent = name,
+                    provider = provider
+                )
+              }
+        }
+        .toSet()
+
+    val (stages, dependencyErrors) = arrangeModuleStages(infos.keys, dependencies)
+    val modulePairs = stages
+        .flatMap { stage ->
+          stage.map { name ->
+            Pair(name, loadModule(root.toUri(), library, infos[name]!!))
+          }
+        }
+        .associate { it }
 
     val modules = modulePairs
-        .map { it.value }
-        .reduce { a, b -> a + b }
+        .mapValues { it.value.value }
 
     return CampaignResponse(
         value = Workspace(
             modules = modules,
-            dependencies = setOf()
+            dependencies = dependencies
         ),
-        campaignErrors = listOf(),
-        parsingErrors = modulePairs.flatMap { it.errors }
+        campaignErrors = dependencyErrors,
+        parsingErrors = modulePairs.flatMap { it.value.errors }
     )
   }
 }
