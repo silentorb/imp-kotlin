@@ -1,6 +1,7 @@
 package silentorb.imp.core
 
-typealias NodeMap = Map<PathKey, Range>
+
+typealias NodeMap = Map<PathKey, FileRange>
 
 typealias ConstrainedLiteralMap = Map<PathKey, TypeHash>
 

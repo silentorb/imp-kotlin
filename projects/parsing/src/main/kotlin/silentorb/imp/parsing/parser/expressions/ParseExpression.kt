@@ -1,7 +1,7 @@
 package silentorb.imp.parsing.parser.expressions
 
 import silentorb.imp.core.*
-import silentorb.imp.parsing.general.PartitionedResponse
+import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.parser.*
 
@@ -15,7 +15,7 @@ data class IntermediateExpression(
     val values: Map<PathKey, Any>
 )
 
-fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): PartitionedResponse<IntermediateExpression> {
+fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): ParsingResponse<IntermediateExpression> {
   val path = pathKeyToString(root)
   val groupGraph = newGroupingGraph(groupTokens(tokens))
   val tokenGraph = arrangePiping(tokens, groupGraph)
@@ -43,7 +43,7 @@ fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): Partition
 
   val nodeMap = tokenNodes.entries
       .associate { (tokenIndex, pathKey) ->
-        Pair(pathKey, tokens[tokenIndex].range)
+        Pair(pathKey, tokens[tokenIndex].fileRange)
       }
 
   val literalTypes = resolveLiteralTypes(tokens, literalTokenKeys)
@@ -64,7 +64,7 @@ fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): Partition
       }
       .associate { it }
 
-  return PartitionedResponse(
+  return ParsingResponse(
       IntermediateExpression(
           initialTypes = literalTypes + referenceTypes,
           nodeMap = nodeMap,
@@ -78,7 +78,7 @@ fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): Partition
   )
 }
 
-fun parseExpression(root: PathKey, context: Context, tokens: Tokens): PartitionedResponse<Dungeon> {
+fun parseExpression(root: PathKey, context: Context, tokens: Tokens): ParsingResponse<Dungeon> {
   val (intermediate, tokenErrors) = mapTokensToNodes(root, context, tokens)
   val (
       initialTypes,
@@ -119,5 +119,5 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): Partitione
       ),
       nodeMap = nodeMap
   )
-  return PartitionedResponse(dungeon, errors)
+  return ParsingResponse(dungeon, errors)
 }

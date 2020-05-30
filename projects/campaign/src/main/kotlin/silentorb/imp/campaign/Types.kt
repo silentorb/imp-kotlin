@@ -1,6 +1,7 @@
 package silentorb.imp.campaign
 
 import silentorb.imp.core.Dungeon
+import silentorb.imp.parsing.general.ParsingErrors
 
 typealias ModuleId = String
 typealias DungeonId = String
@@ -48,5 +49,6 @@ typealias CampaignErrors = List<CampaignError>
 
 data class CampaignResponse<T>(
     val value: T,
-    val errors: CampaignErrors
+    val campaignErrors: CampaignErrors,
+    val parsingErrors: ParsingErrors
 )

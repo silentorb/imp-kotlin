@@ -1,5 +1,6 @@
 package silentorb.imp.parsing.lexer
 
+import silentorb.imp.core.FileRange
 import silentorb.imp.parsing.general.CodeBuffer
 import silentorb.imp.core.Position
 import silentorb.imp.core.Range
@@ -54,7 +55,7 @@ fun tokenFromBundle(rune: Rune): (Bundle) -> TokenStep = { bundle ->
   TokenStep(
       token = Token(
           rune = rune,
-          range = Range(bundle.start, bundle.end),
+          fileRange = FileRange(bundle.start.file, Range(bundle.start, bundle.end)),
           value = bundle.buffer
       ),
       position = bundle.end
@@ -66,17 +67,17 @@ fun badCharacter(bundle: Bundle): TokenStep =
         position = bundle.end,
         token = Token(
             rune = Rune.bad,
-            range = Range(bundle.start, bundle.end),
+            fileRange = FileRange(bundle.start.file, Range(bundle.start, bundle.end)),
             value = bundle.buffer
         )
     )
 
-fun badCharacter(range: Range): TokenStep =
+fun badCharacter(fileRange: FileRange): TokenStep =
     TokenStep(
-        position = range.end,
+        position = fileRange.range.end,
         token = Token(
             rune = Rune.bad,
-            range = range,
+            fileRange = fileRange,
             value = ""
         )
     )

@@ -1,10 +1,8 @@
 package silentorb.imp.parsing.lexer
 
-import silentorb.imp.core.CodeInt
-import silentorb.imp.core.Position
-import silentorb.imp.core.Range
-import silentorb.imp.core.newPosition
+import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
+import java.net.URI
 
 fun nextCharacter(code: CodeBuffer, index: CodeInt): Char? {
   val size = getCodeBufferSize(code)
@@ -22,7 +20,7 @@ fun singleCharacterTokenMatch(position: Position, character: Char): TokenStep? {
   return if (rune != null) {
     val end = nextPosition(character, position)
     TokenStep(
-        token = Token(rune, Range(position, end), character.toString()),
+        token = Token(rune, FileRange(position.file, Range(position, end)), character.toString()),
         position = end
     )
   } else
@@ -45,7 +43,7 @@ fun branchTokenStart(character: Char): BundleToToken? =
 fun tokenStart(code: CodeBuffer, position: Position, character: Char): TokenStep {
   val branch = branchTokenStart(character)
   return if (branch == null)
-    badCharacter(Range(position, nextPosition(character, position)))
+    badCharacter(FileRange(position.file, Range(position, nextPosition(character, position))))
   else
     branch(Bundle(
         code = code,
@@ -77,8 +75,8 @@ tailrec fun tokenize(code: CodeBuffer, position: Position, tokens: Tokens): Toke
     tokenize(code, newPosition, tokens.plus(token))
 }
 
-fun tokenize(code: CodeBuffer): Tokens =
-    tokenize(code, position = newPosition(), tokens = listOf())
+fun tokenize(code: CodeBuffer, file: TokenFile = URI.create("")): Tokens =
+    tokenize(code, position = newPosition(file), tokens = listOf())
 
 fun stripWhitespace(tokens: Tokens): Tokens =
     tokens.filter { it.rune != Rune.whitespace }

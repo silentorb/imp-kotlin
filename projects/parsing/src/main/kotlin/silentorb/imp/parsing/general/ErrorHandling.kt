@@ -3,14 +3,14 @@ package silentorb.imp.parsing.general
 fun newParsingError(message: TextId, token: Token, arguments: List<Any> = listOf()) =
     ParsingError(
         message = message,
-        range = token.range,
+        fileRange = token.fileRange,
         arguments = arguments
     )
 
 fun newParsingError(message: TextId): (Token) -> ParsingError = { token ->
   ParsingError(
       message = message,
-      range = token.range
+      fileRange = token.fileRange
   )
 }
 

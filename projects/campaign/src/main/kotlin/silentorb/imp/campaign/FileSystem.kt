@@ -29,3 +29,6 @@ fun glob(filter: PathFilter, path: Path): List<Path> {
 
 fun glob(pattern: String, path: Path): List<Path> =
     glob(newGlobMatcher(pattern, path), path)
+
+fun baseName(path: Path) =
+    path.fileName.toString().split(".").first()

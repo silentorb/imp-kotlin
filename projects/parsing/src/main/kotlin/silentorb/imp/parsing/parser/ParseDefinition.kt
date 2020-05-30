@@ -1,7 +1,7 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
-import silentorb.imp.parsing.general.PartitionedResponse
+import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.newParsingError
 import silentorb.imp.parsing.lexer.Rune
@@ -23,11 +23,11 @@ fun newParameterNamespace(context: Context, pathKey: PathKey, parameters: List<P
       )
 }
 
-fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>) -> PartitionedResponse<Dungeon> =
+fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>) -> ParsingResponse<Dungeon> =
     { (id, definition) ->
       val tokens = definition.expression.filter { it.rune != Rune.newline }
       if (tokens.none()) {
-        PartitionedResponse(
+        ParsingResponse(
             emptyDungeon,
             listOf(newParsingError(TextId.missingExpression, definition.symbol))
         )
@@ -96,7 +96,7 @@ fun parseDefinition(context: Context): (Map.Entry<PathKey, TokenizedDefinition>)
         } else
           dungeon
 
-        PartitionedResponse(
+        ParsingResponse(
             nextDungeon,
             matchingParenthesesErrors.plus(expressionErrors)
         )

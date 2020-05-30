@@ -37,10 +37,10 @@ fun checkMatchingParentheses(tokens: Tokens): ParsingErrors {
   val openCount = tokens.count { it.rune == Rune.parenthesesOpen }
   val closeCount = tokens.count { it.rune == Rune.parenthesesClose }
   return if (openCount > closeCount)
-    listOf(newParsingError(TextId.missingClosingParenthesis, range = Range(tokens.last().range.end)))
+    listOf(newParsingError(TextId.missingClosingParenthesis, fileRange = FileRange(tokens.last().file, Range(tokens.last().range.end))))
   else if (closeCount > openCount) {
     val range = Range(tokens.last { it.rune == Rune.parenthesesClose }.range.end)
-    listOf(newParsingError(TextId.unexpectedCharacter, range = range))
+    listOf(newParsingError(TextId.unexpectedCharacter, FileRange(tokens.last().file, range)))
   } else
     listOf()
 }
@@ -49,8 +49,8 @@ fun validateFunctionTypes(nodes: Set<PathKey>, types: Map<PathKey, TypeHash>, no
   return nodes
       .filter { !types.containsKey(it) }
       .map { node ->
-        val range = nodeMap[node]!!
-        newParsingError(TextId.unknownFunction, range)
+        val fileRange = nodeMap[node]!!
+        newParsingError(TextId.unknownFunction, fileRange)
       }
 }
 
@@ -71,9 +71,9 @@ fun validateSignatures(context: Context, types: Map<PathKey, TypeHash>, parents:
           }
 
           val argumentClause = argumentTypeNames.joinToString(", ")
-          ParsingError(TextId.noMatchingSignature, range = nodeMap[pathKey]!!, arguments = listOf(argumentClause))
+          ParsingError(TextId.noMatchingSignature, fileRange = nodeMap[pathKey]!!, arguments = listOf(argumentClause))
         } else
-          ParsingError(TextId.ambiguousOverload, range = nodeMap[pathKey]!!)
+          ParsingError(TextId.ambiguousOverload, fileRange = nodeMap[pathKey]!!)
       }
 }
 
@@ -126,15 +126,4 @@ fun validateTypeConstraints(values: Map<PathKey, Any>, context: Context, constra
         newParsingError(TextId.outsideTypeRange, nodeMap[node]!!)
     } else null
   }
-}
-
-fun validateGraph(nodeMap: NodeMap, graph: Graph): ParsingErrors {
-  val graphOutputs = getGraphOutputNodes(graph)
-  return listOfNotNull(
-      errorIf(graphOutputs.none(), TextId.noGraphOutput, Range(newPosition()))
-  )
-      .plus(graphOutputs.drop(1).map {
-        val token = nodeMap[it]!!
-        newParsingError(TextId.multipleGraphOutputs, token)
-      })
 }

@@ -3,7 +3,7 @@ package silentorb.imp.parsing.parser
 import silentorb.imp.core.Context
 import silentorb.imp.core.Dungeon
 import silentorb.imp.core.emptyDungeon
-import silentorb.imp.parsing.general.PartitionedResponse
+import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 
@@ -99,22 +99,22 @@ fun definitionIndices(tokens: Tokens): List<DefinitionIndex> {
   }
 }
 
-tailrec fun partitionParameters(tokens: Tokens, start: Int, end: Int, accumulator: List<TokenizedParameter>): PartitionedResponse<List<TokenizedParameter>> {
+tailrec fun partitionParameters(tokens: Tokens, start: Int, end: Int, accumulator: List<TokenizedParameter>): ParsingResponse<List<TokenizedParameter>> {
   val length = end - start
   return if (length == 0)
-    PartitionedResponse(accumulator, listOf())
+    ParsingResponse(accumulator, listOf())
   else if (length < 3) {
-    PartitionedResponse(accumulator, listOf(newParsingError(TextId.incompleteParameter, tokens[start])))
+    ParsingResponse(accumulator, listOf(newParsingError(TextId.incompleteParameter, tokens[start])))
   } else {
     val symbol = tokens[start]
     val separator = tokens[start + 1]
     val type = tokens[start + 2]
     if (symbol.rune != Rune.identifier)
-      PartitionedResponse(accumulator, listOf(newParsingError(TextId.expectedIdentifier, symbol)))
+      ParsingResponse(accumulator, listOf(newParsingError(TextId.expectedIdentifier, symbol)))
     else if (separator.rune != Rune.colon)
-      PartitionedResponse(accumulator, listOf(newParsingError(TextId.invalidToken, separator)))
+      ParsingResponse(accumulator, listOf(newParsingError(TextId.invalidToken, separator)))
     else if (type.rune != Rune.identifier)
-      PartitionedResponse(accumulator, listOf(newParsingError(TextId.expectedIdentifier, type)))
+      ParsingResponse(accumulator, listOf(newParsingError(TextId.expectedIdentifier, type)))
     else {
       val parameter = TokenizedParameter(symbol.value, type.value)
       partitionParameters(tokens, start + 3, end, accumulator + parameter)
@@ -122,7 +122,7 @@ tailrec fun partitionParameters(tokens: Tokens, start: Int, end: Int, accumulato
   }
 }
 
-fun partitionDefinitions(tokens: Tokens): PartitionedResponse<List<DefinitionRange>> {
+fun partitionDefinitions(tokens: Tokens): ParsingResponse<List<DefinitionRange>> {
   val assignmentTokenIndices = definitionIndices(tokens)
   val entries = assignmentTokenIndices.map { (step, assigmentIndex) ->
     val token = tokens[step]
@@ -156,19 +156,19 @@ fun partitionDefinitions(tokens: Tokens): PartitionedResponse<List<DefinitionRan
 
   val errors = entries.flatMap { it.first }
 
-  return PartitionedResponse(entries.map { it.second }, errors)
+  return ParsingResponse(entries.map { it.second }, errors)
 }
 
 fun toTokenizedGraph(
     tokens: Tokens,
     importRanges: List<ImportRange>,
     definitionRanges: List<DefinitionRange>
-): PartitionedResponse<TokenizedGraph> {
+): ParsingResponse<TokenizedGraph> {
   val imports = importRanges.map(extractImportTokens(tokens))
   val definitions = definitionRanges.map(extractDefinitionTokens(tokens))
   val importErrors = validateImportTokens(imports)
   val definitionErrors = validateDefinitionTokens(definitions)
-  return PartitionedResponse(
+  return ParsingResponse(
       TokenizedGraph(
           imports = imports,
           definitions = definitions
@@ -183,22 +183,22 @@ fun getDefinitionsRangeStart(tokens: Tokens, definitionRanges: List<DefinitionRa
 fun withoutComments(tokens: Tokens): Tokens =
     tokens.filter { it.rune != Rune.comment }
 
-fun parseTokens(context: Context, tokens: Tokens): PartitionedResponse<Dungeon> {
+fun parseTokens(context: Context, tokens: Tokens): ParsingResponse<Dungeon> {
   val (definitionRanges, partitionErrors) = partitionDefinitions(tokens)
   val importRangeMax = getDefinitionsRangeStart(tokens, definitionRanges)
   val importRanges = partitionImports(tokens.take(importRangeMax))
   val (tokenedGraph, tokenGraphErrors) = toTokenizedGraph(tokens, importRanges, definitionRanges)
   val (dungeon, dungeonErrors) = parseDungeon(context)(tokenedGraph)
-  return PartitionedResponse(
+  return ParsingResponse(
       dungeon,
       partitionErrors.plus(tokenGraphErrors).plus(dungeonErrors)
   )
 }
 
-fun parseTokens(context: Context): (Tokens) -> PartitionedResponse<Dungeon> = { tokens ->
+fun parseTokens(context: Context): (Tokens) -> ParsingResponse<Dungeon> = { tokens ->
   assert(context.any())
   if (tokens.none())
-    PartitionedResponse(emptyDungeon, listOf())
+    ParsingResponse(emptyDungeon, listOf())
   else
     parseTokens(context, withoutComments(tokens))
 }
