@@ -159,17 +159,17 @@ fun partitionDefinitions(tokens: Tokens): ParsingResponse<List<DefinitionRange>>
   return ParsingResponse(entries.map { it.second }, errors)
 }
 
-fun toTokenizedGraph(
+fun toTokenGraph(
     tokens: Tokens,
     importRanges: List<ImportRange>,
     definitionRanges: List<DefinitionRange>
-): ParsingResponse<TokenizedGraph> {
+): ParsingResponse<TokenGraph> {
   val imports = importRanges.map(extractImportTokens(tokens))
   val definitions = definitionRanges.map(extractDefinitionTokens(tokens))
   val importErrors = validateImportTokens(imports)
   val definitionErrors = validateDefinitionTokens(definitions)
   return ParsingResponse(
-      TokenizedGraph(
+      TokenGraph(
           imports = imports,
           definitions = definitions
       ),
@@ -183,22 +183,13 @@ fun getDefinitionsRangeStart(tokens: Tokens, definitionRanges: List<DefinitionRa
 fun withoutComments(tokens: Tokens): Tokens =
     tokens.filter { it.rune != Rune.comment }
 
-fun parseTokens(context: Context, tokens: Tokens): ParsingResponse<Dungeon> {
+fun toTokenGraph(tokens: Tokens): ParsingResponse<TokenGraph> {
   val (definitionRanges, partitionErrors) = partitionDefinitions(tokens)
   val importRangeMax = getDefinitionsRangeStart(tokens, definitionRanges)
   val importRanges = partitionImports(tokens.take(importRangeMax))
-  val (tokenedGraph, tokenGraphErrors) = toTokenizedGraph(tokens, importRanges, definitionRanges)
-  val (dungeon, dungeonErrors) = parseDungeon(context)(tokenedGraph)
+  val (tokenGraph, tokenGraphErrors) = toTokenGraph(tokens, importRanges, definitionRanges)
   return ParsingResponse(
-      dungeon,
-      partitionErrors + tokenGraphErrors + dungeonErrors
+      tokenGraph,
+      partitionErrors + tokenGraphErrors
   )
-}
-
-fun parseTokens(context: Context): (Tokens) -> ParsingResponse<Dungeon> = { tokens ->
-  assert(context.any())
-  if (tokens.none())
-    ParsingResponse(emptyDungeon, listOf())
-  else
-    parseTokens(context, withoutComments(tokens))
 }

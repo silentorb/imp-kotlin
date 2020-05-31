@@ -23,7 +23,7 @@ data class TokenizedDefinition(
     val expression: Tokens
 )
 
-data class TokenizedGraph(
+data class TokenGraph(
     val imports: List<TokenizedImport>,
     val definitions: List<TokenizedDefinition>
 )

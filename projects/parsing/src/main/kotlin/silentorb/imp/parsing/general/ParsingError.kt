@@ -39,3 +39,9 @@ fun <T> flattenResponses(responses: List<ParsingResponse<T>>): ParsingResponse<L
         responses.map { it.value },
         responses.flatMap { it.errors }
     )
+
+fun <K, V> flattenResponseMap(responses: Map<K, ParsingResponse<V>>): ParsingResponse<Map<K, V>> =
+    ParsingResponse(
+        responses.mapValues { it.value.value },
+        responses.flatMap { it.value.errors }
+    )

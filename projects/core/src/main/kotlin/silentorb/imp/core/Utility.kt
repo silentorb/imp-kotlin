@@ -59,3 +59,8 @@ fun joinPaths(vararg tokens: String): String =
 
 fun pathKeyToString(key: PathKey): String =
     joinPaths(key.path, key.name)
+
+fun pathKeyFromString(value: String): PathKey {
+  val tokens = value.split(".")
+  return PathKey(tokens.dropLast(1).joinToString("."), tokens.lastOrNull() ?: "")
+}

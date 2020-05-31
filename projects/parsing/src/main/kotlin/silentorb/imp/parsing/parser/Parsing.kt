@@ -2,12 +2,31 @@ package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.Context
 import silentorb.imp.core.Dungeon
+import silentorb.imp.core.PathKey
+import silentorb.imp.core.emptyDungeon
 import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.lexer.stripWhitespace
 import silentorb.imp.parsing.lexer.tokenize
 import java.net.URI
+
+fun parseTokens(context: Context, tokens: Tokens): ParsingResponse<Dungeon> {
+  val (tokenGraph, tokenGraphErrors) = toTokenGraph(tokens)
+  val (dungeon, dungeonErrors) = parseDungeon(context, mapOf(PathKey("", "") to tokenGraph))
+  return ParsingResponse(
+      dungeon,
+      tokenGraphErrors + dungeonErrors
+  )
+}
+
+fun parseTokens(context: Context): (Tokens) -> ParsingResponse<Dungeon> = { tokens ->
+  assert(context.any())
+  if (tokens.none())
+    ParsingResponse(emptyDungeon, listOf())
+  else
+    parseTokens(context, withoutComments(tokens))
+}
 
 fun parseTextBranchingDeprecated(context: Context): (CodeBuffer) -> Response<Dungeon> = { code ->
   val tokens = stripWhitespace(tokenize(code))

@@ -35,18 +35,19 @@ fun newDefinitionContext(
   )
 }
 
-tailrec fun resolveDefinitions(definitions: List<DefinitionFirstPass>, context: Context, accumulator: List<ParsingResponse<Dungeon>>): List<ParsingResponse<Dungeon>> =
+tailrec fun resolveDefinitions(definitions: List<DefinitionFirstPass>, contexts: Map<PathKey, Context>, contextAccumulator: Context, accumulator: List<ParsingResponse<Dungeon>>): List<ParsingResponse<Dungeon>> =
     if (definitions.none())
       accumulator
     else {
       val next = definitions.first()
-      val response = parseDefinitionSecondPass(context, next)
+      val context = contexts[pathKeyFromString(next.key.path)]!!
+      val response = parseDefinitionSecondPass(context + contextAccumulator, next)
       val dungeon = response.value
-      resolveDefinitions(definitions.drop(1), context + dungeon.graph, accumulator + response)
+      resolveDefinitions(definitions.drop(1), contexts, contextAccumulator + dungeon.graph, accumulator + response)
     }
 
-fun parseDefinitions(nodeRanges: Map<PathKey, TokenizedDefinition>, initialContext: Context): ParsingResponse<List<Dungeon>> {
-  val firstPass = nodeRanges
+fun parseDefinitions(tokenDefinitions: Map<PathKey, TokenizedDefinition>, contexts: Map<PathKey, Context>): ParsingResponse<List<Dungeon>> {
+  val firstPass = tokenDefinitions
       .mapValues { (pathKey, definition) ->
         parseDefinitionFirstPass(pathKey, definition)
       }
@@ -77,11 +78,11 @@ fun parseDefinitions(nodeRanges: Map<PathKey, TokenizedDefinition>, initialConte
   val (arrangedDefinitionKeys, dependencyErrors) = arrangeDependencies(definitionMap.keys, dependencies)
 
   val arrangedDefinitions = arrangedDefinitionKeys.map { definitionMap[it]!! }
-  val resolutions = resolveDefinitions(arrangedDefinitions, initialContext, listOf())
+  val resolutions = resolveDefinitions(arrangedDefinitions, contexts, listOf(newNamespace()), listOf())
   val result = flattenResponses(resolutions)
   return result
       .copy(
-          errors = result.errors + firstPassErrors + dependencyErrors.map { newParsingError(TextId.circularDependency, nodeRanges.values.first().symbol) }
+          errors = result.errors + firstPassErrors + dependencyErrors.map { newParsingError(TextId.circularDependency, tokenDefinitions.values.first().symbol) }
       )
 }
 
@@ -125,21 +126,41 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
       )
     }
 
-fun parseDungeon(parentContext: Context): (TokenizedGraph) -> ParsingResponse<Dungeon> =
-    { (imports, definitions) ->
-      val (rawImportedFunctions, importErrors) = flattenResponses(imports.map(parseImport(parentContext)))
-      val nodeRanges = definitions.associateBy { PathKey(localPath, it.symbol.value) }
-      val baseContext = listOf(
-          newNamespace()
-              .copy(
-                  typings = parentContext.map { it.typings }.reduce(::mergeTypings)
-              )
-      )
-      val context = newDefinitionContext(rawImportedFunctions, baseContext)
-      val (dungeons, definitionErrors) = parseDefinitions(nodeRanges, context)
-      val (dungeon, dungeonErrors) = finalizeDungeons(context, nodeRanges)(dungeons)
-      ParsingResponse(
-          dungeon,
-          importErrors + definitionErrors + dungeonErrors
-      )
-    }
+fun parseDungeon(parentContext: Context, graphs: Map<PathKey, TokenGraph>, fileNamespaces: Boolean = false): ParsingResponse<Dungeon> {
+//  val imports = graph.imports
+//  val definitions = graph.definitions
+  val baseContext = listOf(
+      newNamespace()
+          .copy(
+              typings = parentContext.map { it.typings }.reduce(::mergeTypings)
+          )
+  )
+  val (contexts, importErrors) = flattenResponseMap(
+      graphs.mapValues { (_, tokenGraph) ->
+        val (rawImportedFunctions, importErrors) = flattenResponses(tokenGraph.imports.map(parseImport(parentContext)))
+        ParsingResponse(
+            newDefinitionContext(rawImportedFunctions, baseContext),
+            importErrors
+        )
+      }
+//          .mapKeys { joinPaths(it.key.path, it.key.name).drop(1) }
+  )
+
+  val definitions = graphs.entries
+      .flatMap { (pathKey, tokenGraph) ->
+        val path = if (fileNamespaces)
+          pathKeyToString(pathKey)
+        else
+          pathKey.path
+
+        tokenGraph.definitions.map { PathKey(path, it.symbol.value) to it }
+      }
+      .associate { it }
+
+  val (dungeons, definitionErrors) = parseDefinitions(definitions, contexts)
+  val (dungeon, dungeonErrors) = finalizeDungeons(contexts.values.flatten(), definitions)(dungeons)
+  return ParsingResponse(
+      dungeon,
+      importErrors + definitionErrors + dungeonErrors
+  )
+}

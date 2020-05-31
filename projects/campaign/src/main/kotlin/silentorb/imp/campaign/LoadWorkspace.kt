@@ -1,10 +1,10 @@
 package silentorb.imp.campaign
 
-import silentorb.imp.core.Dungeon
-import silentorb.imp.core.arrangeDependencies
+import silentorb.imp.core.*
 import silentorb.imp.execution.Library
 import silentorb.imp.parsing.general.ParsingResponse
-import silentorb.imp.parsing.parser.parseTokens
+import silentorb.imp.parsing.parser.parseDungeon
+import silentorb.imp.parsing.parser.toTokenGraph
 import silentorb.imp.parsing.parser.tokenizeAndSanitize
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -14,17 +14,27 @@ import java.nio.file.Path
 const val workspaceFileName = "workspace.yaml"
 const val moduleFileName = "module.yaml"
 
-fun loadSourceFiles(root: URI, library: Library, moduleConfig: ModuleConfig, sourceFiles: List<Path>): ParsingResponse<Map<DungeonId, Dungeon>> {
-  val context = listOf(library.namespace)
+fun loadSourceFiles(moduleName: String, root: URI, context: Context, moduleConfig: ModuleConfig, sourceFiles: List<Path>): ParsingResponse<Map<DungeonId, Dungeon>> {
   val lexingResults = sourceFiles.map { path ->
     val code = Files.readString(path, StandardCharsets.UTF_8)!!
-    val (tokens, errors) = tokenizeAndSanitize(root.relativize(path.toUri()), code)
-    Pair(Pair(baseName(path), tokens), errors)
+    val (tokens, lexingErrors) = tokenizeAndSanitize(root.relativize(path.toUri()), code)
+    val (tokenizedGraph, tokenGraphErrors) = toTokenGraph(tokens)
+    val pathKey = pathKeyFromString(joinPaths(moduleName, baseName(path)))
+
+    Pair(Pair(pathKey, tokenizedGraph), lexingErrors + tokenGraphErrors)
   }
-  val fileTokens = lexingResults.associate { it.first }
+  val tokenGraphs = lexingResults.associate { it.first }
   val lexingErrors = lexingResults.flatMap { it.second }
 
-  val dungeons = fileTokens.mapValues { parseTokens(context)(it.value) }
+  val dungeons = if (moduleConfig.fileNamespaces)
+    tokenGraphs
+        .mapValues { parseDungeon(context, mapOf(it.key to it.value)) }
+        .mapKeys { it.key.name }
+  else {
+    val dungeon = parseDungeon(context, tokenGraphs, moduleConfig.fileNamespaces)
+    mapOf(moduleName to dungeon)
+  }
+
   return ParsingResponse(
       dungeons.mapValues { it.value.value },
       lexingErrors + dungeons.values.flatMap { it.errors }
@@ -38,10 +48,10 @@ fun loadModuleInfo(path: Path): ModuleInfo {
   )
 }
 
-fun loadModule(root: URI, library: Library, info: ModuleInfo): ParsingResponse<Module> {
+fun loadModule(name: String, root: URI, context: Context, info: ModuleInfo): ParsingResponse<Module> {
   val config = info.config
   val sourceFiles = info.sourceFiles
-  val (dungeons, errors) = loadSourceFiles(root, library, config, sourceFiles)
+  val (dungeons, errors) = loadSourceFiles(name, root, context, config, sourceFiles)
   return ParsingResponse(
       Module(
           dungeons = dungeons,
@@ -62,6 +72,17 @@ fun loadModuleInfos(root: URI, globPattern: String): Map<ModuleId, ModuleInfo> {
         Pair(baseName(path), info)
       }
 }
+
+tailrec fun loadModules(root: URI, infos: Map<ModuleId, ModuleInfo>, context: Context, accumulator: Map<ModuleId, ParsingResponse<Module>>): Map<ModuleId, ParsingResponse<Module>> =
+    if (infos.none())
+      accumulator
+    else {
+      val (name, info) = infos.entries.first()
+      val response = loadModule(name, root, context, info)
+      val (module, _) = response
+      val newContext = context + module.dungeons.map { it.value.graph }
+      loadModules(root, infos - name, newContext, accumulator + (name to response))
+    }
 
 fun loadWorkspace(library: Library, root: Path): CampaignResponse<Workspace> {
   val workspaceFilePath = root.resolve(workspaceFileName)
@@ -90,12 +111,10 @@ fun loadWorkspace(library: Library, root: Path): CampaignResponse<Workspace> {
         .toSet()
 
     val (arrangedModules, dependencyErrors) = arrangeDependencies(infos.keys, dependencies)
-    val modulePairs = arrangedModules
-        .associateWith { name ->
-          loadModule(root.toUri(), library, infos[name]!!)
-        }
-
-    val modules = modulePairs
+    val initialContext = listOf(library.namespace)
+    val arrangedMap = arrangedModules.associateWith { infos[it]!! }
+    val loadingResponse = loadModules(root.toUri(), arrangedMap, initialContext, mapOf())
+    val modules = loadingResponse
         .mapValues { it.value.value }
 
     return CampaignResponse(
@@ -104,7 +123,7 @@ fun loadWorkspace(library: Library, root: Path): CampaignResponse<Workspace> {
             dependencies = dependencies
         ),
         campaignErrors = dependencyErrors.map { CampaignError(it) },
-        parsingErrors = modulePairs.flatMap { it.value.errors }
+        parsingErrors = loadingResponse.flatMap { it.value.errors }
     )
   }
 }
