@@ -1,5 +1,6 @@
 package silentorb.imp.campaign
 
+import silentorb.imp.core.Dependency
 import silentorb.imp.core.Dungeon
 import silentorb.imp.parsing.general.ParsingErrors
 import java.nio.file.Path
@@ -17,14 +18,11 @@ val emptyModule = Module(
     fileNamespaces = false
 )
 
-data class Dependency(
-    val dependent: ModuleId,
-    val provider: ModuleId
-)
+typealias ModuleDependency = Dependency<ModuleId>
 
 data class Workspace(
     val modules: Map<ModuleId, Module>,
-    val dependencies: Set<Dependency>
+    val dependencies: Set<ModuleDependency>
 )
 
 val emptyWorkspace = Workspace(

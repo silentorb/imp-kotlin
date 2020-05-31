@@ -73,6 +73,7 @@ fun parseDefinitionFirstPass(id: PathKey, definition: TokenizedDefinition): Pars
     val matchingParenthesesErrors = checkMatchingParentheses(tokens)
     ParsingResponse(
         DefinitionFirstPass(
+            key = id,
             tokenized = definition,
             intermediate = intermediate
         ),
@@ -81,8 +82,8 @@ fun parseDefinitionFirstPass(id: PathKey, definition: TokenizedDefinition): Pars
   }
 }
 
-fun parseDefinitionSecondPass(context: Context, id: PathKey, definition: DefinitionFirstPass): ParsingResponse<Dungeon> {
-  val pathKey = PathKey(id.path, definition.tokenized.symbol.value)
+fun parseDefinitionSecondPass(context: Context, definition: DefinitionFirstPass): ParsingResponse<Dungeon> {
+  val pathKey = PathKey(definition.key.path, definition.tokenized.symbol.value)
   val parameters = definition.tokenized.parameters.map { parameter ->
     val type = getImplementationType(context, parameter.type)
         ?: unknownType.hash
@@ -107,7 +108,7 @@ fun parseDefinitionSecondPass(context: Context, id: PathKey, definition: Definit
           parameters = parameters,
           output = output,
           outputType = outputType,
-          id = id,
+          id = definition.key,
           pathKey = pathKey,
           dungeon = dungeon
       )
@@ -116,7 +117,7 @@ fun parseDefinitionSecondPass(context: Context, id: PathKey, definition: Definit
       dungeon.copy(
           graph = graph.copy(
               connections = graph.connections + (Input(
-                  destination = id,
+                  destination = definition.key,
                   parameter = defaultParameter
               ) to output),
               returnTypes = graph.returnTypes + (pathKey to outputType)

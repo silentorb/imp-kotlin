@@ -29,5 +29,3 @@ fun customLibrary() = newLibrary(
         )
     )
 )
-
-fun customLibraryContext() = listOf(customLibrary().namespace)

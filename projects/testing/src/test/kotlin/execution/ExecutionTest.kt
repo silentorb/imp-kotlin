@@ -31,10 +31,9 @@ class ExecutionTest {
       
       let main = newMonkey 1 -- The banana count logic is arbitrary
     """.trimIndent()
-    handleRoot(errored, parseTextBranchingDeprecated(customLibraryContext())(code)) { result ->
-      val graph = result.graph
-      val library = standardLibrary()
-      val value = executeToSingleValue(listOf(library.namespace), library.implementation, graph)
+    val library = customLibrary()
+    handleRoot(errored, parseTextBranchingDeprecated(listOf(library.namespace))(code)) { dungeon ->
+      val value = executeToSingleValue(listOf(library.namespace), library.implementation, dungeon)
       assertEquals(2, value)
     }
   }
@@ -48,8 +47,8 @@ class ExecutionTest {
       let add a:Int b:Int = + a b
       let output = add 1 2
     """.trimIndent()
-    handleRoot(errored, parseTextBranchingDeprecated(simpleContext())(code)) { result ->
-      val library = standardLibrary()
+    val library = standardLibrary()
+    handleRoot(errored, parseTextBranchingDeprecated(listOf(library.namespace))(code)) { result ->
       val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
       assertEquals(3, value)
     }

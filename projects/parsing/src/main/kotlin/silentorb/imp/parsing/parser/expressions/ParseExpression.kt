@@ -71,7 +71,8 @@ fun parseExpression(context: Context, intermediate: IntermediateExpression): Par
 
   val referencePairs = references
       .flatMap { (typeName, referenceNodes) ->
-        val type = getSymbolType(context, typeName) ?: unknownType.hash
+        val type = getSymbolType(context, typeName)
+            ?: unknownType.hash
         val targetKey = resolveReference(context, typeName) ?: unknownType.key
         referenceNodes.map { Pair(it, Pair(type, targetKey)) }
       }

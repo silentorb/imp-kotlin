@@ -6,35 +6,26 @@ import silentorb.imp.core.Dungeon
 typealias OutputValues = Map<PathKey, Any>
 typealias Arguments = Map<String, Any>
 
-fun nextStage(nodes: Set<PathKey>, connections: Connections): List<PathKey> =
-    nodes
-        .filter { node -> connections.none { it.key.destination == node } }
-        .map { it }
-
-fun arrangeGraphStages(graph: Graph, values: OutputValues): List<List<PathKey>> {
-  var nodes = graph.nodes
+fun arrangeGraphSequence(graph: Graph, values: OutputValues): List<PathKey> {
+  val nodes = graph.nodes
       .minus(graph.values.keys)
       .minus(values.keys)
       .filter { graph.typings.signatures[graph.returnTypes[it]]?.parameters?.none() ?: true }
       .toSet()
 
   // Only grab connections that connect the filtered pool of execution nodes
-  var connections = graph.connections
+  val dependencies = graph.connections
       .filter { nodes.contains(it.key.destination) && nodes.contains(it.value) }
-  var result = listOf<List<PathKey>>()
+      .map {
+        Dependency(
+            dependent = it.key.destination,
+            provider = it.value
+        )
+      }
+      .toSet()
 
-  while (nodes.any()) {
-    val nextNodes = nextStage(nodes, connections)
-    result = result.plusElement(nextNodes)
-    nodes = nodes.minus(nextNodes)
-    connections = connections.filter { !nextNodes.contains(it.value) }
-  }
-
-  return result
+  return arrangeDependencies(nodes, dependencies).first
 }
-
-fun arrangeGraphSequence(graph: Graph, values: OutputValues): List<PathKey> =
-    arrangeGraphStages(graph, values).flatten()
 
 fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: PathKey): Arguments {
   return graph.connections
@@ -110,6 +101,7 @@ fun mergeImplementationFunctions(context: Context, implementationGraphs: Map<Fun
 }
 
 fun executeToSingleValue(context: Context, functions: FunctionImplementationMap, dungeon: Dungeon): Any? {
-  val newFunctions = mergeImplementationFunctions(context, dungeon.implementationGraphs, functions)
-  return executeToSingleValue(context, functions + newFunctions, dungeon.graph)
+  val combinedContext = context + dungeon.graph
+  val newFunctions = mergeImplementationFunctions(combinedContext, dungeon.implementationGraphs, functions)
+  return executeToSingleValue(combinedContext, functions + newFunctions, dungeon.graph)
 }

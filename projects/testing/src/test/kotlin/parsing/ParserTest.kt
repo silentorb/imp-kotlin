@@ -86,6 +86,26 @@ class ParserTest {
   }
 
   @Test
+  fun canParseDefinitionsInAnyOrder() {
+    val code = """
+let output = intermediate
+let intermediate = 10
+    """.trimIndent()
+
+    handleRoot(errored, parseTextBranchingDeprecated(emptyContext)(code)) { result ->
+      val graph = result.graph
+      val intermediate = PathKey(localPath, "intermediate")
+      assertEquals(4, graph.nodes.size)
+      assertEquals(1, graph.values.size)
+      assertEquals(3, graph.connections.size)
+      assertEquals(10, graph.values.values.first())
+      assertTrue(graph.nodes.contains(intermediate))
+      assertTrue(graph.nodes.contains(PathKey(localPath, "output")))
+      assertTrue(graph.nodes.contains(PathKey(joinPaths(localPath, "intermediate"), "#literal1")))
+    }
+  }
+
+  @Test
   fun requiresANewlineBetweenDefinitions() {
     val code = "let intermediate = 10 let output = intermediate"
     expectError(TextId.expectedNewline, parseTextBranchingDeprecated(emptyContext)(code))

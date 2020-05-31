@@ -25,11 +25,19 @@ fun parseTextBranchingDeprecated(context: Context): (CodeBuffer) -> Response<Dun
   }
 }
 
-fun parseText(uri: URI, context: Context): (CodeBuffer) -> ParsingResponse<Dungeon> = { code ->
+fun tokenizeAndSanitize(uri: URI, code: CodeBuffer): ParsingResponse<Tokens> {
   val tokens = stripWhitespace(tokenize(code, uri))
   val lexingErrors = tokens.filter { it.rune == Rune.bad }
       .map { newParsingError(TextId.unexpectedCharacter, it) }
 
+  return ParsingResponse(
+      tokens,
+      lexingErrors
+  )
+}
+
+fun parseToDungeon(uri: URI, context: Context): (CodeBuffer) -> ParsingResponse<Dungeon> = { code ->
+  val (tokens, lexingErrors) = tokenizeAndSanitize(uri, code)
   val (dungeon, parsingErrors) = parseTokens(context)(tokens)
   ParsingResponse(
       dungeon,

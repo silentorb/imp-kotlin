@@ -4,6 +4,7 @@ fun englishText(text: TextId): String =
     when (text) {
       TextId.ambiguousOverload -> "Ambiguous overload"
       TextId.badArgument -> "Bad argument"
+      TextId.circularDependency -> "Circular dependency"
       TextId.duplicateSymbol -> "Duplicate symbol @tokenText"
       TextId.expectedExpression -> "Expected an expression"
       TextId.expectedIdentifier -> "Expected an identifier"

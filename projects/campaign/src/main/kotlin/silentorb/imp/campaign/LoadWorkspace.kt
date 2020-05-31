@@ -1,9 +1,11 @@
 package silentorb.imp.campaign
 
 import silentorb.imp.core.Dungeon
+import silentorb.imp.core.arrangeDependencies
 import silentorb.imp.execution.Library
 import silentorb.imp.parsing.general.ParsingResponse
-import silentorb.imp.parsing.parser.parseText
+import silentorb.imp.parsing.parser.parseTokens
+import silentorb.imp.parsing.parser.tokenizeAndSanitize
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -14,14 +16,18 @@ const val moduleFileName = "module.yaml"
 
 fun loadSourceFiles(root: URI, library: Library, moduleConfig: ModuleConfig, sourceFiles: List<Path>): ParsingResponse<Map<DungeonId, Dungeon>> {
   val context = listOf(library.namespace)
-  val results = sourceFiles.map { path ->
+  val lexingResults = sourceFiles.map { path ->
     val code = Files.readString(path, StandardCharsets.UTF_8)!!
-    val (dungeon, errors) = parseText(root.relativize(path.toUri()), context)(code)
-    Pair(Pair(baseName(path), dungeon), errors)
+    val (tokens, errors) = tokenizeAndSanitize(root.relativize(path.toUri()), code)
+    Pair(Pair(baseName(path), tokens), errors)
   }
+  val fileTokens = lexingResults.associate { it.first }
+  val lexingErrors = lexingResults.flatMap { it.second }
+
+  val dungeons = fileTokens.mapValues { parseTokens(context)(it.value) }
   return ParsingResponse(
-      results.associate { it.first },
-      results.flatMap { it.second }
+      dungeons.mapValues { it.value.value },
+      lexingErrors + dungeons.values.flatMap { it.errors }
   )
 }
 
@@ -75,7 +81,7 @@ fun loadWorkspace(library: Library, root: Path): CampaignResponse<Workspace> {
         .flatMap { (name, info) ->
           info.config.dependencies
               .map { provider ->
-                Dependency(
+                ModuleDependency(
                     dependent = name,
                     provider = provider
                 )
@@ -83,14 +89,11 @@ fun loadWorkspace(library: Library, root: Path): CampaignResponse<Workspace> {
         }
         .toSet()
 
-    val (stages, dependencyErrors) = arrangeModuleStages(infos.keys, dependencies)
-    val modulePairs = stages
-        .flatMap { stage ->
-          stage.map { name ->
-            Pair(name, loadModule(root.toUri(), library, infos[name]!!))
-          }
+    val (arrangedModules, dependencyErrors) = arrangeDependencies(infos.keys, dependencies)
+    val modulePairs = arrangedModules
+        .associateWith { name ->
+          loadModule(root.toUri(), library, infos[name]!!)
         }
-        .associate { it }
 
     val modules = modulePairs
         .mapValues { it.value.value }
@@ -100,7 +103,7 @@ fun loadWorkspace(library: Library, root: Path): CampaignResponse<Workspace> {
             modules = modules,
             dependencies = dependencies
         ),
-        campaignErrors = dependencyErrors,
+        campaignErrors = dependencyErrors.map { CampaignError(it) },
         parsingErrors = modulePairs.flatMap { it.value.errors }
     )
   }

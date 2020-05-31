@@ -1,5 +1,6 @@
 package silentorb.imp.parsing.parser
 
+import silentorb.imp.core.PathKey
 import silentorb.imp.parsing.general.Token
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.parser.expressions.IntermediateExpression
@@ -28,6 +29,7 @@ data class TokenizedGraph(
 )
 
 data class DefinitionFirstPass(
+    val key: PathKey,
     val tokenized: TokenizedDefinition,
     val intermediate: IntermediateExpression
 )

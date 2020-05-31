@@ -173,7 +173,7 @@ fun toTokenizedGraph(
           imports = imports,
           definitions = definitions
       ),
-      importErrors.plus(definitionErrors)
+      importErrors + definitionErrors
   )
 }
 
@@ -191,7 +191,7 @@ fun parseTokens(context: Context, tokens: Tokens): ParsingResponse<Dungeon> {
   val (dungeon, dungeonErrors) = parseDungeon(context)(tokenedGraph)
   return ParsingResponse(
       dungeon,
-      partitionErrors.plus(tokenGraphErrors).plus(dungeonErrors)
+      partitionErrors + tokenGraphErrors + dungeonErrors
   )
 }
 
