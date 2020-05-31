@@ -2,6 +2,8 @@ package silentorb.imp.parsing.parser
 
 import silentorb.imp.parsing.general.Token
 import silentorb.imp.parsing.general.Tokens
+import silentorb.imp.parsing.parser.expressions.IntermediateExpression
+import java.net.URI
 
 const val localPath = ""
 
@@ -23,4 +25,9 @@ data class TokenizedDefinition(
 data class TokenizedGraph(
     val imports: List<TokenizedImport>,
     val definitions: List<TokenizedDefinition>
+)
+
+data class DefinitionFirstPass(
+    val tokenized: TokenizedDefinition,
+    val intermediate: IntermediateExpression
 )

@@ -82,15 +82,30 @@ fun addGraphToContext(graph: Graph, context: Context): Context =
         .plus(context.last() + graph)
 
 fun parseDefinitions(nodeRanges: Map<PathKey, TokenizedDefinition>, initialContext: Context): ParsingResponse<List<Dungeon>> {
+  val firstPass = nodeRanges
+      .mapValues { (pathKey, definition) ->
+        parseDefinitionFirstPass(pathKey, definition)
+      }
+
+  val firstPassErrors = firstPass.values.flatMap { it.errors }
+
   val (dungeonResponses) = nodeRanges.entries
       .fold<Map.Entry<PathKey, TokenizedDefinition>, Pair<List<ParsingResponse<Dungeon>>, Context>>(Pair(listOf(), initialContext)) { a, b ->
         val (responses, context) = a
-        val response = parseDefinition(context)(b)
-        val nextContext = addGraphToContext(response.value.graph, context)
-        Pair(responses.plus(response), nextContext)
+        val first = firstPass[b.key]!!.value
+        if (first != null) {
+          val response = parseDefinitionSecondPass(context, b.key, first)
+          val nextContext = addGraphToContext(response.value.graph, context)
+          Pair(responses.plus(response), nextContext)
+        } else
+          Pair(responses + ParsingResponse(emptyDungeon, listOf()), context)
       }
 
-  return flattenResponses(dungeonResponses)
+  val result = flattenResponses(dungeonResponses)
+  return result
+      .copy(
+          errors = result.errors + firstPassErrors
+      )
 }
 
 fun parseDungeon(parentContext: Context): (TokenizedGraph) -> ParsingResponse<Dungeon> =

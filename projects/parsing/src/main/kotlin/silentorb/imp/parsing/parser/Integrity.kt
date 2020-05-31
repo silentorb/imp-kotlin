@@ -47,7 +47,7 @@ fun checkMatchingParentheses(tokens: Tokens): ParsingErrors {
 
 fun validateFunctionTypes(nodes: Set<PathKey>, types: Map<PathKey, TypeHash>, nodeMap: NodeMap): ParsingErrors {
   return nodes
-      .filter { !types.containsKey(it) }
+      .filter { !types.containsKey(it) || types[it]!! == unknownType.hash }
       .map { node ->
         val fileRange = nodeMap[node]!!
         newParsingError(TextId.unknownFunction, fileRange)

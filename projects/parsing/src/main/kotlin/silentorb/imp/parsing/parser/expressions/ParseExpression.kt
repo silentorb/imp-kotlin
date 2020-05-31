@@ -5,17 +5,7 @@ import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.parser.*
 
-data class IntermediateExpression(
-    val initialTypes: Map<PathKey, TypeHash>,
-    val namedArguments: Map<PathKey, String>,
-    val nodeMap: NodeMap,
-    val parents: Map<PathKey, List<PathKey>>,
-    val references: Map<PathKey, PathKey>,
-    val stages: List<List<PathKey>>,
-    val values: Map<PathKey, Any>
-)
-
-fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): ParsingResponse<IntermediateExpression> {
+fun mapExpressionTokensToNodes(root: PathKey, tokens: Tokens): ParsingResponse<IntermediateExpression> {
   val path = pathKeyToString(root)
   val groupGraph = newGroupingGraph(groupTokens(tokens))
   val tokenGraph = arrangePiping(tokens, groupGraph)
@@ -25,21 +15,16 @@ fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): ParsingRe
   val parents = collapseNamedArgumentClauses(namedArguments.keys, tokenGraph.parents)
   val indexedTokens = parents.keys.plus(parents.values.flatten()).toList()
   val literalTokenKeys = literalTokenNodes(path, tokens, indexedTokens)
-  val nodeReferences = resolveReferences(context, tokens, indexedTokens - literalTokenKeys.keys)
+  val nodeReferences = indexedTokens - literalTokenKeys.keys
   val tokenNodes = nodeReferences
-      .entries
-      .groupBy { it.value.name }
+      .groupBy { tokens[it].value }
       .flatMap { (name, tokenIndices) ->
         tokenIndices.mapIndexed { index, tokenIndex ->
-          Pair(tokenIndex.key, PathKey(path, "$name${index + 1}"))
+          Pair(tokenIndex, PathKey(path, "$name${index + 1}"))
         }
       }
       .associate { it }
       .plus(literalTokenKeys)
-      .plus(indexedTokens.minus(nodeReferences.keys).minus(literalTokenKeys.keys)
-          .mapIndexed { index, tokenIndex ->
-            Pair(tokenIndex, PathKey(path, "#unknown${index + 1}"))
-          })
 
   val nodeMap = tokenNodes.entries
       .associate { (tokenIndex, pathKey) ->
@@ -47,11 +32,6 @@ fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): ParsingRe
       }
 
   val literalTypes = resolveLiteralTypes(tokens, literalTokenKeys)
-  val referenceTypes = tokenNodes
-      .minus(literalTokenKeys.keys)
-      .entries
-      .associate { Pair(it.value, getSymbolType(context, tokens[it.key].value)) }
-      .filter { it.value != null }.mapValues { it.value!! }
 
   val pipingErrors = validatePiping(tokens, groupGraph)
   val pathKeyParents = parents.entries
@@ -66,10 +46,10 @@ fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): ParsingRe
 
   return ParsingResponse(
       IntermediateExpression(
-          initialTypes = literalTypes + referenceTypes,
+          literalTypes = literalTypes,
           nodeMap = nodeMap,
           parents = pathKeyParents,
-          references = nodeReferences.mapKeys { tokenNodes[it.key]!! },
+          references = nodeReferences.groupBy { tokens[it].value }.mapValues { it.value.map { tokenNodes[it]!! }.toSet() },
           stages = tokenGraph.stages.map { stage -> stage.mapNotNull { tokenNodes[it] } },
           namedArguments = namedArguments.mapKeys { (tokenIndex, _) -> tokenNodes[tokenIndex]!! },
           values = resolveLiterals(tokens, indexedTokens, tokenNodes)
@@ -78,10 +58,9 @@ fun mapTokensToNodes(root: PathKey, context: Context, tokens: Tokens): ParsingRe
   )
 }
 
-fun parseExpression(root: PathKey, context: Context, tokens: Tokens): ParsingResponse<Dungeon> {
-  val (intermediate, tokenErrors) = mapTokensToNodes(root, context, tokens)
+fun parseExpression(context: Context, intermediate: IntermediateExpression): ParsingResponse<Dungeon> {
   val (
-      initialTypes,
+      literalTypes,
       namedArguments,
       nodeMap,
       parents,
@@ -90,6 +69,21 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): ParsingRes
       values
   ) = intermediate
 
+  val referencePairs = references
+      .flatMap { (typeName, referenceNodes) ->
+        val type = getSymbolType(context, typeName) ?: unknownType.hash
+        val targetKey = resolveReference(context, typeName) ?: unknownType.key
+        referenceNodes.map { Pair(it, Pair(type, targetKey)) }
+      }
+      .associate { it }
+
+  val referenceTypes = referencePairs
+      .mapValues { it.value.first }
+
+  val referenceKeys = referencePairs
+      .mapValues { it.value.second }
+
+  val initialTypes = literalTypes + referenceTypes
   val (signatureOptions, implementationTypes, reducedTypes, typings) =
       resolveFunctionSignatures(
           context,
@@ -107,11 +101,11 @@ fun parseExpression(root: PathKey, context: Context, tokens: Tokens): ParsingRes
   val nonNullaryFunctions = parents.filter { it.value.any() }
   val typeResolutionErrors = validateFunctionTypes(nodeMap.keys, initialTypes, nodeMap)
   val signatureErrors = validateSignatures(context, nodeTypes, nonNullaryFunctions, signatureOptions, nodeMap)// +
-  val errors = signatureErrors + typeResolutionErrors + tokenErrors
+  val errors = signatureErrors + typeResolutionErrors
 
   val dungeon = emptyDungeon.copy(
       graph = newNamespace().copy(
-          connections = connections + references.entries.associate { Input(it.key, defaultParameter) to it.value },
+          connections = connections + referenceKeys.entries.associate { Input(it.key, defaultParameter) to it.value },
           implementationTypes = implementationTypes,
           returnTypes = nodeTypes,
           typings = typings,
