@@ -1,7 +1,6 @@
 package silentorb.imp.core
 
 import java.net.URI
-import java.nio.file.Path
 
 // Could be later changed to Long
 typealias CodeInt = Int
@@ -26,7 +25,7 @@ data class Range(
     val end: Position = start
 )
 
-typealias TokenFile = URI
+typealias TokenFile = String
 
 data class FileRange(
     val file: TokenFile,

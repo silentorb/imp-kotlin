@@ -19,7 +19,7 @@ fun loadSourceFiles(moduleName: String, root: Path, context: Context, moduleConf
   val lexingResults = sourceFiles
       .map { path ->
         val code = Files.readString(path, StandardCharsets.UTF_8)!!
-        val (tokens, lexingErrors) = tokenizeAndSanitize(root.toUri().relativize(path.toUri()), code)
+        val (tokens, lexingErrors) = tokenizeAndSanitize(root.relativize(path).toString(), code)
         val (tokenizedGraph, tokenGraphErrors) = toTokenGraph(path, tokens)
         Pair(Pair(path, tokenizedGraph), lexingErrors + tokenGraphErrors)
       }

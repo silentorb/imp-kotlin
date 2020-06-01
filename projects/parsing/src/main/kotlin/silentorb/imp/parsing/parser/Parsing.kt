@@ -1,9 +1,6 @@
 package silentorb.imp.parsing.parser
 
-import silentorb.imp.core.Context
-import silentorb.imp.core.Dungeon
-import silentorb.imp.core.PathKey
-import silentorb.imp.core.emptyDungeon
+import silentorb.imp.core.*
 import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
@@ -51,7 +48,7 @@ fun parseTextBranchingDeprecated(context: Context): (CodeBuffer) -> Response<Dun
   }
 }
 
-fun tokenizeAndSanitize(uri: URI, code: CodeBuffer): ParsingResponse<Tokens> {
+fun tokenizeAndSanitize(uri: TokenFile, code: CodeBuffer): ParsingResponse<Tokens> {
   val tokens = stripWhitespace(tokenize(code, uri))
   val lexingErrors = tokens.filter { it.rune == Rune.bad }
       .map { newParsingError(TextId.unexpectedCharacter, it) }
@@ -62,7 +59,7 @@ fun tokenizeAndSanitize(uri: URI, code: CodeBuffer): ParsingResponse<Tokens> {
   )
 }
 
-fun parseToDungeon(uri: URI, context: Context): (CodeBuffer) -> ParsingResponse<Dungeon> = { code ->
+fun parseToDungeon(uri: TokenFile, context: Context): (CodeBuffer) -> ParsingResponse<Dungeon> = { code ->
   val (tokens, lexingErrors) = tokenizeAndSanitize(uri, code)
   val (dungeon, parsingErrors) = parseTokens(context)(tokens)
   ParsingResponse(

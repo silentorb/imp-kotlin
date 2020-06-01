@@ -27,8 +27,13 @@ fun arrangeGraphSequence(graph: Graph, values: OutputValues): List<PathKey> {
   return arrangeDependencies(nodes, dependencies).first
 }
 
-fun executeNode(context: Context, graph: Graph, functions: FunctionImplementationMap, values: OutputValues, node: PathKey,
-                additionalArguments: Arguments? = null): Any {
+fun executeNode(
+    graph: Graph,
+    functions: FunctionImplementationMap,
+    values: OutputValues,
+    node: PathKey,
+    additionalArguments: Arguments? = null
+): Any {
   val reference = graph.connections[Input(node, defaultParameter)]
   val type = graph.implementationTypes[node]
   return if (reference == null) {
@@ -46,24 +51,46 @@ fun executeNode(context: Context, graph: Graph, functions: FunctionImplementatio
     throw Error("Insufficient data to execute node $node")
 }
 
-fun executeStep(context: Context, functions: FunctionImplementationMap, graph: Graph): (OutputValues, PathKey) -> OutputValues = { values, node ->
-  values.plus(node to executeNode(context, graph, functions, values, node))
+fun executeStep(
+    functions: FunctionImplementationMap,
+    graph: Graph
+): (OutputValues, PathKey) -> OutputValues = { values, node ->
+  values.plus(node to executeNode(graph, functions, values, node))
 }
 
-fun executeStep(context: Context, functions: FunctionImplementationMap, graph: Graph, values: OutputValues, node: PathKey, additionalArguments: Arguments) =
-    values.plus(node to executeNode(context, graph, functions, values, node, additionalArguments))
+fun executeStep(
+    functions: FunctionImplementationMap,
+    graph: Graph,
+    values: OutputValues,
+    node: PathKey,
+    additionalArguments: Arguments
+) =
+    values.plus(node to executeNode(graph, functions, values, node, additionalArguments))
 
-fun execute(context: Context, functions: FunctionImplementationMap, graph: Graph, steps: List<PathKey>, values: OutputValues): OutputValues {
-  return steps.fold(values, executeStep(context, functions, graph))
+fun execute(
+    functions: FunctionImplementationMap,
+    graph: Graph,
+    steps: List<PathKey>,
+    values: OutputValues
+): OutputValues {
+  return steps.fold(values, executeStep(functions, graph))
 }
 
-fun execute(context: Context, functions: FunctionImplementationMap, graph: Graph, values: OutputValues): OutputValues {
+fun execute(
+    functions: FunctionImplementationMap,
+    graph: Graph,
+    values: OutputValues
+): OutputValues {
   val steps = arrangeGraphSequence(graph, values)
-  return execute(context, functions, graph, steps, graph.values + values)
+  return execute(functions, graph, steps, graph.values + values)
 }
 
-fun executeToSingleValue(context: Context, functions: FunctionImplementationMap, graph: Graph, values: OutputValues = mapOf()): Any? {
-  val result = execute(context, functions, graph, values)
+fun executeToSingleValue(
+    functions: FunctionImplementationMap,
+    graph: Graph,
+    values: OutputValues = mapOf()
+): Any? {
+  val result = execute(functions, graph, values)
   val output = getGraphOutputNode(graph)
   return if (output == null)
     null
@@ -80,5 +107,5 @@ fun mergeImplementationFunctions(context: Context, implementationGraphs: Map<Fun
 fun executeToSingleValue(context: Context, functions: FunctionImplementationMap, dungeon: Dungeon): Any? {
   val combinedContext = context + dungeon.graph
   val newFunctions = mergeImplementationFunctions(combinedContext, dungeon.implementationGraphs, functions)
-  return executeToSingleValue(combinedContext, functions + newFunctions, dungeon.graph)
+  return executeToSingleValue(functions + newFunctions, dungeon.graph)
 }

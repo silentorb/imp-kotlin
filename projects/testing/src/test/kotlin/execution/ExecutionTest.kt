@@ -19,7 +19,7 @@ class ExecutionTest {
     handleRoot(errored, parseTextBranchingDeprecated(simpleContext())(code)) { result ->
       val graph = result.graph
       val library = standardLibrary()
-      val value = executeToSingleValue(listOf(library.namespace), library.implementation, graph)
+      val value = executeToSingleValue(library.implementation, graph)
       assertEquals(16, value)
     }
   }

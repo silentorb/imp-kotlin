@@ -12,7 +12,7 @@ fun getImplementationFunctions(context: Context, implementationGraphs: Map<Funct
       val values = inlinedValues + parameters.associate {
         Pair(PathKey(pathKeyToString(key.key), it.name), arguments[it.name]!!)
       }
-      executeToSingleValue(context, functions(), functionGraph, values)!!
+      executeToSingleValue(functions(), functionGraph, values)!!
     }
   }
 }

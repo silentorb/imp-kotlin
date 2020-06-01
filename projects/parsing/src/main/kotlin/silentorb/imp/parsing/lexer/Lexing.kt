@@ -75,7 +75,7 @@ tailrec fun tokenize(code: CodeBuffer, position: Position, tokens: Tokens): Toke
     tokenize(code, newPosition, tokens.plus(token))
 }
 
-fun tokenize(code: CodeBuffer, file: TokenFile = URI.create("")): Tokens =
+fun tokenize(code: CodeBuffer, file: TokenFile = ""): Tokens =
     tokenize(code, position = newPosition(file), tokens = listOf())
 
 fun stripWhitespace(tokens: Tokens): Tokens =
