@@ -95,16 +95,19 @@ tailrec fun <K, V> resolveContextFieldMap(
 fun <K, V> resolveContextFieldMap(context: Context, getter: (Namespace) -> Map<K, V>): Map<K, V> =
     resolveContextFieldMap(context, context.size - 1, getter, mapOf())
 
-tailrec fun <K, V> resolveContextFieldGreedySet(
-    context: Context, key: K, index: Int, getter: (Namespace, K) -> Set<V>,
+tailrec fun <V> resolveContextFieldGreedySet(
+    context: Context, index: Int, getter: (Namespace) -> Set<V>,
     accumulator: Set<V>
 ): Set<V> =
     if (index < 0)
       accumulator
     else {
-      val next = accumulator + getter(context[index], key)
-      resolveContextFieldGreedySet(context, key, index - 1, getter, next)
+      val next = accumulator + getter(context[index])
+      resolveContextFieldGreedySet(context, index - 1, getter, next)
     }
+
+fun <V> resolveContextFieldGreedySet(context: Context, getter: (Namespace) -> Set<V>): Set<V> =
+    resolveContextFieldGreedySet(context, context.size - 1, getter, setOf())
 
 fun <V> resolveContextField(context: Context, getter: (Namespace) -> V?): V? =
     resolveContextField(context, context.size - 1, getter)
@@ -257,3 +260,9 @@ fun getTypeNameOrNull(context: Context, type: TypeHash, step: Int = 0): PathKey?
 
 fun getTypeNameOrUnknown(context: Context, type: TypeHash, step: Int = 0): PathKey =
     getTypeNameOrNull(context, type, step) ?: unknownType.key
+
+fun getInputConnections(context: Context, key: PathKey): Connections {
+  return resolveContextFieldMap(context) { namespace ->
+    namespace.connections.filter { it.key.destination == key }
+  }
+}

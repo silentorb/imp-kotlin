@@ -27,16 +27,6 @@ fun arrangeGraphSequence(graph: Graph, values: OutputValues): List<PathKey> {
   return arrangeDependencies(nodes, dependencies).first
 }
 
-fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: PathKey): Arguments {
-  return graph.connections
-      .filter { it.key.destination == destination && it.key.parameter != defaultParameter }
-      .entries
-      .associate {
-        val value = outputValues[it.value]!!
-        Pair(it.key.parameter, value)
-      }
-}
-
 fun executeNode(context: Context, graph: Graph, functions: FunctionImplementationMap, values: OutputValues, node: PathKey,
                 additionalArguments: Arguments? = null): Any {
   val reference = graph.connections[Input(node, defaultParameter)]
@@ -79,19 +69,6 @@ fun executeToSingleValue(context: Context, functions: FunctionImplementationMap,
     null
   else
     result[output]
-}
-
-fun getImplementationFunctions(context: Context, implementationGraphs: Map<FunctionKey, Graph>, functions: () -> FunctionImplementationMap): FunctionImplementationMap {
-  return implementationGraphs.mapValues { (key, functionGraph) ->
-    val signature = getTypeSignature(context, key.type)!!
-    val parameters = signature.parameters
-    { arguments: Arguments ->
-      val values = parameters.associate {
-        Pair(PathKey(pathKeyToString(key.key), it.name), arguments[it.name]!!)
-      }
-      executeToSingleValue(context, functions(), functionGraph, values)!!
-    }
-  }
 }
 
 fun mergeImplementationFunctions(context: Context, implementationGraphs: Map<FunctionKey, Graph>, functions: FunctionImplementationMap): FunctionImplementationMap {
