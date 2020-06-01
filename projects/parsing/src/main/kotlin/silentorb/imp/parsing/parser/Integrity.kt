@@ -5,6 +5,7 @@ import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.expressions.TokenGraph
 import silentorb.imp.parsing.parser.expressions.getPipingParents
+import java.nio.file.Path
 
 val getImportErrors = { import: TokenizedImport ->
   val path = import.path
@@ -125,5 +126,18 @@ fun validateTypeConstraints(values: Map<PathKey, Any>, context: Context, constra
       else
         newParsingError(TextId.outsideTypeRange, nodeMap[node]!!)
     } else null
+  }
+}
+
+fun validateUnusedImports(context: Context, importMap: Map<Path, List<TokenizedImport>>, definitions: Map<PathKey, TokenizedDefinition>): ParsingErrors {
+  val unusedImports = importMap
+      .filter { (key, _) ->
+        definitions.none { it.value.file == key }
+      }
+
+  return unusedImports.flatMap { (_, imports) ->
+    imports.flatMap { tokenizedImport ->
+      parseImport(context)(tokenizedImport).errors
+    }
   }
 }

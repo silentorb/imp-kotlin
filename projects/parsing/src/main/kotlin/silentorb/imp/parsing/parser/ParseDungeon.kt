@@ -37,6 +37,7 @@ fun newDefinitionContext(
 }
 
 fun newImportedContext(
+    namespacePath: String,
     baseContext: Context,
     tokenImports: List<TokenizedImport>,
     sourceContext: Context
@@ -45,8 +46,16 @@ fun newImportedContext(
       tokenImports
           .map(parseImport(sourceContext))
   )
+  val sameNamespaceBundle = ImportBundle(
+      implementationTypes = sourceContext
+          .map { namespace -> namespace.implementationTypes.filterKeys { it.path == namespacePath } }
+          .reduce { a, b -> a + b },
+      returnTypes = sourceContext
+          .map { namespace -> namespace.returnTypes.filterKeys { it.path == namespacePath } }
+          .reduce { a, b -> a + b }
+  )
   return ParsingResponse(
-      newDefinitionContext(rawImportedFunctions, baseContext),
+      newDefinitionContext(rawImportedFunctions + sameNamespaceBundle, baseContext),
       importErrors
   )
 }
@@ -67,9 +76,9 @@ tailrec fun resolveDefinitions(
       val (context, importErrors) = if (fileContexts.contains(file))
         ParsingResponse(fileContexts[file]!!, listOf())
       else
-        newImportedContext(defaultContext, importMap[file]!!, contextAccumulator)
+        newImportedContext(next.key.path, defaultContext, importMap[file]!!, contextAccumulator)
 
-      val response = parseDefinitionSecondPass(context + contextAccumulator, next)
+      val response = parseDefinitionSecondPass(context, contextAccumulator, next)
       val dungeon = response.value
       resolveDefinitions(
           defaultContext,
@@ -162,11 +171,12 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
       )
     }
 
-fun parseDungeon(baseContext: Context, importMap: Map<Path, List<TokenizedImport>>, definitions: Map<PathKey, TokenizedDefinition>): ParsingResponse<Dungeon> {
-  val (dungeons, definitionErrors) = parseDefinitions(importMap, definitions, baseContext)
-  val (dungeon, dungeonErrors) = finalizeDungeons(baseContext, definitions)(dungeons)
+fun parseDungeon(context: Context, importMap: Map<Path, List<TokenizedImport>>, definitions: Map<PathKey, TokenizedDefinition>): ParsingResponse<Dungeon> {
+  val (dungeons, definitionErrors) = parseDefinitions(importMap, definitions, context)
+  val importErrors = validateUnusedImports(context, importMap, definitions)
+  val (dungeon, dungeonErrors) = finalizeDungeons(context, definitions)(dungeons)
   return ParsingResponse(
       dungeon,
-      definitionErrors + dungeonErrors
+      definitionErrors + dungeonErrors + importErrors
   )
 }

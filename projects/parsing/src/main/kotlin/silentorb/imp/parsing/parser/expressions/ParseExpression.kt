@@ -58,7 +58,7 @@ fun mapExpressionTokensToNodes(root: PathKey, tokens: Tokens): ParsingResponse<I
   )
 }
 
-fun parseExpression(context: Context, intermediate: IntermediateExpression): ParsingResponse<Dungeon> {
+fun parseExpression(context: Context, largerContext: Context, intermediate: IntermediateExpression): ParsingResponse<Dungeon> {
   val (
       literalTypes,
       namedArguments,
@@ -87,7 +87,7 @@ fun parseExpression(context: Context, intermediate: IntermediateExpression): Par
   val initialTypes = literalTypes + referenceTypes
   val (signatureOptions, implementationTypes, reducedTypes, typings) =
       resolveFunctionSignatures(
-          context,
+          largerContext,
           stages,
           parents,
           initialTypes,
@@ -101,7 +101,7 @@ fun parseExpression(context: Context, intermediate: IntermediateExpression): Par
   val nodeTypes = initialTypes + reducedTypes
   val nonNullaryFunctions = parents.filter { it.value.any() }
   val typeResolutionErrors = validateFunctionTypes(nodeMap.keys, initialTypes, nodeMap)
-  val signatureErrors = validateSignatures(context, nodeTypes, nonNullaryFunctions, signatureOptions, nodeMap)// +
+  val signatureErrors = validateSignatures(largerContext, nodeTypes, nonNullaryFunctions, signatureOptions, nodeMap)// +
   val errors = signatureErrors + typeResolutionErrors
 
   val dungeon = emptyDungeon.copy(

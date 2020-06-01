@@ -7,7 +7,6 @@ import silentorb.imp.parsing.general.newParsingError
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.expressions.mapExpressionTokensToNodes
 import silentorb.imp.parsing.parser.expressions.parseExpression
-import java.nio.file.Path
 
 fun newParameterNamespace(context: Context, pathKey: PathKey, parameters: List<Parameter>): Namespace {
   val pathString = pathKeyToString(pathKey)
@@ -82,20 +81,20 @@ fun parseDefinitionFirstPass(key: PathKey, definition: TokenizedDefinition): Par
   }
 }
 
-fun parseDefinitionSecondPass(context: Context, definition: DefinitionFirstPass): ParsingResponse<Dungeon> {
+fun parseDefinitionSecondPass(namespaceContext: Context, largerContext: Context, definition: DefinitionFirstPass): ParsingResponse<Dungeon> {
   val parameters = definition.tokenized.parameters.map { parameter ->
-    val type = getImplementationType(context, parameter.type)
+    val type = getImplementationType(namespaceContext, parameter.type)
         ?: unknownType.hash
     Parameter(parameter.name, type)
   }
   val parameterNamespace = if (parameters.any()) {
-    newParameterNamespace(context, definition.key, parameters)
+    newParameterNamespace(namespaceContext, definition.key, parameters)
   } else
     null
 
-  val localContext = context + listOfNotNull(parameterNamespace)
+  val localContext = namespaceContext + listOfNotNull(parameterNamespace)
 
-  val (dungeon, expressionErrors) = parseExpression(localContext, definition.intermediate)
+  val (dungeon, expressionErrors) = parseExpression(localContext, largerContext, definition.intermediate)
 
   val output = getGraphOutputNode(dungeon.graph)
 
