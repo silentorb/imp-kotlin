@@ -23,7 +23,7 @@ class CampaignTest {
     val modules = workspace.modules
     assertEquals(2, modules.size)
     assertEquals(2, modules["assets"]!!.dungeons.size)
-    assertEquals(2, modules["lib"]!!.dungeons.size)
+    assertEquals(1, modules["lib"]!!.dungeons.size)
 
     val libDungeons = modules["lib"]!!.dungeons
     val context = libDungeons.values.map { it.graph }

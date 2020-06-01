@@ -10,10 +10,17 @@ import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.lexer.stripWhitespace
 import silentorb.imp.parsing.lexer.tokenize
 import java.net.URI
+import java.nio.file.Paths
 
 fun parseTokens(context: Context, tokens: Tokens): ParsingResponse<Dungeon> {
-  val (tokenGraph, tokenGraphErrors) = toTokenGraph(tokens)
-  val (dungeon, dungeonErrors) = parseDungeon(context, mapOf(PathKey("", "") to tokenGraph))
+  val filePath = Paths.get("")
+  val (tokenGraph, tokenGraphErrors) = toTokenGraph(filePath, tokens)
+  val importMap = mapOf(filePath to tokenGraph.imports)
+  val definitions = tokenGraph.definitions
+      .associateBy { definition ->
+        PathKey("", definition.symbol.value)
+      }
+  val (dungeon, dungeonErrors) = parseDungeon(context, importMap, definitions)
   return ParsingResponse(
       dungeon,
       tokenGraphErrors + dungeonErrors

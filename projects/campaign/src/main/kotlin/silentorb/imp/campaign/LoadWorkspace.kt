@@ -10,28 +10,50 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 
 const val workspaceFileName = "workspace.yaml"
 const val moduleFileName = "module.yaml"
 
-fun loadSourceFiles(moduleName: String, root: URI, context: Context, moduleConfig: ModuleConfig, sourceFiles: List<Path>): ParsingResponse<Map<DungeonId, Dungeon>> {
-  val lexingResults = sourceFiles.map { path ->
-    val code = Files.readString(path, StandardCharsets.UTF_8)!!
-    val (tokens, lexingErrors) = tokenizeAndSanitize(root.relativize(path.toUri()), code)
-    val (tokenizedGraph, tokenGraphErrors) = toTokenGraph(tokens)
-    val pathKey = pathKeyFromString(joinPaths(moduleName, baseName(path)))
-
-    Pair(Pair(pathKey, tokenizedGraph), lexingErrors + tokenGraphErrors)
-  }
+fun loadSourceFiles(moduleName: String, root: Path, context: Context, moduleConfig: ModuleConfig, sourceFiles: List<Path>): ParsingResponse<Map<DungeonId, Dungeon>> {
+  val lexingResults = sourceFiles
+      .map { path ->
+        val code = Files.readString(path, StandardCharsets.UTF_8)!!
+        val (tokens, lexingErrors) = tokenizeAndSanitize(root.toUri().relativize(path.toUri()), code)
+        val (tokenizedGraph, tokenGraphErrors) = toTokenGraph(path, tokens)
+        Pair(Pair(path, tokenizedGraph), lexingErrors + tokenGraphErrors)
+      }
   val tokenGraphs = lexingResults.associate { it.first }
   val lexingErrors = lexingResults.flatMap { it.second }
 
+  val importMap = tokenGraphs.mapValues { it.value.imports }
   val dungeons = if (moduleConfig.fileNamespaces)
     tokenGraphs
-        .mapValues { parseDungeon(context, mapOf(it.key to it.value)) }
-        .mapKeys { it.key.name }
+        .mapValues { (path, tokenGraph) ->
+          val definitions = tokenGraph.definitions
+              .associateBy { PathKey(path.toString(), it.symbol.value) }
+
+          parseDungeon(context, importMap, definitions)
+        }
+        .mapKeys { it.key.fileName.toString().split(".").first() }
   else {
-    val dungeon = parseDungeon(context, tokenGraphs, moduleConfig.fileNamespaces)
+    val definitions = tokenGraphs.entries
+        .flatMap { (path, tokenGraph) ->
+          val namespace = root.relativize(path)
+              .parent
+              .toString()
+              .split(Regex("""[/\\]"""))
+              .drop(1)
+              .joinToString(".")
+
+          tokenGraph.definitions
+              .map {
+                PathKey(namespace, it.symbol.value) to it
+              }
+        }
+        .associate { it }
+
+    val dungeon = parseDungeon(context, importMap, definitions)
     mapOf(moduleName to dungeon)
   }
 
@@ -43,15 +65,17 @@ fun loadSourceFiles(moduleName: String, root: URI, context: Context, moduleConfi
 
 fun loadModuleInfo(path: Path): ModuleInfo {
   return ModuleInfo(
+      path = path,
       config = loadYamlFile<ModuleConfig>(path.resolve(moduleFileName)) ?: ModuleConfig(),
       sourceFiles = glob("src/**/*.imp", path)
   )
 }
 
-fun loadModule(name: String, root: URI, context: Context, info: ModuleInfo): ParsingResponse<Module> {
+fun loadModule(name: String, context: Context, info: ModuleInfo): ParsingResponse<Module> {
+  val path = info.path
   val config = info.config
   val sourceFiles = info.sourceFiles
-  val (dungeons, errors) = loadSourceFiles(name, root, context, config, sourceFiles)
+  val (dungeons, errors) = loadSourceFiles(name, path, context, config, sourceFiles)
   return ParsingResponse(
       Module(
           dungeons = dungeons,
@@ -78,7 +102,7 @@ tailrec fun loadModules(root: URI, infos: Map<ModuleId, ModuleInfo>, context: Co
       accumulator
     else {
       val (name, info) = infos.entries.first()
-      val response = loadModule(name, root, context, info)
+      val response = loadModule(name, context, info)
       val (module, _) = response
       val newContext = context + module.dungeons.map { it.value.graph }
       loadModules(root, infos - name, newContext, accumulator + (name to response))

@@ -53,6 +53,7 @@ data class CampaignResponse<T>(
 )
 
 data class ModuleInfo(
+    val path: Path,
     val config: ModuleConfig,
     val sourceFiles: List<Path>
 )

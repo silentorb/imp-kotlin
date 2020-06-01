@@ -6,6 +6,7 @@ import silentorb.imp.core.emptyDungeon
 import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
+import java.nio.file.Path
 
 fun peek(tokens: Tokens, position: Int): (Int) -> Token? = { offset ->
   tokens.getOrNull(position + offset)
@@ -29,8 +30,9 @@ fun extractImportTokens(tokens: Tokens): (ImportRange) -> TokenizedImport = { ra
   )
 }
 
-fun extractDefinitionTokens(tokens: Tokens): (DefinitionRange) -> TokenizedDefinition = { range ->
+fun extractDefinitionTokens(file: Path, tokens: Tokens): (DefinitionRange) -> TokenizedDefinition = { range ->
   TokenizedDefinition(
+      file = file,
       symbol = tokens[range.symbol],
       parameters = range.parameters,
       expression = tokens.subList(range.expressionStart, range.expressionEnd)
@@ -160,12 +162,13 @@ fun partitionDefinitions(tokens: Tokens): ParsingResponse<List<DefinitionRange>>
 }
 
 fun toTokenGraph(
+    file: Path,
     tokens: Tokens,
     importRanges: List<ImportRange>,
     definitionRanges: List<DefinitionRange>
 ): ParsingResponse<TokenGraph> {
   val imports = importRanges.map(extractImportTokens(tokens))
-  val definitions = definitionRanges.map(extractDefinitionTokens(tokens))
+  val definitions = definitionRanges.map(extractDefinitionTokens(file, tokens))
   val importErrors = validateImportTokens(imports)
   val definitionErrors = validateDefinitionTokens(definitions)
   return ParsingResponse(
@@ -183,11 +186,11 @@ fun getDefinitionsRangeStart(tokens: Tokens, definitionRanges: List<DefinitionRa
 fun withoutComments(tokens: Tokens): Tokens =
     tokens.filter { it.rune != Rune.comment }
 
-fun toTokenGraph(tokens: Tokens): ParsingResponse<TokenGraph> {
+fun toTokenGraph(file: Path, tokens: Tokens): ParsingResponse<TokenGraph> {
   val (definitionRanges, partitionErrors) = partitionDefinitions(tokens)
   val importRangeMax = getDefinitionsRangeStart(tokens, definitionRanges)
   val importRanges = partitionImports(tokens.take(importRangeMax))
-  val (tokenGraph, tokenGraphErrors) = toTokenGraph(tokens, importRanges, definitionRanges)
+  val (tokenGraph, tokenGraphErrors) = toTokenGraph(file, tokens, importRanges, definitionRanges)
   return ParsingResponse(
       tokenGraph,
       partitionErrors + tokenGraphErrors

@@ -145,6 +145,9 @@ fun getTypeSignature(context: Context, key: TypeHash): Signature? =
 fun getTypeUnion(context: Context, key: TypeHash): Union? =
     resolveContextField(context) { namespace -> namespace.typings.unions[key] }
 
+fun getValue(context: Context, key: PathKey): Any? =
+    resolveContextField(context) { namespace -> namespace.values[key] }
+
 fun getSymbolType(context: Context, name: String): TypeHash? =
     typesToTypeHash(
         resolveContextFieldGreedy(context) { namespace ->

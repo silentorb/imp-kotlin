@@ -7,6 +7,7 @@ import silentorb.imp.parsing.general.newParsingError
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.expressions.mapExpressionTokensToNodes
 import silentorb.imp.parsing.parser.expressions.parseExpression
+import java.nio.file.Path
 
 fun newParameterNamespace(context: Context, pathKey: PathKey, parameters: List<Parameter>): Namespace {
   val pathString = pathKeyToString(pathKey)
@@ -29,8 +30,7 @@ fun prepareDefinitionFunction(
     parameters: List<Parameter>,
     output: PathKey,
     outputType: TypeHash,
-    id: PathKey,
-    pathKey: PathKey,
+    key: PathKey,
     dungeon: Dungeon
 ): Dungeon {
   val signature = Signature(
@@ -43,25 +43,24 @@ fun prepareDefinitionFunction(
   )
   val implementation = graph.copy(
       connections = graph.connections + (Input(
-          destination = id,
+          destination = key,
           parameter = defaultParameter
       ) to output),
-      returnTypes = graph.returnTypes + (pathKey to outputType),
+      returnTypes = graph.returnTypes + (key to outputType),
       typings = typings
   )
   return dungeon.copy(
       graph = newNamespace().copy(
-          returnTypes = mapOf(pathKey to definitionType),
+          returnTypes = mapOf(key to definitionType),
           typings = typings
       ),
       implementationGraphs = mapOf(
-          FunctionKey(pathKey, definitionType) to implementation
+          FunctionKey(key, definitionType) to implementation
       )
   )
 }
 
-fun parseDefinitionFirstPass(id: PathKey, definition: TokenizedDefinition): ParsingResponse<DefinitionFirstPass?> {
-  val pathKey = PathKey(id.path, definition.symbol.value)
+fun parseDefinitionFirstPass(key: PathKey, definition: TokenizedDefinition): ParsingResponse<DefinitionFirstPass?> {
   val tokens = definition.expression.filter { it.rune != Rune.newline }
   return if (tokens.none()) {
     ParsingResponse(
@@ -69,11 +68,12 @@ fun parseDefinitionFirstPass(id: PathKey, definition: TokenizedDefinition): Pars
         listOf(newParsingError(TextId.missingExpression, definition.symbol))
     )
   } else {
-    val (intermediate, tokenErrors) = mapExpressionTokensToNodes(pathKey, tokens)
+    val (intermediate, tokenErrors) = mapExpressionTokensToNodes(key, tokens)
     val matchingParenthesesErrors = checkMatchingParentheses(tokens)
     ParsingResponse(
         DefinitionFirstPass(
-            key = id,
+            file = definition.file,
+            key = key,
             tokenized = definition,
             intermediate = intermediate
         ),
@@ -83,14 +83,13 @@ fun parseDefinitionFirstPass(id: PathKey, definition: TokenizedDefinition): Pars
 }
 
 fun parseDefinitionSecondPass(context: Context, definition: DefinitionFirstPass): ParsingResponse<Dungeon> {
-  val pathKey = PathKey(definition.key.path, definition.tokenized.symbol.value)
   val parameters = definition.tokenized.parameters.map { parameter ->
     val type = getImplementationType(context, parameter.type)
         ?: unknownType.hash
     Parameter(parameter.name, type)
   }
   val parameterNamespace = if (parameters.any()) {
-    newParameterNamespace(context, pathKey, parameters)
+    newParameterNamespace(context, definition.key, parameters)
   } else
     null
 
@@ -108,8 +107,7 @@ fun parseDefinitionSecondPass(context: Context, definition: DefinitionFirstPass)
           parameters = parameters,
           output = output,
           outputType = outputType,
-          id = definition.key,
-          pathKey = pathKey,
+          key = definition.key,
           dungeon = dungeon
       )
     } else {
@@ -120,7 +118,7 @@ fun parseDefinitionSecondPass(context: Context, definition: DefinitionFirstPass)
                   destination = definition.key,
                   parameter = defaultParameter
               ) to output),
-              returnTypes = graph.returnTypes + (pathKey to outputType)
+              returnTypes = graph.returnTypes + (definition.key to outputType)
           )
       )
     }
