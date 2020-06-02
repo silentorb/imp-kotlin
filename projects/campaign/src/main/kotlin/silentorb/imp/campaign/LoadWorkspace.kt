@@ -18,6 +18,13 @@ val workspaceFilePath = Paths.get(workspaceFileName)
 const val moduleFileName = "module.yaml"
 val moduleFilePath = Paths.get(moduleFileName)
 
+fun namespaceFromPath(root:Path, path: Path): String =
+    root.relativize(path)
+        .toString()
+        .split(Regex("""[/\\]"""))
+        .drop(1)
+        .joinToString(".")
+
 fun loadSourceFiles(moduleName: String, root: Path, context: Context, moduleConfig: ModuleConfig, sourceFiles: List<Path>): ParsingResponse<Map<DungeonId, Dungeon>> {
   val lexingResults = sourceFiles
       .map { path ->
@@ -33,8 +40,9 @@ fun loadSourceFiles(moduleName: String, root: Path, context: Context, moduleConf
   val dungeons = if (moduleConfig.fileNamespaces)
     tokenGraphs
         .mapValues { (path, tokenGraph) ->
+          val namespace = namespaceFromPath(root, path.parent)
           val definitions = tokenGraph.definitions
-              .associateBy { PathKey(path.toString(), it.symbol.value) }
+              .associateBy { PathKey(namespace, it.symbol.value) }
 
           parseDungeon(context, importMap, definitions)
         }
@@ -42,12 +50,7 @@ fun loadSourceFiles(moduleName: String, root: Path, context: Context, moduleConf
   else {
     val definitions = tokenGraphs.entries
         .flatMap { (path, tokenGraph) ->
-          val namespace = root.relativize(path)
-              .parent
-              .toString()
-              .split(Regex("""[/\\]"""))
-              .drop(1)
-              .joinToString(".")
+          val namespace = namespaceFromPath(root, path.parent)
 
           tokenGraph.definitions
               .map {

@@ -9,6 +9,9 @@ data class PathKey(
 ) {
   init {
     assert(path.firstOrNull() != '.')
+    if (path.contains("E:")) {
+      val j = 0
+    }
   }
 }
 
