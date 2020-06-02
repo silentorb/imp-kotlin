@@ -5,7 +5,7 @@ import silentorb.imp.execution.Library
 import silentorb.imp.execution.mergeImplementationFunctions
 import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.parser.parseDungeon
-import silentorb.imp.parsing.parser.toTokenGraph
+import silentorb.imp.parsing.parser.structure.toTokenGraph
 import silentorb.imp.parsing.parser.tokenizeAndSanitize
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -18,7 +18,7 @@ val workspaceFilePath = Paths.get(workspaceFileName)
 const val moduleFileName = "module.yaml"
 val moduleFilePath = Paths.get(moduleFileName)
 
-fun namespaceFromPath(root:Path, path: Path): String =
+fun namespaceFromPath(root: Path, path: Path): String =
     root.relativize(path)
         .toString()
         .split(Regex("""[/\\]"""))
@@ -173,9 +173,13 @@ fun loadContainingWorkspace(library: Library, root: Path): Pair<Path, CampaignRe
   }
 }
 
-fun getModulesExecutionArtifacts(implementation: FunctionImplementationMap, modules: Map<ModuleId, Module>): Pair<Context, FunctionImplementationMap> {
+fun getModulesContext(modules: Map<ModuleId, Module>): Context {
   val dungeons = modules.map { it.value.dungeons }.reduce { a, b -> a + b }
-  val context = dungeons.values.map { it.graph }
+  return dungeons.values.map { it.graph }
+}
+
+fun getModulesExecutionArtifacts(implementation: FunctionImplementationMap, modules: Map<ModuleId, Module>): Pair<Context, FunctionImplementationMap> {
+  val context = getModulesContext(modules)
   val functionGraphs = modules.values
       .map { module ->
         module.dungeons.map {

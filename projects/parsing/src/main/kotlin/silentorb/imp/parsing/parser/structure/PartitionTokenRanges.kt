@@ -1,11 +1,9 @@
-package silentorb.imp.parsing.parser
+package silentorb.imp.parsing.parser.structure
 
-import silentorb.imp.core.Context
-import silentorb.imp.core.Dungeon
-import silentorb.imp.core.emptyDungeon
 import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
+import silentorb.imp.parsing.parser.*
 import java.nio.file.Path
 
 fun peek(tokens: Tokens, position: Int): (Int) -> Token? = { offset ->
@@ -61,7 +59,8 @@ val isDefinitionTerminator: TokenFilter = { token ->
 fun partitionImports(tokens: Tokens): List<ImportRange> {
   val importTokenIndices = filterIndices(tokens, isImportToken)
   return importTokenIndices.map { importTokenIndex ->
-    val end = nextIndexOf(tokens, importTokenIndex, isImportTerminator) ?: tokens.size
+    val end = nextIndexOf(tokens, importTokenIndex, isImportTerminator)
+        ?: tokens.size
     ImportRange(
         start = importTokenIndex,
         end = end

@@ -1,7 +1,10 @@
-package silentorb.imp.parsing.parser.expressions
+package silentorb.imp.parsing.parser.structure
 
 import silentorb.imp.core.PathKey
 import silentorb.imp.parsing.general.Tokens
+import silentorb.imp.parsing.parser.expressions.NodeReferenceMap
+import silentorb.imp.parsing.parser.expressions.TokenIndex
+import silentorb.imp.parsing.parser.expressions.getLiteralRuneType
 
 fun nodeReferenceTokens(nodeReferences: NodeReferenceMap, indexes: List<TokenIndex>): Map<TokenIndex, PathKey> =
     indexes

@@ -112,12 +112,17 @@ fun <V> resolveContextFieldGreedySet(context: Context, getter: (Namespace) -> Se
 fun <V> resolveContextField(context: Context, getter: (Namespace) -> V?): V? =
     resolveContextField(context, context.size - 1, getter)
 
-fun getNamespaceReturnTypes(context: Context, path: String): Map<PathKey, TypeHash> =
+fun getReturnTypes(context: Context, path: String): Map<PathKey, TypeHash> =
     resolveContextFieldMap(context) { namespace ->
       namespace.returnTypes.filter { it.key.path == path }
     }
 
-fun getNamespaceImplementationTypes(context: Context, path: String): Map<PathKey, TypeHash> =
+fun getReturnType(context: Context, key: PathKey): TypeHash? =
+    resolveContextField(context) { namespace ->
+      namespace.returnTypes[key]
+    }
+
+fun getImplementationTypes(context: Context, path: String): Map<PathKey, TypeHash> =
     resolveContextFieldMap(context) { namespace ->
       namespace.implementationTypes.filter { it.key.path == path }
     }
@@ -177,24 +182,30 @@ fun getPathKeyImplementationTypes(context: Context, key: PathKey): List<TypeHash
   }
 }
 
-fun flattenTypeSignatures(context: Context): (TypeHash) -> List<Signature> = { type ->
+fun getImplementationType(context: Context, key: PathKey): TypeHash? {
+  return resolveContextField(context) { namespace ->
+    namespace.implementationTypes[key]
+  }
+}
+
+fun getTypeSignatures(context: Context): (TypeHash) -> List<Signature> = { type ->
   resolveContextFieldGreedy(context) { namespace ->
     val signature = namespace.typings.signatures[type]
     if (signature != null)
       listOf(signature)
     else {
       val union = namespace.typings.unions[type]
-      union?.flatMap(flattenTypeSignatures(context)) ?: listOf()
+      union?.flatMap(getTypeSignatures(context)) ?: listOf()
     }
   }
 }
 
-fun getTypeSignatures(context: Context, pathKey: PathKey): List<Signature> {
-  val types = getPathKeyTypes(context, pathKey)
-  return types
-      .flatMap(flattenTypeSignatures(context))
-      .distinct()
-}
+//fun getTypeSignatures(context: Context, pathKey: PathKey): List<Signature> {
+//  val types = getPathKeyTypes(context, pathKey)
+//  return types
+//      .flatMap(getTypeSignatures(context))
+//      .distinct()
+//}
 
 fun resolveNumericTypeConstraint(key: TypeHash) =
     resolveContextField { namespace -> namespace.typings.numericTypeConstraints[key] }
@@ -264,5 +275,17 @@ fun getTypeNameOrUnknown(context: Context, type: TypeHash, step: Int = 0): PathK
 fun getInputConnections(context: Context, key: PathKey): Connections {
   return resolveContextFieldMap(context) { namespace ->
     namespace.connections.filter { it.key.destination == key }
+  }
+}
+
+fun getArgumentConnections(context: Context, key: PathKey): Connections {
+  return resolveContextFieldMap(context) { namespace ->
+    namespace.connections.filter { it.key.destination == key && it.key.parameter != defaultParameter }
+  }
+}
+
+fun getConnection(context: Context, input: Input): PathKey? {
+  return resolveContextField(context) { namespace ->
+    namespace.connections[input]
   }
 }

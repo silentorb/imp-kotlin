@@ -13,3 +13,8 @@ data class TypeAlias(
     val alias: TypeHash? = null,
     val numericConstraint: NumericTypeConstraint? = null
 )
+
+data class ExecutionStep(
+    val node: PathKey,
+    val execute: NodeImplementation
+)

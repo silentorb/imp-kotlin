@@ -14,7 +14,7 @@ tailrec fun <T> arrangeDependencies(modules: Set<T>, dependencies: Set<Dependenc
       Pair(accumulator, listOf())
     else {
       val nextModules = modules
-          .filter { module -> dependencies.none { it.dependent == module } }
+          .filter { module -> dependencies.none { it.dependent == module && modules.contains(it.provider) } }
 
       if (nextModules.none())
         Pair(accumulator, listOf(DependencyError.circularDependency))

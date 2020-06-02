@@ -1,21 +1,38 @@
 package silentorb.imp.execution
 
 import silentorb.imp.core.*
-import silentorb.imp.core.Dungeon
 
 typealias OutputValues = Map<PathKey, Any>
 typealias Arguments = Map<String, Any>
 
-fun arrangeGraphSequence(graph: Graph, values: OutputValues): List<PathKey> {
-  val nodes = graph.nodes
-      .minus(graph.values.keys)
-      .minus(values.keys)
-      .filter { graph.typings.signatures[graph.returnTypes[it]]?.parameters?.none() ?: true }
+tailrec fun getNodeDependencyConnections(context: Context, nodes: Set<PathKey>, accumulator: Connections): Connections =
+    if (nodes.none())
+      accumulator
+    else {
+      val newConnections = nodes
+          .map { getInputConnections(context, it) }
+          .reduce { a, b -> a + b }
+
+      val newNodes = newConnections.values
+          .toSet()
+          .minus(accumulator.keys.map { it.destination })
+
+      getNodeDependencyConnections(context, newNodes, accumulator + newConnections)
+    }
+
+fun arrangeGraphSequence(context: Context, connections: Connections): List<PathKey> {
+  val nodes = connections.values
+      .plus(connections.keys.map { it.destination })
+      .filter {
+        val type = getReturnType(context, it)
+        if (type != null)
+          getTypeSignatures(context)(type).all { it.parameters.none() }
+        else
+          false
+      }
       .toSet()
 
-  // Only grab connections that connect the filtered pool of execution nodes
-  val dependencies = graph.connections
-      .filter { nodes.contains(it.key.destination) && nodes.contains(it.value) }
+  val dependencies = connections
       .map {
         Dependency(
             dependent = it.key.destination,
@@ -27,75 +44,77 @@ fun arrangeGraphSequence(graph: Graph, values: OutputValues): List<PathKey> {
   return arrangeDependencies(nodes, dependencies).first
 }
 
-fun executeNode(
-    graph: Graph,
-    functions: FunctionImplementationMap,
-    values: OutputValues,
-    node: PathKey,
-    additionalArguments: Arguments? = null
-): Any {
-  val reference = graph.connections[Input(node, defaultParameter)]
-  val type = graph.implementationTypes[node]
-  return if (reference == null) {
-    val arguments = prepareArguments(graph, values, node)
-    assert(arguments.size == 1)
-    arguments.values.first()
+fun generateNodeFunction(context: Context,
+                         functions: FunctionImplementationMap,
+                         node: PathKey
+): NodeImplementation {
+  val reference = getConnection(context, Input(node, defaultParameter))
+  val type = getImplementationType(context, node)
+  if (reference != null && type == null) {
+    return generateNodeFunction(context, functions, reference)
+  } else if (reference == null) {
+    val value = getValue(context, node)!!
+    return { _: NodeImplementationArguments ->
+      value
+    }
   } else if (type != null) {
     val implementationKey = FunctionKey(reference, type)
     val function = functions[implementationKey]!!
-    val arguments = prepareArguments(graph, values, node)
-    function(if (additionalArguments != null) arguments + additionalArguments else arguments)
-  } else if (values.containsKey(reference)) {
-    values[reference]!!
+    val argumentKeys = getArgumentConnections(context, node)
+    return { values: NodeImplementationArguments ->
+      function(argumentKeys.entries.associate { it.key.parameter to values[it.value]!! })
+//      function(if (additionalArguments != null) arguments + additionalArguments else arguments)
+    }
   } else
     throw Error("Insufficient data to execute node $node")
 }
 
-fun executeStep(
-    functions: FunctionImplementationMap,
-    graph: Graph
-): (OutputValues, PathKey) -> OutputValues = { values, node ->
-  values.plus(node to executeNode(graph, functions, values, node))
+fun executeStep(): (OutputValues, ExecutionStep) -> OutputValues = { values, step ->
+  values + (step.node to step.execute(values))
 }
 
-fun executeStep(
-    functions: FunctionImplementationMap,
-    graph: Graph,
-    values: OutputValues,
-    node: PathKey,
-    additionalArguments: Arguments
-) =
-    values.plus(node to executeNode(graph, functions, values, node, additionalArguments))
+fun executeStep(values: OutputValues, step: ExecutionStep) =
+    values + (step.node to step.execute(values))
 
-fun execute(
+fun executeSteps(steps: List<ExecutionStep>, values: OutputValues): OutputValues {
+  return steps.fold(values) { accumulator, step -> executeStep(accumulator, step) }
+}
+
+fun prepareExecutionSteps(
+    context: Context,
     functions: FunctionImplementationMap,
-    graph: Graph,
-    steps: List<PathKey>,
-    values: OutputValues
-): OutputValues {
-  return steps.fold(values, executeStep(functions, graph))
+    resultNodes: Set<PathKey>): List<ExecutionStep> {
+  val connections = getNodeDependencyConnections(context, resultNodes, mapOf())
+  val steps = arrangeGraphSequence(context, connections)
+  return steps.map { node ->
+    ExecutionStep(
+        node = node,
+        execute = generateNodeFunction(context, functions, node)
+    )
+  }
 }
 
 fun execute(
+    context: Context,
     functions: FunctionImplementationMap,
-    graph: Graph,
-    values: OutputValues
+    nodes: Set<PathKey>
 ): OutputValues {
-  val steps = arrangeGraphSequence(graph, values)
-  return execute(functions, graph, steps, graph.values + values)
+  val steps = prepareExecutionSteps(context, functions, nodes)
+  return executeSteps(steps, mapOf())
 }
 
 fun executeToSingleValue(
+    context: Context,
     functions: FunctionImplementationMap,
-    graph: Graph,
-    values: OutputValues = mapOf()
+    graph: Graph
 ): Any? {
-  val result = execute(functions, graph, values)
   val output = getGraphOutputNode(graph)
   return if (output == null)
     null
-  else
-    result[output]
+  else {
+    val values = execute(context + graph, functions, setOf(output))
+    values[output]
+  }
 }
 
 fun mergeImplementationFunctions(context: Context, implementationGraphs: Map<FunctionKey, Graph>, functions: FunctionImplementationMap): FunctionImplementationMap {
@@ -107,5 +126,5 @@ fun mergeImplementationFunctions(context: Context, implementationGraphs: Map<Fun
 fun executeToSingleValue(context: Context, functions: FunctionImplementationMap, dungeon: Dungeon): Any? {
   val combinedContext = context + dungeon.graph
   val newFunctions = mergeImplementationFunctions(combinedContext, dungeon.implementationGraphs, functions)
-  return executeToSingleValue(functions + newFunctions, dungeon.graph)
+  return executeToSingleValue(context, functions + newFunctions, dungeon.graph)
 }

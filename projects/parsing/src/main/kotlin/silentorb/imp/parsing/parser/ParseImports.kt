@@ -26,8 +26,8 @@ fun parseImport(context: Context): (TokenizedImport) -> ParsingResponse<ImportBu
     val hasWildcard = tokenizedImport.path.last().rune == Rune.operator
 
     if (hasWildcard) {
-      val returnTypes = getNamespaceReturnTypes(context, toPathString(path))
-      val implementationTypes = getNamespaceImplementationTypes(context, toPathString(path))
+      val returnTypes = getReturnTypes(context, toPathString(path))
+      val implementationTypes = getImplementationTypes(context, toPathString(path))
 
       if (returnTypes.none() && implementationTypes.none()) {
         ParsingResponse(emptyImportBundle(), listOf(ParsingError(TextId.importNotFound, tokensToFileRange(tokenizedImport.path))))

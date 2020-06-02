@@ -1,4 +1,6 @@
 import imp.standard.*
 import imp.standard.math.*
 
-let render value: Int = + value defaultValue
+let empty = + 0 0
+
+let render value: Int = + value defaultValue .+ empty

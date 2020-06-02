@@ -1,8 +1,6 @@
 package silentorb.imp.execution
 
-import silentorb.imp.core.Graph
-import silentorb.imp.core.PathKey
-import silentorb.imp.core.defaultParameter
+import silentorb.imp.core.*
 
 fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: PathKey): Arguments {
   return graph.connections

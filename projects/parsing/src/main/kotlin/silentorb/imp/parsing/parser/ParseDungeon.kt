@@ -2,6 +2,7 @@ package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
+import silentorb.imp.parsing.parser.structure.parseDefinitionFirstPass
 import java.nio.file.Path
 
 fun gatherTypeNames(context: Context, nodeTypes: Map<PathKey, TypeHash>) =
@@ -65,6 +66,7 @@ tailrec fun resolveDefinitions(
     importMap: Map<Path, List<TokenizedImport>>,
     definitions: List<DefinitionFirstPass>,
     fileContexts: Map<Path, Context>,
+    namespaceContexts: Map<String, Context>,
     contextAccumulator: Context,
     accumulator: List<ParsingResponse<Dungeon>>
 ): List<ParsingResponse<Dungeon>> =
@@ -78,13 +80,16 @@ tailrec fun resolveDefinitions(
       else
         newImportedContext(next.key.path, defaultContext, importMap[file]!!, contextAccumulator)
 
-      val response = parseDefinitionSecondPass(context, contextAccumulator, next)
+      val namespaceContext = namespaceContexts[next.key.path] ?: listOf()
+
+      val response = parseDefinitionSecondPass(context + namespaceContext, contextAccumulator, next)
       val dungeon = response.value
       resolveDefinitions(
           defaultContext,
           importMap,
           definitions.drop(1),
-          fileContexts + (file to (context + dungeon.graph)),
+          fileContexts + (file to (context)),
+          namespaceContexts + (next.key.path to namespaceContext + dungeon.graph),
           contextAccumulator + dungeon.graph,
           accumulator + response.copy(errors = response.errors + importErrors)
       )
@@ -123,7 +128,7 @@ fun parseDefinitions(importMap: Map<Path, List<TokenizedImport>>, tokenDefinitio
 
   val defaultContext = listOf(newNamespace())
   val arrangedDefinitions = arrangedDefinitionKeys.map { definitionMap[it]!! }
-  val resolutions = resolveDefinitions(defaultContext, importMap, arrangedDefinitions, mapOf(), context, listOf())
+  val resolutions = resolveDefinitions(defaultContext, importMap, arrangedDefinitions, mapOf(), mapOf(), context, listOf())
   val result = flattenResponses(resolutions)
   return result
       .copy(

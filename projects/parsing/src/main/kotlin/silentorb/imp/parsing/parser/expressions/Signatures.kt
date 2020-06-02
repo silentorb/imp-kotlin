@@ -29,7 +29,7 @@ fun narrowTypeByArguments(
                 node = childNode
             )
           }
-      val functionOverloads = flattenTypeSignatures(context)(functionType)
+      val functionOverloads = getTypeSignatures(context)(functionType)
       val signatureMatches = overloadMatches(context, arguments, functionOverloads)
       if (signatureMatches.any())
         Pair(pathKey, signatureMatches)

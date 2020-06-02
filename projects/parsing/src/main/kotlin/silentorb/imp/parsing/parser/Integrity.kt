@@ -4,7 +4,7 @@ import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.expressions.TokenGraph
-import silentorb.imp.parsing.parser.expressions.getPipingParents
+import silentorb.imp.parsing.parser.structure.getPipingParents
 import java.nio.file.Path
 
 val getImportErrors = { tokenizedImport: TokenizedImport ->

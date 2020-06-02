@@ -132,3 +132,6 @@ val unknownType = newTypePair(PathKey("", unknownSymbol))
 
 typealias FunctionImplementation = (Map<Key, Any>) -> Any
 typealias FunctionImplementationMap = Map<FunctionKey, FunctionImplementation>
+
+typealias NodeImplementationArguments = Map<PathKey, Any>
+typealias NodeImplementation = (NodeImplementationArguments) -> Any
