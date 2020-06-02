@@ -17,6 +17,7 @@ fun englishText(text: TextId): String =
       TextId.missingClosingParenthesis -> "Missing closing parentheses"
       TextId.missingExpression -> "Missing expression"
       TextId.multipleGraphOutputs -> "Multiple graph outputs"
+      TextId.missingImportPath -> "Missing import path"
       TextId.noGraphOutput -> "No graph output"
       TextId.noMatchingSignature -> "No matching function signature for (%s)"
       TextId.outsideTypeRange -> "Outside type range"

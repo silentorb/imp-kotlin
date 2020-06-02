@@ -137,6 +137,15 @@ let intermediate = 10
   }
 
   @Test
+  fun preventsEmptyImports() {
+    val code = """
+      import
+    """.trimIndent()
+    expectError(TextId.missingImportPath, parseTextBranchingDeprecated(emptyContext)(code))
+  }
+
+
+  @Test
   fun preventsMisplacedWildcardsInImports() {
     val code = """
       import silentorb.imp.*.simpleFunction

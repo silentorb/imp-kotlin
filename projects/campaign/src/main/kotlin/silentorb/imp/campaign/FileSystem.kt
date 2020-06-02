@@ -3,6 +3,7 @@ package silentorb.imp.campaign
 import java.io.File
 import java.net.URI
 import java.nio.file.FileSystems
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -37,3 +38,17 @@ fun glob(pattern: String, uri: URI): List<Path> =
 
 fun baseName(path: Path) =
     path.fileName.toString().split(".").first()
+
+tailrec fun findContainingDirectory(indicatorFile: Path, path: Path): Path? =
+    if (Files.isRegularFile(path.resolve(indicatorFile)))
+      path
+    else if (path.parent == null)
+      null
+    else
+      findContainingDirectory(indicatorFile, path.parent)
+
+fun findContainingWorkspaceDirectory(path: Path): Path? =
+    findContainingDirectory(workspaceFilePath, path)
+
+fun findContainingModule(path: Path): Path? =
+    findContainingDirectory(moduleFilePath, path)

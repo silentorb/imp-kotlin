@@ -10,6 +10,7 @@ import java.nio.file.Path
 const val localPath = ""
 
 data class TokenizedImport(
+    val importToken: Token,
     val path: Tokens
 )
 

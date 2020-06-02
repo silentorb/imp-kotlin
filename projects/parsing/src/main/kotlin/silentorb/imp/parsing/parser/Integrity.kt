@@ -7,16 +7,20 @@ import silentorb.imp.parsing.parser.expressions.TokenGraph
 import silentorb.imp.parsing.parser.expressions.getPipingParents
 import java.nio.file.Path
 
-val getImportErrors = { import: TokenizedImport ->
-  val path = import.path
+val getImportErrors = { tokenizedImport: TokenizedImport ->
+  val path = tokenizedImport.path
   val shouldBeIdentifiers = (0 until path.size - 1 step 2).map { path[it] }
   val shouldBeDots = (1 until path.size - 1 step 2).map { path[it] }
-  val last = path.last()
-  val invalidTokens = shouldBeIdentifiers.filterNot { it.rune == Rune.identifier }
-      .plus(shouldBeDots.filterNot { it.rune == Rune.dot })
-      .plus(listOf(last).filterNot { it.rune == Rune.identifier || (it.rune == Rune.operator && it.value == "*") })
+  if (path.none())
+    listOf(newParsingError(TextId.missingImportPath, tokenizedImport.importToken))
+  else {
+    val last = path.last()
+    val invalidTokens = shouldBeIdentifiers.filterNot { it.rune == Rune.identifier }
+        .plus(shouldBeDots.filterNot { it.rune == Rune.dot })
+        .plus(listOf(last).filterNot { it.rune == Rune.identifier || (it.rune == Rune.operator && it.value == "*") })
 
-  invalidTokens.map(newParsingError(TextId.invalidToken))
+    invalidTokens.map(newParsingError(TextId.invalidToken))
+  }
 }
 
 fun validateImportTokens(imports: List<TokenizedImport>) =
@@ -136,8 +140,9 @@ fun validateUnusedImports(context: Context, importMap: Map<Path, List<TokenizedI
       }
 
   return unusedImports.flatMap { (_, imports) ->
-    imports.flatMap { tokenizedImport ->
-      parseImport(context)(tokenizedImport).errors
-    }
+    imports
+        .flatMap { tokenizedImport ->
+          parseImport(context)(tokenizedImport).errors
+        }
   }
 }

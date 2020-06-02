@@ -4,28 +4,27 @@ import silentorb.imp.core.Dependency
 import silentorb.imp.core.Dungeon
 import silentorb.imp.parsing.general.ParsingErrors
 import java.nio.file.Path
+import java.nio.file.Paths
 
 typealias ModuleId = String
 typealias DungeonId = String
 
 data class Module(
+    val path: Path,
     val dungeons: Map<DungeonId, Dungeon>,
     val fileNamespaces: Boolean
-)
-
-val emptyModule = Module(
-    dungeons = mapOf(),
-    fileNamespaces = false
 )
 
 typealias ModuleDependency = Dependency<ModuleId>
 
 data class Workspace(
+    val path: Path,
     val modules: Map<ModuleId, Module>,
     val dependencies: Set<ModuleDependency>
 )
 
 val emptyWorkspace = Workspace(
+    path = Paths.get(""),
     modules = mapOf(),
     dependencies = setOf()
 )

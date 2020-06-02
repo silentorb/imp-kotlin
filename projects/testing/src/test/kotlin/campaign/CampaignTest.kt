@@ -1,15 +1,14 @@
 package campaign
 
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import silentorb.imp.campaign.getModulesExecutionArtifacts
 import silentorb.imp.campaign.loadWorkspace
 import silentorb.imp.execution.executeToSingleValue
 import silentorb.imp.execution.mergeImplementationFunctions
 import silentorb.imp.library.standard.standardLibrary
 import silentorb.imp.testing.errored
-import java.net.URI
 import java.nio.file.Paths
 
 class CampaignTest {
@@ -24,19 +23,7 @@ class CampaignTest {
     assertEquals(2, modules.size)
     assertEquals(2, modules["assets"]!!.dungeons.size)
     assertEquals(1, modules["lib"]!!.dungeons.size)
-
-    val libDungeons = modules["lib"]!!.dungeons
-    val context = libDungeons.values.map { it.graph }
-    val functionGraphs = modules.values
-        .map { module ->
-          module.dungeons.map {
-            it.value.implementationGraphs
-          }
-              .reduce { a, b -> a + b }
-        }
-        .reduce { a, b -> a + b }
-
-    val functions = mergeImplementationFunctions(context, functionGraphs, library.implementation)
+    val (context, functions) = getModulesExecutionArtifacts(library.implementation, modules)
     val assets = modules["assets"]!!.dungeons
     val mouseValue = executeToSingleValue(context, functions, assets["mouse"]!!)
     val ravenValue = executeToSingleValue(context, functions, assets["raven"]!!)

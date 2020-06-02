@@ -26,6 +26,7 @@ data class DefinitionRange(
 
 fun extractImportTokens(tokens: Tokens): (ImportRange) -> TokenizedImport = { range ->
   TokenizedImport(
+      importToken = tokens[range.start],
       path = tokens.subList(range.start + 1, range.end) // Skip the "import" token
   )
 }

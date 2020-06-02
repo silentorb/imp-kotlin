@@ -2,6 +2,7 @@ package silentorb.imp.campaign
 
 import silentorb.imp.core.*
 import silentorb.imp.execution.Library
+import silentorb.imp.execution.mergeImplementationFunctions
 import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.parser.parseDungeon
 import silentorb.imp.parsing.parser.toTokenGraph
@@ -13,7 +14,9 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 const val workspaceFileName = "workspace.yaml"
+val workspaceFilePath = Paths.get(workspaceFileName)
 const val moduleFileName = "module.yaml"
+val moduleFilePath = Paths.get(moduleFileName)
 
 fun loadSourceFiles(moduleName: String, root: Path, context: Context, moduleConfig: ModuleConfig, sourceFiles: List<Path>): ParsingResponse<Map<DungeonId, Dungeon>> {
   val lexingResults = sourceFiles
@@ -78,6 +81,7 @@ fun loadModule(name: String, context: Context, info: ModuleInfo): ParsingRespons
   val (dungeons, errors) = loadSourceFiles(name, path, context, config, sourceFiles)
   return ParsingResponse(
       Module(
+          path = path,
           dungeons = dungeons,
           fileNamespaces = config.fileNamespaces ?: false
       ),
@@ -143,6 +147,7 @@ fun loadWorkspace(library: Library, root: Path): CampaignResponse<Workspace> {
 
     return CampaignResponse(
         value = Workspace(
+            path = root,
             modules = modules,
             dependencies = dependencies
         ),
@@ -150,4 +155,33 @@ fun loadWorkspace(library: Library, root: Path): CampaignResponse<Workspace> {
         parsingErrors = loadingResponse.flatMap { it.value.errors }
     )
   }
+}
+
+fun loadContainingWorkspace(library: Library, root: Path): Pair<Path, CampaignResponse<Workspace>>? {
+  val moduleDirectory = findContainingModule(root)
+  return if (moduleDirectory == null)
+    null
+  else {
+    val workspaceDirectory = findContainingWorkspaceDirectory(moduleDirectory)
+    if (workspaceDirectory != null)
+      Pair(moduleDirectory, loadWorkspace(library, workspaceDirectory))
+    else
+      null
+  }
+}
+
+fun getModulesExecutionArtifacts(implementation: FunctionImplementationMap, modules: Map<ModuleId, Module>): Pair<Context, FunctionImplementationMap> {
+  val dungeons = modules.map { it.value.dungeons }.reduce { a, b -> a + b }
+  val context = dungeons.values.map { it.graph }
+  val functionGraphs = modules.values
+      .map { module ->
+        module.dungeons.map {
+          it.value.implementationGraphs
+        }
+            .reduce { a, b -> a + b }
+      }
+      .reduce { a, b -> a + b }
+
+  val functions = mergeImplementationFunctions(context, functionGraphs, implementation)
+  return Pair(context, functions)
 }
