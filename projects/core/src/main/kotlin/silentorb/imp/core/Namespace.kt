@@ -284,6 +284,12 @@ fun getArgumentConnections(context: Context, key: PathKey): Connections {
   }
 }
 
+fun getParameterConnections(context: Context, key: PathKey): Connections {
+  return resolveContextFieldMap(context) { namespace ->
+    namespace.connections.filter { it.value == key }
+  }
+}
+
 fun getConnection(context: Context, input: Input): PathKey? {
   return resolveContextField(context) { namespace ->
     namespace.connections[input]

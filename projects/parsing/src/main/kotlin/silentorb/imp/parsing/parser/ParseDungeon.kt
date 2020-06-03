@@ -95,7 +95,7 @@ tailrec fun resolveDefinitions(
       )
     }
 
-fun parseDefinitions(importMap: Map<Path, List<TokenizedImport>>, tokenDefinitions: Map<PathKey, TokenizedDefinition>, context: Context): ParsingResponse<List<Dungeon>> {
+fun resolveDefinitions(importMap: Map<Path, List<TokenizedImport>>, tokenDefinitions: Map<PathKey, TokenizedDefinition>, context: Context): ParsingResponse<List<Dungeon>> {
   val firstPass = tokenDefinitions
       .mapValues { (pathKey, definition) ->
         parseDefinitionFirstPass(pathKey, definition)
@@ -177,7 +177,7 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
     }
 
 fun parseDungeon(context: Context, importMap: Map<Path, List<TokenizedImport>>, definitions: Map<PathKey, TokenizedDefinition>): ParsingResponse<Dungeon> {
-  val (dungeons, definitionErrors) = parseDefinitions(importMap, definitions, context)
+  val (dungeons, definitionErrors) = resolveDefinitions(importMap, definitions, context)
   val importErrors = validateUnusedImports(context, importMap, definitions)
   val (dungeon, dungeonErrors) = finalizeDungeons(context, definitions)(dungeons)
   return ParsingResponse(

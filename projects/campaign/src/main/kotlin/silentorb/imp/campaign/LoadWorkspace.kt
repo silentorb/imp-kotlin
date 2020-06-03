@@ -29,6 +29,7 @@ fun loadSourceFiles(moduleName: String, root: Path, context: Context, moduleConf
   val lexingResults = sourceFiles
       .map { path ->
         val code = Files.readString(path, StandardCharsets.UTF_8)!!
+            .replace("\r\n", "\n")
         val (tokens, lexingErrors) = tokenizeAndSanitize(root.relativize(path).toString(), code)
         val (tokenizedGraph, tokenGraphErrors) = toTokenGraph(path, tokens)
         Pair(Pair(path, tokenizedGraph), lexingErrors + tokenGraphErrors)
@@ -86,7 +87,7 @@ fun loadModule(name: String, context: Context, info: ModuleInfo): ParsingRespons
       Module(
           path = path,
           dungeons = dungeons,
-          fileNamespaces = config.fileNamespaces ?: false
+          fileNamespaces = config.fileNamespaces
       ),
       errors
   )
