@@ -160,14 +160,14 @@ fun loadWorkspace(library: Library, root: Path): CampaignResponse<Workspace> {
   }
 }
 
-fun loadContainingWorkspace(library: Library, root: Path): Pair<Path, CampaignResponse<Workspace>>? {
+fun loadContainingWorkspace(library: Library, root: Path): CampaignResponse<Workspace>? {
   val moduleDirectory = findContainingModule(root)
   return if (moduleDirectory == null)
     null
   else {
     val workspaceDirectory = findContainingWorkspaceDirectory(moduleDirectory)
     if (workspaceDirectory != null)
-      Pair(moduleDirectory, loadWorkspace(library, workspaceDirectory))
+      loadWorkspace(library, workspaceDirectory)
     else
       null
   }
