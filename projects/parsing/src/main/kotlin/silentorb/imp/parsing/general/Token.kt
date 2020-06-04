@@ -4,6 +4,7 @@ import silentorb.imp.core.FileRange
 import silentorb.imp.core.Range
 import silentorb.imp.core.TokenFile
 import silentorb.imp.parsing.lexer.Rune
+import silentorb.imp.parsing.syntax.Burg
 import java.nio.file.Path
 
 data class Token(
@@ -23,3 +24,9 @@ fun tokensToRange(tokens: Tokens): Range =
 
 fun tokensToFileRange(tokens: Tokens): FileRange =
     FileRange(tokens.first().file, tokensToRange(tokens))
+
+fun burgsToRange(burgs: List<Burg>): Range =
+    Range(burgs.first().range.start, burgs.last().range.end)
+
+fun burgsToFileRange(burgs: List<Burg>): FileRange =
+    FileRange(burgs.first().file, burgsToRange(burgs))

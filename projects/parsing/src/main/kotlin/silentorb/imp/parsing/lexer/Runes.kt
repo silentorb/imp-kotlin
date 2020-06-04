@@ -4,6 +4,7 @@ enum class Rune {
   assignment,
   bad,
   colon,
+  comma,
   comment,
   dot,
   identifier,

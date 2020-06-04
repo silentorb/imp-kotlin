@@ -6,9 +6,7 @@ import silentorb.imp.core.PathKey
 import silentorb.imp.core.joinPaths
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
-import silentorb.imp.parsing.parser.emptyContext
-import silentorb.imp.parsing.parser.localPath
-import silentorb.imp.parsing.parser.parseTextBranchingDeprecated
+import silentorb.imp.parsing.parser.*
 import silentorb.imp.testing.errored
 import silentorb.imp.testing.expectError
 
@@ -25,6 +23,13 @@ class ParserTest {
       assertEquals(1, graph.connections.size)
       assertEquals(10, graph.values.values.first())
     }
+  }
+
+  @Test
+  fun canParseImports() {
+    val code = "import silentorb.imp.test.simpleFunction"
+    val (_, errors) = parseToDungeon("", simpleContext, code)
+    errored(errors)
   }
 
   @Test

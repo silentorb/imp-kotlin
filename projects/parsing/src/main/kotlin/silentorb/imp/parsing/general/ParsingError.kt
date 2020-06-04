@@ -5,7 +5,7 @@ import silentorb.imp.core.Range
 import silentorb.imp.core.rangeString
 
 data class ParsingError(
-    val message: TextId,
+    val message: Any,
     val fileRange: FileRange,
     val arguments: List<Any> = listOf()
 )
@@ -24,7 +24,7 @@ fun errorIf(condition: Boolean, message: TextId, fileRange: FileRange): ParsingE
     else
       null
 
-fun formatError(textLibrary: (TextId) -> String, error: ParsingError): String {
+fun formatError(textLibrary: (Any) -> String, error: ParsingError): String {
   val initial = textLibrary(error.message) + " at ${rangeString(error.fileRange)}"
   return String.format(initial, *error.arguments.toTypedArray())
 }

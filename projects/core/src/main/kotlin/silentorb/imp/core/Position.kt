@@ -12,7 +12,7 @@ data class Position(
     val row: CodeInt
 )
 
-fun newPosition(file: TokenFile) =
+fun newPosition(file: TokenFile = "") =
     Position(
         index = 0,
         column = 1,

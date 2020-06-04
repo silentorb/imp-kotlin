@@ -1,17 +1,18 @@
 package silentorb.imp.parsing.parser
 
+import silentorb.imp.core.FileRange
 import silentorb.imp.core.PathKey
 import silentorb.imp.parsing.general.Token
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.parser.expressions.IntermediateExpression
+import silentorb.imp.parsing.syntax.Burg
 import java.net.URI
 import java.nio.file.Path
 
 const val localPath = ""
 
 data class TokenizedImport(
-    val importToken: Token,
-    val path: Tokens
+    val path: List<Burg>
 )
 
 data class TokenizedParameter(

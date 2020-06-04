@@ -10,7 +10,7 @@ import silentorb.imp.parsing.structureOld.toTokenGraph
 import silentorb.imp.parsing.structureOld.withoutComments
 import java.nio.file.Paths
 
-fun parseTokens(context: Context, tokens: Tokens): ParsingResponse<Dungeon> {
+fun parseTokensToDungeon(context: Context, tokens: Tokens): ParsingResponse<Dungeon> {
   val filePath = Paths.get("")
   val (tokenGraph, tokenGraphErrors) = toTokenGraph(filePath, tokens)
   val importMap = mapOf(filePath to tokenGraph.imports)
@@ -25,12 +25,12 @@ fun parseTokens(context: Context, tokens: Tokens): ParsingResponse<Dungeon> {
   )
 }
 
-fun parseTokens(context: Context): (Tokens) -> ParsingResponse<Dungeon> = { tokens ->
+fun parseTokensToDungeon(context: Context): (Tokens) -> ParsingResponse<Dungeon> = { tokens ->
   assert(context.any())
   if (tokens.none())
     ParsingResponse(emptyDungeon, listOf())
   else
-    parseTokens(context, withoutComments(tokens))
+    parseTokensToDungeon(context, withoutComments(tokens))
 }
 
 fun parseTextBranchingDeprecated(context: Context): (CodeBuffer) -> Response<Dungeon> = { code ->
@@ -41,7 +41,7 @@ fun parseTextBranchingDeprecated(context: Context): (CodeBuffer) -> Response<Dun
   if (lexingErrors.any())
     failure(lexingErrors)
   else {
-    val (dungeon, parsingErrors) = parseTokens(context)(tokens)
+    val (dungeon, parsingErrors) = parseTokensToDungeon(context)(tokens)
     if (parsingErrors.any())
       failure(parsingErrors)
     else
@@ -60,11 +60,15 @@ fun tokenizeAndSanitize(uri: TokenFile, code: CodeBuffer): ParsingResponse<Token
   )
 }
 
-fun parseToDungeon(uri: TokenFile, context: Context): (CodeBuffer) -> ParsingResponse<Dungeon> = { code ->
+fun parseToDungeon(uri: TokenFile, context: Context, code: CodeBuffer): ParsingResponse<Dungeon> {
   val (tokens, lexingErrors) = tokenizeAndSanitize(uri, code)
-  val (dungeon, parsingErrors) = parseTokens(context)(tokens)
-  ParsingResponse(
+  val (dungeon, parsingErrors) = parseTokensToDungeon(context)(tokens)
+  return ParsingResponse(
       dungeon,
       lexingErrors.plus(parsingErrors)
   )
+}
+
+fun parseToDungeon(uri: TokenFile, context: Context): (CodeBuffer) -> ParsingResponse<Dungeon> = { code ->
+  parseToDungeon(uri, context, code)
 }

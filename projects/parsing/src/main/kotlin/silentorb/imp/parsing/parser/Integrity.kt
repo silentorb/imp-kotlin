@@ -7,25 +7,6 @@ import silentorb.imp.parsing.parser.expressions.TokenGraph
 import silentorb.imp.parsing.structureOld.getPipingParents
 import java.nio.file.Path
 
-val getImportErrors = { tokenizedImport: TokenizedImport ->
-  val path = tokenizedImport.path
-  val shouldBeIdentifiers = (0 until path.size - 1 step 2).map { path[it] }
-  val shouldBeDots = (1 until path.size - 1 step 2).map { path[it] }
-  if (path.none())
-    listOf(newParsingError(TextId.missingImportPath, tokenizedImport.importToken))
-  else {
-    val last = path.last()
-    val invalidTokens = shouldBeIdentifiers.filterNot { it.rune == Rune.identifier }
-        .plus(shouldBeDots.filterNot { it.rune == Rune.dot })
-        .plus(listOf(last).filterNot { it.rune == Rune.identifier || (it.rune == Rune.operator && it.value == "*") })
-
-    invalidTokens.map(newParsingError(TextId.invalidToken))
-  }
-}
-
-fun validateImportTokens(imports: List<TokenizedImport>) =
-    imports.flatMap(getImportErrors)
-
 fun validateDefinitionTokens(definitions: List<TokenizedDefinition>): ParsingErrors {
   val duplicateSymbols = definitions
       .groupBy { it.symbol.value }

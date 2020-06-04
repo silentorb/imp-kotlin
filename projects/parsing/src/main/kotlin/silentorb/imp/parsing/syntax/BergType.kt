@@ -1,11 +1,13 @@
-package silentorb.imp.parsing.structure
+package silentorb.imp.parsing.syntax
 
 enum class BurgType {
   assignment,
   bad,
   colon,
   comment,
+  definitionName,
   dot,
+  fileRoot,
   importKeyword,
   importPathToken,
   importPathWildcard,
