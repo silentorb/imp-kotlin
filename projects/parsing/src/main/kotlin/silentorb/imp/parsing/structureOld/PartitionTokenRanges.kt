@@ -1,4 +1,4 @@
-package silentorb.imp.parsing.parser.structure
+package silentorb.imp.parsing.structureOld
 
 import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.general.*

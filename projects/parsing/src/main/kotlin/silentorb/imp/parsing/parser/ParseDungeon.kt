@@ -2,7 +2,7 @@ package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
-import silentorb.imp.parsing.parser.structure.parseDefinitionFirstPass
+import silentorb.imp.parsing.structureOld.parseDefinitionFirstPass
 import java.nio.file.Path
 
 fun gatherTypeNames(context: Context, nodeTypes: Map<PathKey, TypeHash>) =
