@@ -3,39 +3,52 @@ package silentorb.imp.parsing.structureOld
 import silentorb.imp.core.PathKey
 import silentorb.imp.core.pathKeyToString
 import silentorb.imp.parsing.general.ParsingResponse
-import silentorb.imp.parsing.general.Tokens
-import silentorb.imp.parsing.parser.expressions.*
-import silentorb.imp.parsing.parser.validatePiping
+import silentorb.imp.parsing.general.newParsingError
+import silentorb.imp.parsing.parser.expressions.IntermediateExpression
+import silentorb.imp.parsing.parser.expressions.resolveLiteralTypes
+import silentorb.imp.parsing.parser.expressions.resolveLiterals
+import silentorb.imp.parsing.parser.getExpandedChildren
+import silentorb.imp.parsing.syntax.BurgType
+import silentorb.imp.parsing.syntax.Realm
 
-fun expressionTokensToNodes(root: PathKey, tokens: Tokens): ParsingResponse<IntermediateExpression> {
+fun getNamedArguments(realm: Realm) =
+    realm.burgs
+        .filterValues { it.type == BurgType.argument }
+        .keys.mapNotNull { parameter ->
+          val children = getExpandedChildren(realm, parameter)
+          val argumentName = children.firstOrNull { it.type == BurgType.argumentName }
+          if (argumentName != null)
+            (parameter to argumentName)
+          else
+            null
+        }
+        .associate { it }
+
+fun expressionTokensToNodes(root: PathKey, realm: Realm): ParsingResponse<IntermediateExpression> {
   val path = pathKeyToString(root)
-  val groupGraph = newGroupingGraph(groupTokens(tokens))
-  val tokenGraph = arrangePiping(tokens, groupGraph)
-  val namedArguments = tokenGraph.parents
-      .map { (_, children) -> getNamedArguments(tokens, children) }
-      .reduce { a, b -> a.plus(b) }
-  val parents = collapseNamedArgumentClauses(namedArguments.keys, tokenGraph.parents)
-  val indexedTokens = parents.keys.plus(parents.values.flatten()).toList()
-  val literalTokenKeys = literalTokenNodes(path, tokens, indexedTokens)
-  val nodeReferences = indexedTokens - literalTokenKeys.keys
+  val namedArguments = getNamedArguments(realm)
+  val parents = realm.roads
+//  val parents = collapseNamedArgumentClauses(namedArguments.keys, realm.parents)
+//  val indexedTokens = parents.keys.plus(parents.values.flatten()).toList()
+  val literalTokenKeys = literalTokenNodes(path, realm.burgs.values)
+  val nodeReferences = realm.burgs.values.filter { it.type == BurgType.reference }
   val tokenNodes = nodeReferences
-      .groupBy { tokens[it].value }
-      .flatMap { (name, tokenIndices) ->
-        tokenIndices.mapIndexed { index, tokenIndex ->
-          Pair(tokenIndex, PathKey(path, "$name${index + 1}"))
+      .groupBy { it.value as String }
+      .flatMap { (name, burgs) ->
+        burgs.mapIndexed { index, burg ->
+          Pair(burg.hashCode(), PathKey(path, "$name${index + 1}"))
         }
       }
       .associate { it }
       .plus(literalTokenKeys)
 
   val nodeMap = tokenNodes.entries
-      .associate { (tokenIndex, pathKey) ->
-        Pair(pathKey, tokens[tokenIndex].fileRange)
+      .associate { (id, pathKey) ->
+        Pair(pathKey, realm.burgs[id]!!.fileRange)
       }
 
-  val literalTypes = resolveLiteralTypes(tokens, literalTokenKeys)
+  val literalTypes = resolveLiteralTypes(realm.burgs, literalTokenKeys)
 
-  val pipingErrors = validatePiping(tokens, groupGraph)
   val pathKeyParents = parents.entries
       .mapNotNull { (key, value) ->
         val parent = tokenNodes[key]
@@ -46,16 +59,24 @@ fun expressionTokensToNodes(root: PathKey, tokens: Tokens): ParsingResponse<Inte
       }
       .associate { it }
 
+  val (stages, dependencyErrors) = arrangeRealm(realm)
+
   return ParsingResponse(
       IntermediateExpression(
           literalTypes = literalTypes,
           nodeMap = nodeMap,
           parents = pathKeyParents,
-          references = nodeReferences.groupBy { tokens[it].value }.mapValues { it.value.map { tokenNodes[it]!! }.toSet() },
-          stages = tokenGraph.stages.map { stage -> stage.mapNotNull { tokenNodes[it] } },
-          namedArguments = namedArguments.mapKeys { (tokenIndex, _) -> tokenNodes[tokenIndex]!! },
-          values = resolveLiterals(tokens, indexedTokens, tokenNodes)
+          references = nodeReferences
+              .groupBy { it.value as String }
+              .mapValues { it.value.map { tokenNodes[it.hashCode()]!! }.toSet() },
+//          stages = tokenGraph.stages.map { stage -> stage.mapNotNull { tokenNodes[it] } },
+          namedArguments = namedArguments.mapKeys { (burg, _) -> tokenNodes[burg]!! },
+          stages = stages.map { tokenNodes[it]!! },
+          values = literalTokenKeys.entries
+              .associate { (burgId, key) ->
+                (key to realm.burgs[burgId]!!.value!!)
+              }
       ),
-      pipingErrors
+      dependencyErrors.map(newParsingError(realm.burgs[realm.root]!!))
   )
 }

@@ -1,32 +1,33 @@
-package silentorb.imp.parsing.syntax
+package silentorb.imp.parsing.syntax.traversing
 
 import silentorb.imp.parsing.general.TextId
-import silentorb.imp.parsing.lexer.Rune
+import silentorb.imp.parsing.syntax.*
 
 val parseDefinitionName: TokenToParsingTransition = { token ->
   when {
-    token.rune == Rune.identifier -> ParsingMode.definitionParameterNameOrAssignment to skip
+    isIdentifier(token) -> ParsingStep(pushChild, ParsingMode.definitionParameterNameOrAssignment, BurgType.definitionName)
     else -> parsingError(TextId.expectedIdentifier)
   }
 }
 
 val parseDefinitionAssignment: TokenToParsingTransition = { token ->
   when {
-    token.rune == Rune.operator && token.value == "=" -> ParsingMode.definitionParameterNameOrAssignment to skip
+    isAssignment(token) -> ParsingStep(skip, ParsingMode.definitionParameterNameOrAssignment)
     else -> parsingError(TextId.expectedAssignment)
   }
 }
 
 val parseDefinitionParameterName: TokenToParsingTransition = { token ->
   when {
-    token.rune == Rune.identifier -> ParsingMode.definitionParameterColon to skip
+    isIdentifier(token) -> ParsingStep(skip, ParsingMode.definitionParameterColon)
     else -> parsingError(TextId.expectedParameterName)
   }
 }
 
 val parseDefinitionParameterNameOrAssignment: TokenToParsingTransition = { token ->
   when {
-    token.rune == Rune.identifier -> ParsingMode.definitionParameterColon to skip
+    isIdentifier(token) -> ParsingStep(skip, ParsingMode.definitionParameterColon)
+    isAssignment(token) -> ParsingStep(skip, ParsingMode.definitionExpression)
     else -> parsingError(TextId.expectedParameterNameOrAssignment)
   }
 }
@@ -35,23 +36,23 @@ val parseDefinitionParameterType = parseType(ParsingMode.definitionParameterSepa
 
 val parseDefinitionParameterColon: TokenToParsingTransition = { token ->
   when {
-    token.rune == Rune.identifier -> ParsingMode.definitionParameterType to skip
-    else -> null to addError(TextId.expectedColon)
+    isIdentifier(token) -> ParsingStep(skip, ParsingMode.definitionParameterType)
+    else -> parsingError(TextId.expectedColon)
   }
 }
 
 val parseDefinitionParameterSeparatorOrAssignment: TokenToParsingTransition = { token ->
   when {
-    token.rune == Rune.comma -> ParsingMode.definitionParameterName to skip
-    token.rune == Rune.operator && token.value == "=" -> ParsingMode.definitionExpression to skip
+    isComma(token) -> ParsingStep(skip, ParsingMode.definitionParameterName)
+    isAssignment(token) -> ParsingStep(skip, ParsingMode.definitionExpression)
     else -> parsingError(TextId.expectedCommaOrAssignment)
   }
 }
 
 val parseBody: TokenToParsingTransition = { token ->
   when {
-    token.rune == Rune.identifier && token.value == "let" -> ParsingMode.definitionName to skip
-    token.rune == Rune.newline -> ParsingMode.body to foldStack
+    isLet(token) -> ParsingStep(skip, ParsingMode.definitionName)
+    isNewline(token) -> ParsingStep(skip, ParsingMode.body)
     else -> parsingError(TextId.expectedLetKeyword)
   }
 }

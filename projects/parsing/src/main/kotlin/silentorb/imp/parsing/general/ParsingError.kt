@@ -1,8 +1,10 @@
 package silentorb.imp.parsing.general
 
+import silentorb.imp.core.DependencyError
 import silentorb.imp.core.FileRange
 import silentorb.imp.core.Range
 import silentorb.imp.core.rangeString
+import silentorb.imp.parsing.syntax.Burg
 
 data class ParsingError(
     val message: Any,
@@ -16,6 +18,12 @@ fun newParsingError(message: TextId, fileRange: FileRange) =
     ParsingError(
         message = message,
         fileRange = fileRange
+    )
+
+fun newParsingError(message: TextId, burg: Burg) =
+    ParsingError(
+        message = message,
+        fileRange = burg.fileRange
     )
 
 fun errorIf(condition: Boolean, message: TextId, fileRange: FileRange): ParsingError? =
@@ -45,3 +53,7 @@ fun <K, V> flattenResponseMap(responses: Map<K, ParsingResponse<V>>): ParsingRes
         responses.mapValues { it.value.value },
         responses.flatMap { it.value.errors }
     )
+
+fun newParsingError(burg: Burg): (DependencyError) -> ParsingError = { error ->
+  newParsingError(TextId.circularDependency, burg)
+}

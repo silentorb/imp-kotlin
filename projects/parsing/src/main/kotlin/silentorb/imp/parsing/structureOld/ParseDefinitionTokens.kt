@@ -10,23 +10,15 @@ import silentorb.imp.parsing.parser.TokenizedDefinition
 import silentorb.imp.parsing.parser.checkMatchingParentheses
 
 fun parseDefinitionFirstPass(key: PathKey, definition: TokenizedDefinition): ParsingResponse<DefinitionFirstPass?> {
-  val tokens = definition.expression.filter { it.rune != Rune.newline }
-  return if (tokens.none()) {
-    ParsingResponse(
-        null,
-        listOf(newParsingError(TextId.missingExpression, definition.symbol))
-    )
-  } else {
-    val (intermediate, tokenErrors) = expressionTokensToNodes(key, tokens)
-    val matchingParenthesesErrors = checkMatchingParentheses(tokens)
-    ParsingResponse(
-        DefinitionFirstPass(
-            file = definition.file,
-            key = key,
-            tokenized = definition,
-            intermediate = intermediate
-        ),
-        tokenErrors + matchingParenthesesErrors
-    )
-  }
+  val (intermediate, tokenErrors) = expressionTokensToNodes(key, definition.expression)
+//  val matchingParenthesesErrors = checkMatchingParentheses(tokens)
+  return ParsingResponse(
+      DefinitionFirstPass(
+          file = definition.file,
+          key = key,
+          tokenized = definition,
+          intermediate = intermediate
+      ),
+      tokenErrors
+  )
 }

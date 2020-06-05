@@ -1,10 +1,14 @@
 package silentorb.imp.parsing.syntax
 
 import silentorb.imp.core.FileRange
+import silentorb.imp.core.Range
 import silentorb.imp.core.TokenFile
+import silentorb.imp.core.newPosition
 import silentorb.imp.parsing.general.*
+import silentorb.imp.parsing.lexer.Rune
+import silentorb.imp.parsing.syntax.traversing.*
 
-fun parseSyntax(token: Token, mode: ParsingMode): ParsingTransition {
+fun parseSyntax(token: Token, mode: ParsingMode): ParsingStep {
   val action: TokenToParsingTransition =
       when (mode) {
         ParsingMode.header -> ::parseHeader
@@ -25,18 +29,41 @@ fun parseSyntax(token: Token, mode: ParsingMode): ParsingTransition {
   return action(token)
 }
 
+val nullBurg = Burg(
+    type = BurgType.bad,
+    range = Range(newPosition(), newPosition()),
+    file = ""
+)
+
 fun parseSyntax(file: TokenFile, tokens: Tokens): ParsingResponse<Realm> {
-  val (_, state) = tokens
-      .fold(ParsingMode.header to newState()) { (mode, state), token ->
-        val (nextMode, transition) = parseSyntax(token, mode)
-        ((nextMode ?: mode) to transition(token, state))
+  val sanitizedTokens = if (tokens.size == 0 || tokens.last().rune != Rune.newline)
+    tokens + Token(Rune.newline, FileRange("", Range(newPosition(), newPosition())), "")
+  else
+    tokens
+
+  val (finalMode, state) = sanitizedTokens
+      .fold(ParsingMode.header to newState(file)) { (mode, state), token ->
+        val (transition, nextMode, burgType) = parseSyntax(token, mode)
+        val burg = if (burgType != null)
+          Burg(
+              type = burgType,
+              range = token.range,
+              file = file
+          )
+        else
+          nullBurg
+        ((nextMode ?: mode) to transition(burg, state))
       }
 
+  assert(state.burgStack.size == 1)
+
+  val root = state.burgStack.first()
   val realm = Realm(
-      burgs = state.burgs
-          .plus(state.burgStack.first().first())
-          .map(finalizeBurg(file))
-          .associateBy { it.hashCode() }
+      root = root.hashCode(),
+      burgs = state.accumulator
+          .plus(root)
+          .associateBy { it.hashCode() },
+      roads = state.roads
   )
 
   return ParsingResponse(

@@ -1,6 +1,7 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
+import silentorb.imp.parsing.syntax.*
 
 val emptyContext: Context = listOf(newNamespace())
 
@@ -53,4 +54,22 @@ fun <T> filterIndexes(collection: Collection<T>, predicate: (T) -> Boolean): Lis
         index
       else
         null
+    }
+
+fun getChildren(realm: Realm, parent: BurgId): List<BurgId> =
+    (realm.roads[parent] ?: listOf())
+
+fun getExpandedChildren(realm: Realm, parent: BurgId): List<Burg> =
+    (realm.roads[parent] ?: listOf())
+        .map { realm.burgs[it]!! }
+
+fun subRealm(roads: Roads, root: BurgId, depth: Int = 1): Set<BurgId> =
+    if (depth > 100)
+      throw Error("Infinite loop while parsing")
+    else {
+      val children = roads[root] ?: listOf()
+      children
+          .flatMap { subRealm(roads, it, depth + 1) }
+          .plus(root)
+          .toSet()
     }

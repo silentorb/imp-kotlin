@@ -12,11 +12,11 @@ import java.nio.file.Paths
 
 fun parseTokensToDungeon(context: Context, tokens: Tokens): ParsingResponse<Dungeon> {
   val filePath = Paths.get("")
-  val (tokenGraph, tokenGraphErrors) = toTokenGraph(filePath, tokens)
+  val (tokenGraph, tokenGraphErrors) = toTokenGraph(filePath.toString(), tokens)
   val importMap = mapOf(filePath to tokenGraph.imports)
   val definitions = tokenGraph.definitions
       .associateBy { definition ->
-        PathKey("", definition.symbol.value)
+        PathKey("", definition.symbol.value as String)
       }
   val (dungeon, dungeonErrors) = parseDungeon(context, importMap, definitions)
   return ParsingResponse(

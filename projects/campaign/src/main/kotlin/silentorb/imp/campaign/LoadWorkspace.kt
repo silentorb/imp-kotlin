@@ -5,7 +5,6 @@ import silentorb.imp.execution.Library
 import silentorb.imp.execution.mergeImplementationFunctions
 import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.parser.parseDungeon
-import silentorb.imp.parsing.structureOld.toTokenGraphOld
 import silentorb.imp.parsing.parser.tokenizeAndSanitize
 import silentorb.imp.parsing.structureOld.toTokenGraph
 import java.net.URI
@@ -32,7 +31,7 @@ fun loadSourceFiles(moduleName: String, root: Path, context: Context, moduleConf
         val code = Files.readString(path, StandardCharsets.UTF_8)!!
             .replace("\r\n", "\n")
         val (tokens, lexingErrors) = tokenizeAndSanitize(root.relativize(path).toString(), code)
-        val (tokenizedGraph, tokenGraphErrors) = toTokenGraph(path, tokens)
+        val (tokenizedGraph, tokenGraphErrors) = toTokenGraph(path.toString(), tokens)
         Pair(Pair(path, tokenizedGraph), lexingErrors + tokenGraphErrors)
       }
   val tokenGraphs = lexingResults.associate { it.first }
@@ -44,7 +43,7 @@ fun loadSourceFiles(moduleName: String, root: Path, context: Context, moduleConf
         .mapValues { (path, tokenGraph) ->
           val namespace = namespaceFromPath(root, path.parent)
           val definitions = tokenGraph.definitions
-              .associateBy { PathKey(namespace, it.symbol.value) }
+              .associateBy { PathKey(namespace, it.symbol.value as String) }
 
           parseDungeon(context, importMap, definitions)
         }
@@ -56,7 +55,7 @@ fun loadSourceFiles(moduleName: String, root: Path, context: Context, moduleConf
 
           tokenGraph.definitions
               .map {
-                PathKey(namespace, it.symbol.value) to it
+                PathKey(namespace, it.symbol.value as String) to it
               }
         }
         .associate { it }

@@ -132,7 +132,7 @@ fun resolveDefinitions(importMap: Map<Path, List<TokenizedImport>>, tokenDefinit
   val result = flattenResponses(resolutions)
   return result
       .copy(
-          errors = result.errors + firstPassErrors + dependencyErrors.map { newParsingError(TextId.circularDependency, tokenDefinitions.values.first().symbol) }
+          errors = result.errors + firstPassErrors + dependencyErrors.map(newParsingError(tokenDefinitions.values.first().symbol))
       )
 }
 

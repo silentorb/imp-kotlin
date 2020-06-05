@@ -51,7 +51,7 @@ data class SignatureOptionsAndTypes(
 
 fun resolveFunctionSignatures(
     context: Context,
-    stages: List<List<PathKey>>,
+    stages: List<PathKey>,
     parents: Map<PathKey, List<PathKey>>,
     initialTypes: Map<PathKey, TypeHash>,
     nodeMap: NodeMap,
@@ -59,9 +59,9 @@ fun resolveFunctionSignatures(
 ): SignatureOptionsAndTypes {
   return stages
       .fold(SignatureOptionsAndTypes()) { accumulator, stage ->
-        val stageParents = stage
-            .filter { parents[it]?.any() ?: false }
-            .associateWith { parents[it] ?: listOf() }
+//        val stageParents = stage
+//            .filter { parents[it]?.any() ?: false }
+//            .associateWith { parents[it] ?: listOf() }
         val argumentTypes = initialTypes.plus(accumulator.types)
         val newContext = context + newNamespace().copy(typings = accumulator.typings)
         val signatureOptions = stageParents

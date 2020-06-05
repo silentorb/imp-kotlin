@@ -57,9 +57,9 @@ fun prepareDefinitionFunction(
 
 fun parseDefinitionSecondPass(namespaceContext: Context, largerContext: Context, definition: DefinitionFirstPass): ParsingResponse<Dungeon> {
   val parameters = definition.tokenized.parameters.map { parameter ->
-    val type = getImplementationType(namespaceContext, parameter.type)
+    val type = getImplementationType(namespaceContext, parameter.type.value as String)
         ?: unknownType.hash
-    Parameter(parameter.name, type)
+    Parameter(parameter.name.value as String, type)
   }
   val parameterNamespace = if (parameters.any()) {
     newParameterNamespace(namespaceContext, definition.key, parameters)

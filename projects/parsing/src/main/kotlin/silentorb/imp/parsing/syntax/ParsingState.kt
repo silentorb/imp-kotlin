@@ -1,16 +1,20 @@
 package silentorb.imp.parsing.syntax
 
+import silentorb.imp.core.TokenFile
+
 data class ParsingState(
-    val burgs: Set<PendingBurg>,
+    val accumulator: Set<Burg>,
     val burgStack: BurgStack,
     val errors: List<PendingParsingError>,
-    val modeStack: List<ParsingMode>
+    val modeStack: List<ParsingMode>,
+    val roads: Map<BurgId, List<BurgId>>
 )
 
-fun newState() =
+fun newState(file: TokenFile) =
     ParsingState(
-        burgs = setOf(),
-        burgStack = listOf(listOf(rootBurg())),
+        accumulator = setOf(),
+        burgStack = listOf(listOf(newRootBurg(file))),
         errors = listOf(),
-        modeStack = listOf()
+        modeStack = listOf(),
+        roads = mapOf()
     )

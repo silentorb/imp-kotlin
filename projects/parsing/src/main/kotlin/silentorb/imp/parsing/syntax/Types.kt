@@ -1,33 +1,27 @@
 package silentorb.imp.parsing.syntax
 
 import silentorb.imp.core.FileRange
-import silentorb.imp.core.Position
 import silentorb.imp.core.Range
 import silentorb.imp.core.TokenFile
-import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.Token
-
-data class PendingBurg(
-    val type: BurgType,
-    val range: Range,
-    val value: Any? = null,
-    val children: List<BurgId> = listOf()
-)
 
 data class Burg(
     val type: BurgType,
     val range: Range,
     val file: TokenFile,
-    val value: Any? = null,
-    val children: List<BurgId>
-)
+    val value: Any? = null
+) {
+  val fileRange: FileRange get() = FileRange(file, range)
+}
 
 typealias BurgId = Int
 
 typealias Roads = Map<BurgId, List<BurgId>>
 
 data class Realm(
-    val burgs: Map<BurgId, Burg>
+    val root: BurgId,
+    val burgs: Map<BurgId, Burg>,
+    val roads: Roads
 )
 
 data class PendingParsingError(
@@ -35,11 +29,19 @@ data class PendingParsingError(
     val range: Range
 )
 
-typealias ParsingStateTransition = (Token, ParsingState) -> ParsingState
+data class ParsingStep(
+    val transition: ParsingStateTransition,
+    val mode: ParsingMode? = null,
+    val type: BurgType? = null,
+    val wrapper: BurgType? = null
+)
 
-typealias ParsingTransition = Pair<ParsingMode?, ParsingStateTransition>
-typealias TokenToParsingTransition = (Token) -> ParsingTransition
+typealias ParsingStateTransition = (Burg, ParsingState) -> ParsingState
+
+typealias TokenToParsingTransition = (Token) -> ParsingStep
 
 typealias Stack<T> = List<List<T>>
 
-typealias BurgStack = Stack<PendingBurg>
+typealias BurgStack = Stack<Burg>
+
+typealias TokenPattern = (Token) -> Boolean

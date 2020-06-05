@@ -1,21 +1,13 @@
 package silentorb.imp.parsing.structureOld
 
 import silentorb.imp.core.PathKey
-import silentorb.imp.parsing.general.Tokens
-import silentorb.imp.parsing.parser.expressions.NodeReferenceMap
-import silentorb.imp.parsing.parser.expressions.TokenIndex
-import silentorb.imp.parsing.parser.expressions.getLiteralRuneType
+import silentorb.imp.parsing.parser.expressions.getLiteralBurgType
+import silentorb.imp.parsing.syntax.Burg
+import silentorb.imp.parsing.syntax.BurgId
 
-fun nodeReferenceTokens(nodeReferences: NodeReferenceMap, indexes: List<TokenIndex>): Map<TokenIndex, PathKey> =
-    indexes
-        .filter { tokenIndex ->
-          nodeReferences.containsKey(tokenIndex)
-        }
-        .associateWith { nodeReferences[it]!! }
-
-fun literalTokenNodes(path: String, tokens: Tokens, indexedTokens: List<TokenIndex>): Map<TokenIndex, PathKey> {
-  val literalNodes = indexedTokens.filter { getLiteralRuneType(tokens[it].rune) != null }
+fun literalTokenNodes(path: String, burgs: Collection<Burg>): Map<BurgId, PathKey> {
+  val literalNodes = burgs.filter { getLiteralBurgType(it.type) != null }
   return literalNodes
-      .mapIndexed { index, tokenIndex -> Pair(tokenIndex, PathKey(path, "#literal${index + 1}")) }
+      .mapIndexed { index, tokenIndex -> Pair(tokenIndex.hashCode(), PathKey(path, "#literal${index + 1}")) }
       .associate { it }
 }

@@ -1,22 +1,20 @@
 package silentorb.imp.parsing.syntax
 
 enum class BurgType {
-  assignment,
+  argument,
+  argumentName,
+  argumentValue,
   bad,
-  colon,
-  comment,
   definitionName,
   dot,
+  expression,
   fileRoot,
   importKeyword,
   importPathToken,
   importPathWildcard,
-  keyword,
+  letKeyword,
   literalFloat,
   literalInteger,
-  newline,
-  operator,
-  parenthesesClose,
-  parenthesesOpen,
+  parameter,
   reference,
 }
