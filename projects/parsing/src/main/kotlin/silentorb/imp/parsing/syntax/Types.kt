@@ -9,7 +9,8 @@ data class Burg(
     val type: BurgType,
     val range: Range,
     val file: TokenFile,
-    val value: Any? = null
+    val children: List<BurgId>,
+    val value: Any?
 ) {
   val fileRange: FileRange get() = FileRange(file, range)
 }
@@ -20,9 +21,10 @@ typealias Roads = Map<BurgId, List<BurgId>>
 
 data class Realm(
     val root: BurgId,
-    val burgs: Map<BurgId, Burg>,
-    val roads: Roads
-)
+    val burgs: Map<BurgId, Burg>
+) {
+  val roads: Roads get() = burgs.mapValues { it.value.children }
+}
 
 data class PendingParsingError(
     val message: Any,
@@ -31,12 +33,13 @@ data class PendingParsingError(
 
 data class ParsingStep(
     val transition: ParsingStateTransition,
-    val mode: ParsingMode? = null,
-    val type: BurgType? = null,
-    val wrapper: BurgType? = null
+    val mode: ParsingMode? = null
 )
 
-typealias ParsingStateTransition = (Burg, ParsingState) -> ParsingState
+typealias ValueTranslator = (String) -> Any?
+
+typealias NewBurg = (BurgType, ValueTranslator) -> Burg
+typealias ParsingStateTransition = (NewBurg, ParsingState) -> ParsingState
 
 typealias TokenToParsingTransition = (Token) -> ParsingStep
 

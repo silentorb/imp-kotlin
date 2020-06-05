@@ -2,10 +2,8 @@ package silentorb.imp.parsing.parser.expressions
 
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.ParsingResponse
-import silentorb.imp.parsing.general.newParsingError
 import silentorb.imp.parsing.parser.validateFunctionTypes
 import silentorb.imp.parsing.parser.validateSignatures
-import silentorb.imp.parsing.structureOld.arrangeRealm
 
 fun parseExpression(context: Context, largerContext: Context, intermediate: IntermediateExpression): ParsingResponse<Dungeon> {
   val (
@@ -39,9 +37,7 @@ fun parseExpression(context: Context, largerContext: Context, intermediate: Inte
           largerContext,
           stages,
           parents,
-          initialTypes,
-          nodeMap,
-          namedArguments
+          initialTypes
       )
   val signatures = signatureOptions
       .filter { it.value.size == 1 }

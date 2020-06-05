@@ -2,7 +2,6 @@ package silentorb.imp.parsing.parser.expressions
 
 import silentorb.imp.core.*
 import silentorb.imp.core.Range
-import silentorb.imp.core.NodeMap
 
 data class FunctionInvocation(
     val type: TypeHash,
@@ -13,13 +12,13 @@ data class FunctionInvocation(
 fun narrowTypeByArguments(
     context: Context,
     argumentTypes: Map<PathKey, TypeHash>,
-    nodeMap: NodeMap,
-    namedArguments: Map<PathKey, String>
-): (Map.Entry<PathKey, List<PathKey>>) -> Pair<PathKey, List<SignatureMatch>>? = { (pathKey, children) ->
+    pathKey: PathKey,
+    children: List<PathKey>
+): List<SignatureMatch> {
   val functionType = argumentTypes[pathKey]
-  if (functionType != null) {
-    if (children.any { !argumentTypes.containsKey(it)})
-      null
+  return if (functionType != null) {
+    if (children.any { !argumentTypes.containsKey(it) })
+      listOf()
     else {
       val arguments = children
           .map { childNode ->
@@ -32,12 +31,12 @@ fun narrowTypeByArguments(
       val functionOverloads = getTypeSignatures(context)(functionType)
       val signatureMatches = overloadMatches(context, arguments, functionOverloads)
       if (signatureMatches.any())
-        Pair(pathKey, signatureMatches)
+        signatureMatches
       else
-        null
+        listOf()
     }
   } else
-    null
+    listOf()
 }
 
 typealias SignatureOptions = Map<PathKey, List<SignatureMatch>>
@@ -53,35 +52,26 @@ fun resolveFunctionSignatures(
     context: Context,
     stages: List<PathKey>,
     parents: Map<PathKey, List<PathKey>>,
-    initialTypes: Map<PathKey, TypeHash>,
-    nodeMap: NodeMap,
-    namedArguments: Map<PathKey, String>
+    initialTypes: Map<PathKey, TypeHash>
 ): SignatureOptionsAndTypes {
   return stages
+      .filter { parents[it]?.any() ?: false }
       .fold(SignatureOptionsAndTypes()) { accumulator, stage ->
-//        val stageParents = stage
-//            .filter { parents[it]?.any() ?: false }
-//            .associateWith { parents[it] ?: listOf() }
+        val inputs = parents[stage]!!
         val argumentTypes = initialTypes.plus(accumulator.types)
         val newContext = context + newNamespace().copy(typings = accumulator.typings)
-        val signatureOptions = stageParents
-            .mapNotNull(narrowTypeByArguments(newContext, argumentTypes, nodeMap, namedArguments))
-            .associate { it }
-        val reducedNestedSignatures = signatureOptions.mapValues { (_, matches) ->
-          matches.map { reduceSignature(it.signature, it.alignment.keys) }
-        }
-        val newImplementationTypes = signatureOptions.mapValues { (_, matches) ->
-          signaturesToTypeHash(matches.map { it.signature })
-        }
-        val newTypes = reducedNestedSignatures
-            .filter { it.value.size == 1 }
-            .mapValues { (_, signatures) ->
-              signatures.first().output
-            }
-        val newTypings = reduceTypings(reducedNestedSignatures.values.map(::extractTypings))
+        val signatureOptions = narrowTypeByArguments(newContext, argumentTypes, stage, inputs)
+        val reducedNestedSignatures = signatureOptions.map { reduceSignature(it.signature, it.alignment.keys) }
+        val newImplementationTypes = signaturesToTypeHash(signatureOptions.map { it.signature })
+        val newTypes = if (signatureOptions.size == 1)
+          mapOf(stage to signatureOptions.first().signature.output)
+        else
+          mapOf()
+
+        val newTypings = extractTypings(reducedNestedSignatures)
         accumulator.copy(
-            signatureOptions = accumulator.signatureOptions + signatureOptions,
-            implementationTypes = accumulator.implementationTypes + newImplementationTypes,
+            signatureOptions = accumulator.signatureOptions + (stage to signatureOptions),
+            implementationTypes = accumulator.implementationTypes + (stage to newImplementationTypes),
             types = accumulator.types + newTypes,
             typings = accumulator.typings + newTypings
         )

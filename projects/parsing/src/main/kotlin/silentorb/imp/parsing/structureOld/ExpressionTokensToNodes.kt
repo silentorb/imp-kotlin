@@ -6,10 +6,10 @@ import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.general.newParsingError
 import silentorb.imp.parsing.parser.expressions.IntermediateExpression
 import silentorb.imp.parsing.parser.expressions.resolveLiteralTypes
-import silentorb.imp.parsing.parser.expressions.resolveLiterals
 import silentorb.imp.parsing.parser.getExpandedChildren
 import silentorb.imp.parsing.syntax.BurgType
 import silentorb.imp.parsing.syntax.Realm
+import silentorb.imp.parsing.syntax.arrangeRealm
 
 fun getNamedArguments(realm: Realm) =
     realm.burgs
@@ -27,7 +27,7 @@ fun getNamedArguments(realm: Realm) =
 fun expressionTokensToNodes(root: PathKey, realm: Realm): ParsingResponse<IntermediateExpression> {
   val path = pathKeyToString(root)
   val namedArguments = getNamedArguments(realm)
-  val parents = realm.roads
+  val parents = realm.burgs.mapValues { it.value.children }
 //  val parents = collapseNamedArgumentClauses(namedArguments.keys, realm.parents)
 //  val indexedTokens = parents.keys.plus(parents.values.flatten()).toList()
   val literalTokenKeys = literalTokenNodes(path, realm.burgs.values)
@@ -69,9 +69,8 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): ParsingResponse<Interm
           references = nodeReferences
               .groupBy { it.value as String }
               .mapValues { it.value.map { tokenNodes[it.hashCode()]!! }.toSet() },
-//          stages = tokenGraph.stages.map { stage -> stage.mapNotNull { tokenNodes[it] } },
           namedArguments = namedArguments.mapKeys { (burg, _) -> tokenNodes[burg]!! },
-          stages = stages.map { tokenNodes[it]!! },
+          stages = stages.mapNotNull { tokenNodes[it] },
           values = literalTokenKeys.entries
               .associate { (burgId, key) ->
                 (key to realm.burgs[burgId]!!.value!!)

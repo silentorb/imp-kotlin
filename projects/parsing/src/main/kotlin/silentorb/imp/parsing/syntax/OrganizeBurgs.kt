@@ -1,4 +1,4 @@
-package silentorb.imp.parsing.structureOld
+package silentorb.imp.parsing.syntax
 
 import silentorb.imp.core.Dependency
 import silentorb.imp.core.DependencyError
@@ -8,12 +8,10 @@ import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.*
-import silentorb.imp.parsing.syntax.*
-import java.nio.file.Path
 import java.nio.file.Paths
 
 fun arrangeRealm(realm: Realm): Pair<List<BurgId>, List<DependencyError>> {
-  val dependencies = realm.roads
+  val dependencies = realm.burgs.mapValues { it.value.children }
       .flatMap { (parent, children) ->
         children.map { child ->
           Dependency(child, parent)
@@ -34,17 +32,17 @@ fun toTokenGraph(file: TokenFile, tokens: Tokens): ParsingResponse<TokenDungeon>
   val rootChildren = getExpandedChildren(realm, realm.root)
 
   val imports = rootChildren
-      .filter { it.type == BurgType.importKeyword }
+      .filter { it.type == BurgType.importClause }
       .map { importBurg ->
         TokenizedImport(
-            path = realm.roads[importBurg.hashCode()]!!.map(lookUpBurg)
+            path = importBurg.children.map(lookUpBurg)
         )
       }
 
   val definitions = rootChildren
-      .filter { it.type == BurgType.letKeyword }
-      .mapNotNull { letBurg ->
-        val definitionChildren = getExpandedChildren(realm, letBurg.hashCode())
+      .filter { it.type == BurgType.definition }
+      .mapNotNull { definition ->
+        val definitionChildren = getExpandedChildren(realm, definition.hashCode())
 
         val name = definitionChildren.firstOrNull { it.type == BurgType.definitionName }
         if (name != null) {
@@ -66,8 +64,7 @@ fun toTokenGraph(file: TokenFile, tokens: Tokens): ParsingResponse<TokenDungeon>
             val suburbs = subRealm(realm.roads, expressionBurg.hashCode())
             val expression = realm.copy(
                 root = expressionBurg.hashCode(),
-                burgs = realm.burgs - suburbs,
-                roads = realm.roads - suburbs
+                burgs = realm.burgs.filterKeys { suburbs.contains(it) }
             )
             TokenizedDefinition(
                 file = Paths.get(file),

@@ -126,14 +126,16 @@ fun resolveDefinitions(importMap: Map<Path, List<TokenizedImport>>, tokenDefinit
 
   val (arrangedDefinitionKeys, dependencyErrors) = arrangeDependencies(definitionMap.keys, dependencies)
 
+  // Keep it as a lambda so that the burg resolution code is not called unless there are items in the list
+  val dependencyParsingErrors = dependencyErrors.map { newParsingError(tokenDefinitions.values.first().symbol)(it) }
   val defaultContext = listOf(newNamespace())
   val arrangedDefinitions = arrangedDefinitionKeys.map { definitionMap[it]!! }
   val resolutions = resolveDefinitions(defaultContext, importMap, arrangedDefinitions, mapOf(), mapOf(), context, listOf())
   val result = flattenResponses(resolutions)
   return result
       .copy(
-          errors = result.errors + firstPassErrors + dependencyErrors.map(newParsingError(tokenDefinitions.values.first().symbol))
-      )
+          errors = result.errors + firstPassErrors + dependencyParsingErrors
+  )
 }
 
 fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinition>): (List<Dungeon>) -> ParsingResponse<Dungeon> =

@@ -13,17 +13,10 @@ fun newRootBurg(file: TokenFile): Burg =
         range = Range(
             start = newPosition(),
             end = newPosition()
-        )
+        ),
+        children = listOf(),
+        value = null
     )
-
-//fun finalizeBurg(file: TokenFile): (PendingBurg) -> Burg = { pendingBurg ->
-//  Burg(
-//      file = file,
-//      type = pendingBurg.type,
-//      range = pendingBurg.range,
-//      children = pendingBurg.children
-//  )
-//}
 
 fun <T> stackAppend(stack: Stack<T>, item: T): Stack<T> =
     stack.dropLast(1).plusElement(stack.last() + item)
@@ -32,7 +25,8 @@ fun adoptChildren(parent: Burg, children: List<Burg>) =
     parent.copy(
         range = parent.range.copy(
             end = children.last().range.end
-        )
+        ),
+        children = parent.children + children.map { it.hashCode() }
     )
 
 fun <T> replaceTop(stack: Stack<T>, newTop: List<T>): Stack<T> =

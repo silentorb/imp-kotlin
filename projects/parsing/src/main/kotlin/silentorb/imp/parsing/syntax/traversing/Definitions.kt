@@ -5,7 +5,7 @@ import silentorb.imp.parsing.syntax.*
 
 val parseDefinitionName: TokenToParsingTransition = { token ->
   when {
-    isIdentifier(token) -> ParsingStep(pushChild, ParsingMode.definitionParameterNameOrAssignment, BurgType.definitionName)
+    isIdentifier(token) -> definitionName
     else -> parsingError(TextId.expectedIdentifier)
   }
 }
@@ -51,7 +51,7 @@ val parseDefinitionParameterSeparatorOrAssignment: TokenToParsingTransition = { 
 
 val parseBody: TokenToParsingTransition = { token ->
   when {
-    isLet(token) -> ParsingStep(skip, ParsingMode.definitionName)
+    isLet(token) -> startDefinition
     isNewline(token) -> ParsingStep(skip, ParsingMode.body)
     else -> parsingError(TextId.expectedLetKeyword)
   }

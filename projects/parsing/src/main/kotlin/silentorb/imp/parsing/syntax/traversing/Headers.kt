@@ -6,30 +6,30 @@ import silentorb.imp.parsing.syntax.*
 
 fun parseHeader(token: Token): ParsingStep =
     when {
-      isImport(token) -> ParsingStep(pushChild, ParsingMode.importFirstPathToken, BurgType.importKeyword)
-      isLet(token) -> ParsingStep(skip, ParsingMode.definitionName)
-      isNewline(token) -> ParsingStep(foldStack, ParsingMode.header)
+      isImport(token) -> ParsingStep(push(BurgType.importClause, asMarker), ParsingMode.importFirstPathToken)
+      isLet(token) -> startDefinition
+      isNewline(token) -> ParsingStep(fold, ParsingMode.header)
       else -> parsingError(TextId.expectedImportOrLetKeywords)
     }
 
 fun parseImportFirstPathToken(token: Token): ParsingStep =
     when {
-      isIdentifier(token) -> ParsingStep(pushChild, ParsingMode.importSeparator, BurgType.importPathToken)
-      isWildcard(token) -> ParsingStep(pushChild, ParsingMode.header, BurgType.importPathToken)
+      isIdentifier(token) -> firstImportPathToken
+      isWildcard(token) -> importPathWildcard
       isNewline(token) -> parsingError(TextId.missingImportPath)
       else -> parsingError(TextId.expectedIdentifier)
     }
 
 fun parseImportFollowingPathToken(token: Token): ParsingStep =
     when {
-      isIdentifier(token) -> ParsingStep(addSibling, ParsingMode.importSeparator, BurgType.importPathToken)
-      isWildcard(token) -> ParsingStep(addSibling, ParsingMode.header, BurgType.importPathWildcard)
+      isIdentifier(token) -> followingImportPathToken
+      isWildcard(token) -> importPathWildcard
       else -> parsingError(TextId.expectedIdentifierOrWildcard)
     }
 
 fun parseImportSeparator(token: Token): ParsingStep =
     when {
       isDot(token) -> ParsingStep(skip, ParsingMode.importFollowingPathToken)
-      isNewline(token) -> ParsingStep(foldStack, ParsingMode.header)
+      isNewline(token) -> ParsingStep(fold, ParsingMode.header)
       else -> parsingError(TextId.expectedPeriodOrNewline)
     }

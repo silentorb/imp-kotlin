@@ -57,10 +57,10 @@ fun <T> filterIndexes(collection: Collection<T>, predicate: (T) -> Boolean): Lis
     }
 
 fun getChildren(realm: Realm, parent: BurgId): List<BurgId> =
-    (realm.roads[parent] ?: listOf())
+    (realm.burgs[parent]?.children ?: listOf())
 
 fun getExpandedChildren(realm: Realm, parent: BurgId): List<Burg> =
-    (realm.roads[parent] ?: listOf())
+    (realm.burgs[parent]?.children ?: listOf())
         .map { realm.burgs[it]!! }
 
 fun subRealm(roads: Roads, root: BurgId, depth: Int = 1): Set<BurgId> =

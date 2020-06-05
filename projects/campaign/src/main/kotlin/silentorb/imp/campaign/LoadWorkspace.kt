@@ -6,7 +6,7 @@ import silentorb.imp.execution.mergeImplementationFunctions
 import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.parser.parseDungeon
 import silentorb.imp.parsing.parser.tokenizeAndSanitize
-import silentorb.imp.parsing.structureOld.toTokenGraph
+import silentorb.imp.parsing.syntax.toTokenGraph
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files

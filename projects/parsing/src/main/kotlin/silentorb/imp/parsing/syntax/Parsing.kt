@@ -29,12 +29,6 @@ fun parseSyntax(token: Token, mode: ParsingMode): ParsingStep {
   return action(token)
 }
 
-val nullBurg = Burg(
-    type = BurgType.bad,
-    range = Range(newPosition(), newPosition()),
-    file = ""
-)
-
 fun parseSyntax(file: TokenFile, tokens: Tokens): ParsingResponse<Realm> {
   val sanitizedTokens = if (tokens.size == 0 || tokens.last().rune != Rune.newline)
     tokens + Token(Rune.newline, FileRange("", Range(newPosition(), newPosition())), "")
@@ -43,27 +37,27 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): ParsingResponse<Realm> {
 
   val (finalMode, state) = sanitizedTokens
       .fold(ParsingMode.header to newState(file)) { (mode, state), token ->
-        val (transition, nextMode, burgType) = parseSyntax(token, mode)
-        val burg = if (burgType != null)
+        val (transition, nextMode) = parseSyntax(token, mode)
+        val newBurg: NewBurg = { burgType, valueTranslator ->
           Burg(
               type = burgType,
               range = token.range,
-              file = file
+              file = file,
+              children = listOf(),
+              value = valueTranslator(token.value)
           )
-        else
-          nullBurg
-        ((nextMode ?: mode) to transition(burg, state))
+        }
+        ((nextMode ?: mode) to transition(newBurg, state))
       }
 
   assert(state.burgStack.size == 1)
 
-  val root = state.burgStack.first()
+  val root = state.burgStack.first().first()
   val realm = Realm(
       root = root.hashCode(),
       burgs = state.accumulator
           .plus(root)
-          .associateBy { it.hashCode() },
-      roads = state.roads
+          .associateBy { it.hashCode() }
   )
 
   return ParsingResponse(
