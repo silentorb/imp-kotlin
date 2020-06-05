@@ -4,17 +4,26 @@ import silentorb.imp.core.FileRange
 import silentorb.imp.core.Range
 import silentorb.imp.core.TokenFile
 import silentorb.imp.core.newPosition
-import silentorb.imp.parsing.general.*
+import silentorb.imp.parsing.general.ParsingError
+import silentorb.imp.parsing.general.ParsingResponse
+import silentorb.imp.parsing.general.Token
+import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.syntax.traversing.*
 
-fun parseSyntax(token: Token, mode: ParsingMode): ParsingStep {
+fun parseDescent(mode: ParsingMode?): TokenToParsingTransition = { _ ->
+  // Switching to ParsingMode.body as the next best thing to throwing an error
+  ParsingStep(skip, mode ?: ParsingMode.body)
+}
+
+fun getTransition(token: Token, mode: ParsingMode, lowerMode: ParsingMode?): ParsingStep {
   val action: TokenToParsingTransition =
       when (mode) {
-        ParsingMode.header -> ::parseHeader
-        ParsingMode.importFirstPathToken -> ::parseImportFirstPathToken
-        ParsingMode.importFollowingPathToken -> ::parseImportFollowingPathToken
-        ParsingMode.importSeparator -> ::parseImportSeparator
+        ParsingMode.descend -> parseDescent(lowerMode)
+        ParsingMode.header -> parseHeader
+        ParsingMode.importFirstPathToken -> parseImportFirstPathToken
+        ParsingMode.importFollowingPathToken -> parseImportFollowingPathToken
+        ParsingMode.importSeparator -> parseImportSeparator
         ParsingMode.body -> parseBody
         ParsingMode.definitionAssignment -> parseDefinitionAssignment
         ParsingMode.definitionParameterColon -> parseDefinitionParameterColon
@@ -23,11 +32,44 @@ fun parseSyntax(token: Token, mode: ParsingMode): ParsingStep {
         ParsingMode.definitionParameterNameOrAssignment -> parseDefinitionParameterNameOrAssignment
         ParsingMode.definitionParameterType -> parseDefinitionParameterType
         ParsingMode.definitionName -> parseDefinitionName
-        ParsingMode.definitionExpression -> parseExpression(ParsingMode.body)
+        ParsingMode.expression -> parseDefinitionExpression
+        ParsingMode.subExpression -> parseSubExpression
       }
 
   return action(token)
 }
+
+fun newBurg(file: TokenFile, token: Token): NewBurg = { burgType, valueTranslator ->
+  Burg(
+      type = burgType,
+      range = token.range,
+      file = file,
+      children = listOf(),
+      value = valueTranslator(token.value)
+  )
+}
+
+tailrec fun parsingStep(
+    file: TokenFile,
+    tokens: Tokens,
+    mode: ParsingMode,
+    state: ParsingState
+): ParsingState =
+    if (tokens.none())
+      state
+    else {
+      val token = tokens.first()
+      val lowerMode = state.modeStack.lastOrNull()
+      val (transition, requestedMode) = getTransition(token, mode, lowerMode)
+      val nextMode = requestedMode ?: mode
+      val nextState = transition(newBurg(file, token), state)
+      val nextTokens = if (mode == ParsingMode.descend)
+        tokens
+      else
+        tokens.drop(1)
+
+      parsingStep(file, nextTokens, nextMode, nextState)
+    }
 
 fun parseSyntax(file: TokenFile, tokens: Tokens): ParsingResponse<Realm> {
   val sanitizedTokens = if (tokens.size == 0 || tokens.last().rune != Rune.newline)
@@ -35,20 +77,7 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): ParsingResponse<Realm> {
   else
     tokens
 
-  val (finalMode, state) = sanitizedTokens
-      .fold(ParsingMode.header to newState(file)) { (mode, state), token ->
-        val (transition, nextMode) = parseSyntax(token, mode)
-        val newBurg: NewBurg = { burgType, valueTranslator ->
-          Burg(
-              type = burgType,
-              range = token.range,
-              file = file,
-              children = listOf(),
-              value = valueTranslator(token.value)
-          )
-        }
-        ((nextMode ?: mode) to transition(newBurg, state))
-      }
+  val state = parsingStep(file, sanitizedTokens, ParsingMode.header, newState(file))
 
   assert(state.burgStack.size == 1)
 

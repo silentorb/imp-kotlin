@@ -18,8 +18,14 @@ fun isFloat(token: Token) =
 fun isInteger(token: Token) =
     token.rune == Rune.literalInteger
 
+fun isParenthesesClose(token: Token) =
+    token.rune == Rune.parenthesesClose
+
+fun isParenthesesOpen(token: Token) =
+    token.rune == Rune.parenthesesOpen
+
 fun isImport(token: Token) =
-  token.rune == Rune.identifier && token.value == "import"
+    token.rune == Rune.identifier && token.value == "import"
 
 fun isLet(token: Token) =
     token.rune == Rune.identifier && token.value == "let"

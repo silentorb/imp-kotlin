@@ -9,9 +9,11 @@ enum class ParsingMode {
   definitionParameterNameOrAssignment,
   definitionParameterType,
   definitionName,
-  definitionExpression,
+  descend,
+  expression,
   importFirstPathToken,
   importFollowingPathToken,
   importSeparator,
   header,
+  subExpression,
 }

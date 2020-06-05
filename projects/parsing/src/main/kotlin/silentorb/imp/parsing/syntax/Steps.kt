@@ -7,3 +7,5 @@ val definitionName = ParsingStep(push(BurgType.definitionName, asString) + pop, 
 val firstImportPathToken = ParsingStep(push(BurgType.importPathToken, asString), ParsingMode.importSeparator)
 val followingImportPathToken = ParsingStep(append(BurgType.importPathToken, asString), ParsingMode.importSeparator)
 val importPathWildcard = ParsingStep(push(BurgType.importPathToken, asString), ParsingMode.header)
+
+val startSubExpression = ParsingStep(push(BurgType.expression, asMarker), ParsingMode.subExpression)

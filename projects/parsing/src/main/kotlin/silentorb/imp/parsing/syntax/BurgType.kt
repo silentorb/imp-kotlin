@@ -10,6 +10,7 @@ enum class BurgType {
   dot,
   expression,
   fileRoot,
+  group,
   importClause,
   importPathToken,
   importPathWildcard,
