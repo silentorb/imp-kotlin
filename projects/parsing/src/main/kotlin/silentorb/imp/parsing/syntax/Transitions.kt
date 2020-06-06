@@ -13,6 +13,12 @@ fun push(burgType: BurgType, valueTranslator: ValueTranslator): ParsingStateTran
   )
 }
 
+val pushEmpty: ParsingStateTransition = { _, state ->
+  state.copy(
+      burgStack = state.burgStack.plusElement(listOf())
+  )
+}
+
 fun append(burgType: BurgType, valueTranslator: ValueTranslator): ParsingStateTransition = { newBurg, state ->
   state.copy(
       burgStack = stackAppend(state.burgStack, newBurg(burgType, valueTranslator))
@@ -49,6 +55,12 @@ val skip: ParsingStateTransition = { _, state ->
   state
 }
 
+fun onReturn(mode: ParsingMode): ParsingStateTransition = { _, state ->
+  state.copy(
+      modeStack = state.modeStack + mode
+  )
+}
+
 fun addError(message: TextId): ParsingStateTransition = { newBurg, state ->
   state.copy(
       errors = state.errors + PendingParsingError(
@@ -65,3 +77,8 @@ operator fun ParsingStateTransition.plus(other: ParsingStateTransition): Parsing
   val intermediate = this(newBurg, state)
   other(newBurg, intermediate)
 }
+
+operator fun ParsingStateTransition.plus(other: ParsingStep): ParsingStep =
+    other.copy(
+        transition = this + other.transition
+    )

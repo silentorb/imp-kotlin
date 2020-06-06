@@ -5,9 +5,10 @@ import silentorb.imp.parsing.syntax.*
 
 val parseHeader: TokenToParsingTransition = { token ->
   when {
-    isImport(token) -> ParsingStep(push(BurgType.importClause, asMarker), ParsingMode.importFirstPathToken)
+    isImport(token) -> startImport
     isLet(token) -> startDefinition
     isNewline(token) -> ParsingStep(fold, ParsingMode.header)
+    isEndOfFile(token) -> skipStep
     else -> parsingError(TextId.expectedImportOrLetKeywords)
   }
 }

@@ -33,7 +33,8 @@ data class PendingParsingError(
 
 data class ParsingStep(
     val transition: ParsingStateTransition,
-    val mode: ParsingMode? = null
+    val mode: ParsingMode? = null,
+    val consume: Boolean = true
 )
 
 typealias ValueTranslator = (String) -> Any?

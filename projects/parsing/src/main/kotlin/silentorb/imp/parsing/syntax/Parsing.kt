@@ -1,9 +1,6 @@
 package silentorb.imp.parsing.syntax
 
-import silentorb.imp.core.FileRange
-import silentorb.imp.core.Range
-import silentorb.imp.core.TokenFile
-import silentorb.imp.core.newPosition
+import silentorb.imp.core.*
 import silentorb.imp.parsing.general.ParsingError
 import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.general.Token
@@ -19,11 +16,6 @@ fun parseDescent(mode: ParsingMode?): TokenToParsingTransition = { _ ->
 fun getTransition(token: Token, mode: ParsingMode, lowerMode: ParsingMode?): ParsingStep {
   val action: TokenToParsingTransition =
       when (mode) {
-        ParsingMode.descend -> parseDescent(lowerMode)
-        ParsingMode.header -> parseHeader
-        ParsingMode.importFirstPathToken -> parseImportFirstPathToken
-        ParsingMode.importFollowingPathToken -> parseImportFollowingPathToken
-        ParsingMode.importSeparator -> parseImportSeparator
         ParsingMode.body -> parseBody
         ParsingMode.definitionAssignment -> parseDefinitionAssignment
         ParsingMode.definitionParameterColon -> parseDefinitionParameterColon
@@ -32,8 +24,16 @@ fun getTransition(token: Token, mode: ParsingMode, lowerMode: ParsingMode?): Par
         ParsingMode.definitionParameterNameOrAssignment -> parseDefinitionParameterNameOrAssignment
         ParsingMode.definitionParameterType -> parseDefinitionParameterType
         ParsingMode.definitionName -> parseDefinitionName
-        ParsingMode.expression -> parseDefinitionExpression
-        ParsingMode.subExpression -> parseSubExpression
+        ParsingMode.descend -> parseDescent(lowerMode)
+        ParsingMode.expressionRootArguments -> parseRootExpressionArguments
+        ParsingMode.expressionRootStart -> parseRootExpressionStart
+        ParsingMode.expressionStart -> startExpression
+        ParsingMode.header -> parseHeader
+        ParsingMode.importFirstPathToken -> parseImportFirstPathToken
+        ParsingMode.importFollowingPathToken -> parseImportFollowingPathToken
+        ParsingMode.importSeparator -> parseImportSeparator
+        ParsingMode.subExpressionArguments -> parseSubExpressionArguments
+        ParsingMode.subExpressionStart -> parseSubExpressionStart
       }
 
   return action(token)
@@ -60,14 +60,15 @@ tailrec fun parsingStep(
     else {
       val token = tokens.first()
       val lowerMode = state.modeStack.lastOrNull()
-      val (transition, requestedMode) = getTransition(token, mode, lowerMode)
+      val (transition, requestedMode, consume) = getTransition(token, mode, lowerMode)
       val nextMode = requestedMode ?: mode
       val nextState = transition(newBurg(file, token), state)
-      val nextTokens = if (mode == ParsingMode.descend)
-        tokens
-      else
+      val nextTokens = if (consume)
         tokens.drop(1)
+      else
+        tokens
 
+//      println("${if (token.value.isEmpty()) token.rune.name else token.value}\t\t\t${mode.name} -> ${nextMode.name}")
       parsingStep(file, nextTokens, nextMode, nextState)
     }
 
@@ -76,8 +77,8 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): ParsingResponse<Realm> {
     tokens + Token(Rune.newline, FileRange("", Range(newPosition(), newPosition())), "")
   else
     tokens
-
-  val state = parsingStep(file, sanitizedTokens, ParsingMode.header, newState(file))
+  val closedTokens = sanitizedTokens + Token(Rune.eof, emptyFileRange(), "")
+  val state = parsingStep(file, closedTokens, ParsingMode.header, newState(file))
 
   assert(state.burgStack.size == 1)
 

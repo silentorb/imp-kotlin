@@ -3,26 +3,59 @@ package silentorb.imp.parsing.syntax.traversing
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.syntax.*
 
-val parseExpression: TokenToParsingTransition = { token ->
+val parseExpressionCommonStart: TokenToParsingTransition = { token ->
   when {
-    isParenthesesOpen(token) -> startSubExpression
-    isIdentifier(token) -> ParsingStep(push(BurgType.reference, asString))
+    isIdentifier(token) -> ParsingStep(push(BurgType.reference, asString) + pushEmpty)
     isFloat(token) -> ParsingStep(push(BurgType.literalFloat, asFloat))
     isInteger(token) -> ParsingStep(push(BurgType.literalInteger, asInt))
+    isNewline(token) -> skipStep
     else -> parsingError(TextId.invalidToken)
   }
 }
 
-val parseSubExpression: TokenToParsingTransition = { token ->
+val parseExpressionCommonArgument: TokenToParsingTransition = { token ->
   when {
-    isParenthesesClose(token) -> ParsingStep(push(BurgType.expression, asMarker))
-    else -> parseExpression(token)
+    isIdentifier(token) -> ParsingStep(append(BurgType.reference, asString))
+    isFloat(token) -> ParsingStep(append(BurgType.literalFloat, asFloat))
+    isInteger(token) -> ParsingStep(append(BurgType.literalInteger, asInt))
+    isNewline(token) -> skipStep
+    else -> parsingError(TextId.invalidToken)
   }
 }
 
-fun parseExpressionStart(mode: ParsingMode): TokenToParsingTransition = { token ->
-  val intermediate = parseExpression(token)
-  intermediate.copy(
-      transition = push(BurgType.expression, asMarker) + intermediate.transition
-  )
+val parseRootExpressionStart: TokenToParsingTransition = { token ->
+  when {
+    isParenthesesOpen(token) -> onReturn(ParsingMode.expressionRootArguments) + startSubExpression
+    isParenthesesClose(token) -> parsingError(TextId.missingOpeningParenthesis)
+    isLet(token) -> nextDefinition
+    else -> parseExpressionCommonStart(token)
+  }
+}
+
+val parseRootExpressionArguments: TokenToParsingTransition = { token ->
+  when {
+    isParenthesesOpen(token) -> onReturn(ParsingMode.expressionRootArguments) + startSubExpression
+    isParenthesesClose(token) -> parsingError(TextId.missingOpeningParenthesis)
+    isLet(token) -> nextDefinition
+    isEndOfFile(token) -> ParsingStep(fold)
+    else -> parseExpressionCommonArgument(token)
+  }
+}
+
+val parseSubExpressionStart: TokenToParsingTransition = { token ->
+  when {
+    isParenthesesOpen(token) -> onReturn(ParsingMode.subExpressionArguments) + startSubExpression
+    isParenthesesClose(token) -> descend
+    isLet(token) -> addError(TextId.missingClosingParenthesis) + nextDefinition
+    else -> parseExpressionCommonStart(token)
+  }
+}
+
+val parseSubExpressionArguments: TokenToParsingTransition = { token ->
+  when {
+    isParenthesesOpen(token) -> onReturn(ParsingMode.subExpressionArguments) + startSubExpression
+    isParenthesesClose(token) -> descend
+    isLet(token) -> addError(TextId.missingClosingParenthesis) + nextDefinition
+    else -> parseExpressionCommonArgument(token)
+  }
 }

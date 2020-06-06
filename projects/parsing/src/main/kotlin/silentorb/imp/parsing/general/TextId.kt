@@ -23,6 +23,7 @@ enum class TextId {
   incompleteParameter,
   invalidToken,
   missingClosingParenthesis,
+  missingOpeningParenthesis,
   missingArgumentName,
   missingArgumentExpression,
   missingExpression,

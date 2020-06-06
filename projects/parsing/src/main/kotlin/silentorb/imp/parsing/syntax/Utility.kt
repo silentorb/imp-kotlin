@@ -5,6 +5,7 @@ import silentorb.imp.core.TokenFile
 import silentorb.imp.core.newPosition
 import silentorb.imp.parsing.general.Token
 import silentorb.imp.parsing.lexer.Rune
+import silentorb.imp.parsing.syntax.traversing.startExpression
 
 fun newRootBurg(file: TokenFile): Burg =
     Burg(
@@ -31,3 +32,10 @@ fun adoptChildren(parent: Burg, children: List<Burg>) =
 
 fun <T> replaceTop(stack: Stack<T>, newTop: List<T>): Stack<T> =
     stack.dropLast(1).plusElement(newTop)
+
+fun pushMarker(markerType:BurgType, returnMode: ParsingMode) =
+    ParsingStep(push(markerType, asMarker), returnMode, consume = false)
+
+fun parsePushMarker(markerType:BurgType, returnMode: ParsingMode): TokenToParsingTransition = {
+  pushMarker(markerType, returnMode)
+}

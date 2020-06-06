@@ -32,6 +32,9 @@ data class FileRange(
     val range: Range
 )
 
+fun emptyFileRange(): FileRange =
+    FileRange("", Range(newPosition(), newPosition()))
+
 fun positionString(position: Position): String =
     "${position.row}:${position.column}"
 

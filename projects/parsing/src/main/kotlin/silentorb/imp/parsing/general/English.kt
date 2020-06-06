@@ -27,12 +27,10 @@ fun englishText(text: Any): String =
       TextId.missingExpression -> "Missing expression"
       TextId.multipleGraphOutputs -> "Multiple graph outputs"
       TextId.missingImportPath -> "Missing import path"
+      TextId.missingOpeningParenthesis -> "Missing opening parentheses"
       TextId.noGraphOutput -> "No graph output"
       TextId.noMatchingSignature -> "No matching function signature for (%s)"
       TextId.outsideTypeRange -> "Outside type range"
       TextId.unexpectedCharacter -> "Unexpected character"
       TextId.unknownFunction -> "Unknown function"
-
-//      // TODO: Temporarily adding an else because message rendering isn't being used yet and it will be easier to update this function in a batches
-//      else -> throw Error("Not implemented: $text")
     }

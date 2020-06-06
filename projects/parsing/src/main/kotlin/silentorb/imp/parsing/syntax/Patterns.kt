@@ -36,5 +36,8 @@ fun isIdentifier(token: Token) =
 fun isNewline(token: Token) =
     token.rune == Rune.newline
 
+fun isEndOfFile(token: Token) =
+    token.rune == Rune.eof
+
 fun isWildcard(token: Token) =
-    token.rune == Rune.wildcard
+    token.rune == Rune.operator && token.value == "*"
