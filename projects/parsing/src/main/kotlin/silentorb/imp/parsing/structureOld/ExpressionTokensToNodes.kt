@@ -27,11 +27,14 @@ fun getNamedArguments(realm: Realm) =
 fun expressionTokensToNodes(root: PathKey, realm: Realm): ParsingResponse<IntermediateExpression> {
   val path = pathKeyToString(root)
   val namedArguments = getNamedArguments(realm)
-  val parents = realm.burgs.mapValues { it.value.children }
-//  val parents = collapseNamedArgumentClauses(namedArguments.keys, realm.parents)
-//  val indexedTokens = parents.keys.plus(parents.values.flatten()).toList()
-  val literalTokenKeys = literalTokenNodes(path, realm.burgs.values)
-  val nodeReferences = realm.burgs.values.filter { it.type == BurgType.reference }
+  val burgs = realm.burgs
+  val parents = burgs
+      .filter { it.value.type == BurgType.application }
+      .mapValues { (_, application) ->
+        application.children.filter { burgs[it]!!.type == BurgType.argument }
+      }
+  val literalTokenKeys = literalTokenNodes(path, burgs.values)
+  val nodeReferences = burgs.values.filter { it.type == BurgType.reference }
   val tokenNodes = nodeReferences
       .groupBy { it.value as String }
       .flatMap { (name, burgs) ->
@@ -50,14 +53,13 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): ParsingResponse<Interm
   val literalTypes = resolveLiteralTypes(realm.burgs, literalTokenKeys)
 
   val pathKeyParents = parents.entries
-      .mapNotNull { (key, value) ->
-        val parent = tokenNodes[key]
-        if (parent != null)
-          Pair(parent, value.map { tokenNodes[it]!! })
-        else
-          null
+      .associate { (key, value) ->
+        val application = burgs[key]!!
+        val appliedFunction = burgs.entries.first {
+          it.value.type == BurgType.appliedFunction && application.children.contains(it.key)
+        }
+        Pair(tokenNodes[appliedFunction.key]!!, value.map { tokenNodes[it]!! })
       }
-      .associate { it }
 
   val (stages, dependencyErrors) = arrangeRealm(realm)
 

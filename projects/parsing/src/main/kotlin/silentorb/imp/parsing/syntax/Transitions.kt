@@ -54,6 +54,41 @@ val popAppend: ParsingStateTransition = { _, state ->
   )
 }
 
+val liftParent: ParsingStateTransition = { _, state ->
+  val stack = state.burgStack
+  val shortStack = stack.dropLast(1)
+  val upperLayer = stack.last()
+  val lowerLayer = shortStack.last()
+  val oldParent = lowerLayer.last()
+  assert(upperLayer.size == 1)
+  val oldReplacementParent = upperLayer.first()
+  val argumentValue = Burg(
+      type = BurgType.argument,
+      range = oldParent.range,
+      file = oldParent.file,
+      children = listOf(oldParent.hashCode()),
+      value = null
+  )
+  val newArgument = Burg(
+      type = BurgType.argument,
+      range = oldParent.range,
+      file = oldParent.file,
+      children = listOf(argumentValue.hashCode()),
+      value = null
+  )
+  val newReplacementParent = upperLayer.first()
+      .copy(
+          range = oldReplacementParent.range.copy(
+              start = oldParent.range.start
+          ),
+          children = oldReplacementParent.children + newArgument.hashCode()
+      )
+  state.copy(
+      accumulator = state.accumulator - oldParent + upperLayer + argumentValue + newArgument,
+      burgStack = stack.dropLast(2).plusElement(lowerLayer.drop(1) + newReplacementParent)
+  )
+}
+
 fun fold(state: ParsingState): ParsingState =
     if (state.burgStack.size < 2)
       state

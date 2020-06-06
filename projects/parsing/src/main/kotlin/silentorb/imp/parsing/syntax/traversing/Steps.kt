@@ -4,13 +4,12 @@ import silentorb.imp.parsing.syntax.*
 
 val startDefinition = ParsingStep(pushMarker(BurgType.definition), ParsingMode.definitionName)
 val startImport = ParsingStep(pushMarker(BurgType.importClause), ParsingMode.importFirstPathToken)
-val startGroup = ParsingStep(pushMarker(BurgType.group), ParsingMode.groupStart)
+val startGroup = ParsingStep(skip, ParsingMode.groupStart)
+val startArgument = pushMarker(BurgType.argument)
 
 val parameterName = ParsingStep(skip, ParsingMode.definitionParameterColon)
 val startParameter = pushMarker(BurgType.parameter) + parameterName
-
-val startApplication = pushMarker(BurgType.parameter)
-val startArgument = pushMarker(BurgType.argument)
+val startExpression = push(BurgType.expression, asMarker) + parseRootExpressionStart
 
 // Other
 val nextDefinition = fold + startDefinition
@@ -20,3 +19,17 @@ val followingImportPathToken = ParsingStep(append(BurgType.importPathToken, asSt
 val importPathWildcard = ParsingStep(append(BurgType.importPathWildcard, asString) + fold, ParsingMode.header)
 val skipStep = ParsingStep(skip)
 val descend = ParsingStep(skip, ParsingMode.descend, consume = false)
+val startPipingRoot = ParsingStep(skip, ParsingMode.pipingRootStart)
+val startPipingGroup = ParsingStep(skip, ParsingMode.pipingGroupedStart)
+
+fun startApplication(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
+    pushMarker(BurgType.application) +
+        pushMarker(BurgType.appliedFunction) +
+        push(burgType, translator) +
+        pop +
+        pop
+
+fun applyPiping(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
+    pop +
+        startApplication(burgType, translator) +
+        liftParent

@@ -33,6 +33,8 @@ fun getTransition(token: Token, mode: ParsingMode, lowerMode: ParsingMode?): Par
         ParsingMode.importSeparator -> parseImportSeparator
         ParsingMode.groupArguments -> parseSubExpressionArguments
         ParsingMode.groupStart -> parseSubExpressionStart
+        ParsingMode.pipingRootStart -> parsePipingRootStart
+        ParsingMode.pipingGroupedStart -> parseGroupedPipingStart
       }
 
   return action(token)
@@ -67,7 +69,7 @@ tailrec fun parsingStep(
       else
         tokens
 
-//      println("${if (token.value.isEmpty()) token.rune.name else token.value}\t\t\t${mode.name} -> ${nextMode.name}")
+      println("${nextState.burgStack.size.toString().padStart(2)} ${(if (token.value.isEmpty()) token.rune.name else token.value).padStart(12)} ${mode.name} -> ${nextMode.name}")
       parsingStep(file, nextTokens, nextMode, nextState)
     }
 

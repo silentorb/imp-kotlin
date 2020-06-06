@@ -18,4 +18,6 @@ enum class ParsingMode {
   header,
   groupArguments,
   groupStart,
+  pipingRootStart,
+  pipingGroupedStart,
 }

@@ -28,6 +28,7 @@ enum class TextId {
   missingArgumentExpression,
   missingExpression,
   missingImportPath,
+  missingLefthandExpression,
   multipleGraphOutputs,
   noGraphOutput,
   noMatchingSignature,

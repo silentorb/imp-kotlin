@@ -18,12 +18,7 @@ fun parseExpressionElement(step: ExpressionElementStep): TokenToParsingTransitio
 fun parseExpressionCommonStart(mode: ParsingMode) =
     parseExpressionElement { burgType, translator ->
       ParsingStep(
-          pushMarker(BurgType.application)
-              + pushMarker(BurgType.appliedFunction)
-              + push(burgType, translator)
-              + pop
-              + pop
-              + pushEmpty
+          startApplication(burgType, translator)
           , mode)
     }
 
@@ -35,7 +30,7 @@ fun parseExpressionCommonArgument(mode: ParsingMode) =
               + push(burgType, translator)
               + pop
               + pop
-              + popAppend
+              + pop
           , mode)
     }
 
@@ -44,35 +39,18 @@ val parseRootExpressionStart: TokenToParsingTransition = { token ->
     isParenthesesOpen(token) -> onReturn(ParsingMode.expressionRootArguments) + startGroup
     isParenthesesClose(token) -> parsingError(TextId.missingOpeningParenthesis)
     isLet(token) -> nextDefinition
+    isDot(token) -> parsingError(TextId.missingLefthandExpression)
     else -> parseExpressionCommonStart(ParsingMode.expressionRootArguments)(token)
   }
 }
-val startExpression = push(BurgType.expression, asMarker) + parseRootExpressionStart
 
 val parseRootExpressionArguments: TokenToParsingTransition = { token ->
   when {
-    isParenthesesOpen(token) -> onReturn(ParsingMode.expressionRootArguments) + startGroup
+    isParenthesesOpen(token) -> onReturn(ParsingMode.expressionRootArguments) + startArgument + startGroup
     isParenthesesClose(token) -> parsingError(TextId.missingOpeningParenthesis)
     isLet(token) -> nextDefinition
     isEndOfFile(token) -> ParsingStep(fold)
+    isDot(token) -> startPipingRoot
     else -> parseExpressionCommonArgument(ParsingMode.expressionRootArguments)(token)
-  }
-}
-
-val parseSubExpressionStart: TokenToParsingTransition = { token ->
-  when {
-    isParenthesesOpen(token) -> onReturn(ParsingMode.groupArguments) + startGroup
-    isParenthesesClose(token) -> descend
-    isLet(token) -> addError(TextId.missingClosingParenthesis) + nextDefinition
-    else -> parseExpressionCommonStart(ParsingMode.groupArguments)(token)
-  }
-}
-
-val parseSubExpressionArguments: TokenToParsingTransition = { token ->
-  when {
-    isParenthesesOpen(token) -> onReturn(ParsingMode.groupArguments) + startGroup
-    isParenthesesClose(token) -> descend
-    isLet(token) -> addError(TextId.missingClosingParenthesis) + nextDefinition
-    else -> parseExpressionCommonArgument(ParsingMode.groupArguments)(token)
   }
 }
