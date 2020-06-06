@@ -26,14 +26,13 @@ fun getTransition(token: Token, mode: ParsingMode, lowerMode: ParsingMode?): Par
         ParsingMode.definitionName -> parseDefinitionName
         ParsingMode.descend -> parseDescent(lowerMode)
         ParsingMode.expressionRootArguments -> parseRootExpressionArguments
-        ParsingMode.expressionRootStart -> parseRootExpressionStart
         ParsingMode.expressionStart -> startExpression
         ParsingMode.header -> parseHeader
         ParsingMode.importFirstPathToken -> parseImportFirstPathToken
         ParsingMode.importFollowingPathToken -> parseImportFollowingPathToken
         ParsingMode.importSeparator -> parseImportSeparator
-        ParsingMode.subExpressionArguments -> parseSubExpressionArguments
-        ParsingMode.subExpressionStart -> parseSubExpressionStart
+        ParsingMode.groupArguments -> parseSubExpressionArguments
+        ParsingMode.groupStart -> parseSubExpressionStart
       }
 
   return action(token)
@@ -89,6 +88,8 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): ParsingResponse<Realm> {
           .plus(root)
           .associateBy { it.hashCode() }
   )
+
+  logRealmHierarchy(realm)
 
   return ParsingResponse(
       realm,

@@ -13,6 +13,9 @@ fun push(burgType: BurgType, valueTranslator: ValueTranslator): ParsingStateTran
   )
 }
 
+fun pushMarker(burgType: BurgType) =
+    push(burgType, asMarker)
+
 val pushEmpty: ParsingStateTransition = { _, state ->
   state.copy(
       burgStack = state.burgStack.plusElement(listOf())
@@ -39,6 +42,16 @@ fun popChildren(state: ParsingState): ParsingState {
 
 val pop: ParsingStateTransition = { _, state ->
   popChildren(state)
+}
+
+val popAppend: ParsingStateTransition = { _, state ->
+  val stack = state.burgStack
+  val shortStack = stack.dropLast(1)
+  val children = stack.last()
+  val newTop = shortStack.last()
+  state.copy(
+      burgStack = stack.dropLast(2).plusElement(newTop + children)
+  )
 }
 
 fun fold(state: ParsingState): ParsingState =
@@ -82,3 +95,7 @@ operator fun ParsingStateTransition.plus(other: ParsingStep): ParsingStep =
     other.copy(
         transition = this + other.transition
     )
+
+operator fun ParsingStateTransition.plus(other: TokenToParsingTransition): TokenToParsingTransition = { token ->
+  this + other(token)
+}

@@ -2,14 +2,15 @@ package silentorb.imp.parsing.syntax.traversing
 
 import silentorb.imp.parsing.syntax.*
 
-// Markers with starting symbols
-val startDefinition = ParsingStep(push(BurgType.definition, asMarker), ParsingMode.definitionName)
-val startImport = ParsingStep(push(BurgType.importClause, asMarker), ParsingMode.importFirstPathToken)
-val startSubExpression = ParsingStep(push(BurgType.group, asMarker), ParsingMode.subExpressionStart)
+val startDefinition = ParsingStep(pushMarker(BurgType.definition), ParsingMode.definitionName)
+val startImport = ParsingStep(pushMarker(BurgType.importClause), ParsingMode.importFirstPathToken)
+val startGroup = ParsingStep(pushMarker(BurgType.group), ParsingMode.groupStart)
 
-// Markers without starting symbols
-val startExpression = parsePushMarker(BurgType.expression, ParsingMode.expressionRootStart)
-val startParameter = ParsingStep(push(BurgType.parameter, asMarker), ParsingMode.definitionParameterName)
+val parameterName = ParsingStep(skip, ParsingMode.definitionParameterColon)
+val startParameter = pushMarker(BurgType.parameter) + parameterName
+
+val startApplication = pushMarker(BurgType.parameter)
+val startArgument = pushMarker(BurgType.argument)
 
 // Other
 val nextDefinition = fold + startDefinition

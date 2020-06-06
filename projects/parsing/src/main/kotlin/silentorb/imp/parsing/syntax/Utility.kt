@@ -33,9 +33,16 @@ fun adoptChildren(parent: Burg, children: List<Burg>) =
 fun <T> replaceTop(stack: Stack<T>, newTop: List<T>): Stack<T> =
     stack.dropLast(1).plusElement(newTop)
 
-fun pushMarker(markerType:BurgType, returnMode: ParsingMode) =
-    ParsingStep(push(markerType, asMarker), returnMode, consume = false)
+fun pushMarker(markerType: BurgType, returnMode: ParsingMode? = null) =
+    ParsingStep(push(markerType, asMarker), returnMode)
 
-fun parsePushMarker(markerType:BurgType, returnMode: ParsingMode): TokenToParsingTransition = {
-  pushMarker(markerType, returnMode)
+fun logRealmHierarchy(realm: Realm, head: BurgId = realm.root, depth: Int = 0) {
+  for (i in 0 until depth) {
+    print("  ")
+  }
+  val burg = realm.burgs[head]!!
+  println(burg.type.name)
+  for (child in burg.children) {
+    logRealmHierarchy(realm, child, depth + 1)
+  }
 }

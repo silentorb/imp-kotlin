@@ -19,7 +19,7 @@ val parseDefinitionAssignment: TokenToParsingTransition = { token ->
 
 val parseDefinitionParameterName: TokenToParsingTransition = { token ->
   when {
-    isIdentifier(token) -> ParsingStep(skip, ParsingMode.definitionParameterColon)
+    isIdentifier(token) -> parameterName
     else -> parsingError(TextId.expectedParameterName)
   }
 }
