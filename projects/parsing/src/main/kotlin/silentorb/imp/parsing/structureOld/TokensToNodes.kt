@@ -1,7 +1,7 @@
 package silentorb.imp.parsing.structureOld
 
 import silentorb.imp.core.PathKey
-import silentorb.imp.parsing.parser.expressions.getLiteralBurgType
+import silentorb.imp.parsing.resolution.getLiteralBurgType
 import silentorb.imp.parsing.syntax.Burg
 import silentorb.imp.parsing.syntax.BurgId
 

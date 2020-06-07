@@ -1,4 +1,4 @@
-package silentorb.imp.parsing.parser.expressions
+package silentorb.imp.parsing.resolution
 
 import silentorb.imp.core.*
 import silentorb.imp.core.Range
@@ -51,29 +51,43 @@ data class SignatureOptionsAndTypes(
 fun resolveFunctionSignatures(
     context: Context,
     stages: List<PathKey>,
-    parents: Map<PathKey, List<PathKey>>,
+    applications: Map<PathKey, FunctionApplication>,
     initialTypes: Map<PathKey, TypeHash>
 ): SignatureOptionsAndTypes {
   return stages
-      .filter { parents[it]?.any() ?: false }
+      .filter { applications.keys.contains(it) }
       .fold(SignatureOptionsAndTypes()) { accumulator, stage ->
-        val inputs = parents[stage]!!
+        val application = applications[stage]!!
         val argumentTypes = initialTypes.plus(accumulator.types)
         val newContext = context + newNamespace().copy(typings = accumulator.typings)
-        val signatureOptions = narrowTypeByArguments(newContext, argumentTypes, stage, inputs)
-        val reducedNestedSignatures = signatureOptions.map { reduceSignature(it.signature, it.alignment.keys) }
-        val newImplementationTypes = signaturesToTypeHash(signatureOptions.map { it.signature })
-        val newTypes = if (signatureOptions.size == 1)
-          mapOf(stage to signatureOptions.first().signature.output)
-        else
-          mapOf()
+        if (application.arguments.none()) {
+          val type = argumentTypes[application.target]
+          if (type != null) {
+            accumulator.copy(
+                types = accumulator.types + (stage to type)
+            )
+          } else
+            accumulator
+        } else {
+          val signatureOptions = narrowTypeByArguments(newContext, argumentTypes, application.target, application.arguments)
+          val reducedNestedSignatures = signatureOptions.map { reduceSignature(it.signature, it.alignment.keys) }
+          val newImplementationTypes = if (signatureOptions.any())
+            mapOf(stage to signaturesToTypeHash(signatureOptions.map { it.signature }))
+          else
+            mapOf()
 
-        val newTypings = extractTypings(reducedNestedSignatures)
-        accumulator.copy(
-            signatureOptions = accumulator.signatureOptions + (stage to signatureOptions),
-            implementationTypes = accumulator.implementationTypes + (stage to newImplementationTypes),
-            types = accumulator.types + newTypes,
-            typings = accumulator.typings + newTypings
-        )
+          val newTypes = if (signatureOptions.size == 1)
+            mapOf(stage to signatureOptions.first().signature.output)
+          else
+            mapOf()
+
+          val newTypings = extractTypings(reducedNestedSignatures)
+          accumulator.copy(
+              signatureOptions = accumulator.signatureOptions + (stage to signatureOptions),
+              implementationTypes = accumulator.implementationTypes + newImplementationTypes,
+              types = accumulator.types + newTypes,
+              typings = accumulator.typings + newTypings
+          )
+        }
       }
 }

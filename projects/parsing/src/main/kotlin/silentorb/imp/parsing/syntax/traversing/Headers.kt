@@ -17,7 +17,7 @@ val parseImportFirstPathToken: TokenToParsingTransition = { token ->
   when {
     isIdentifier(token) -> firstImportPathToken
     isWildcard(token) -> importPathWildcard
-    isNewline(token) -> parsingError(TextId.missingImportPath)
+    isNewline(token) -> addError(TextId.missingImportPath) + ParsingStep(fold, ParsingMode.header)
     else -> parsingError(TextId.expectedIdentifier)
   }
 }

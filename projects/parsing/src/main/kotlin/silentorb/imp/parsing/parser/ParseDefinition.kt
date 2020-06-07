@@ -2,7 +2,7 @@ package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.ParsingResponse
-import silentorb.imp.parsing.parser.expressions.parseExpression
+import silentorb.imp.parsing.resolution.parseExpression
 
 fun newParameterNamespace(context: Context, pathKey: PathKey, parameters: List<Parameter>): Namespace {
   val pathString = pathKeyToString(pathKey)

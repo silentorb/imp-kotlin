@@ -1,4 +1,4 @@
-package silentorb.imp.parsing.parser.expressions
+package silentorb.imp.parsing.resolution
 
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.ParsingResponse
@@ -7,6 +7,7 @@ import silentorb.imp.parsing.parser.validateSignatures
 
 fun parseExpression(context: Context, largerContext: Context, intermediate: IntermediateExpression): ParsingResponse<Dungeon> {
   val (
+      applications,
       literalTypes,
       namedArguments,
       nodeMap,
@@ -36,7 +37,7 @@ fun parseExpression(context: Context, largerContext: Context, intermediate: Inte
       resolveFunctionSignatures(
           largerContext,
           stages,
-          parents,
+          applications,
           initialTypes
       )
   val signatures = signatureOptions
@@ -45,7 +46,7 @@ fun parseExpression(context: Context, largerContext: Context, intermediate: Inte
   val connections = arrangeConnections(parents, signatures)
   val nodeTypes = initialTypes + reducedTypes
   val nonNullaryFunctions = parents.filter { it.value.any() }
-  val typeResolutionErrors = validateFunctionTypes(nodeMap.keys, initialTypes, nodeMap)
+  val typeResolutionErrors = validateFunctionTypes(applications.filter { it.value.arguments.any() }.keys, implementationTypes, nodeMap)
   val signatureErrors = validateSignatures(largerContext, nodeTypes, nonNullaryFunctions, signatureOptions, nodeMap)// +
   val errors = signatureErrors + typeResolutionErrors
 

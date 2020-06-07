@@ -5,7 +5,9 @@ import silentorb.imp.core.DependencyError
 import silentorb.imp.core.TokenFile
 import silentorb.imp.core.arrangeDependencies
 import silentorb.imp.parsing.general.ParsingResponse
+import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.Tokens
+import silentorb.imp.parsing.general.newParsingError
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.*
 import java.nio.file.Paths
@@ -26,7 +28,7 @@ fun withoutComments(tokens: Tokens): Tokens =
     tokens.filter { it.rune != Rune.comment }
 
 fun toTokenGraph(file: TokenFile, tokens: Tokens): ParsingResponse<TokenDungeon> {
-  val (realm, errors) = parseSyntax(file, tokens)
+  val (realm, syntaxErrors) = parseSyntax(file, tokens)
   val burgs = realm.burgs
   val lookUpBurg = { id: BurgId -> burgs[id]!! }
   val rootChildren = getExpandedChildren(realm, realm.root)
@@ -77,10 +79,16 @@ fun toTokenGraph(file: TokenFile, tokens: Tokens): ParsingResponse<TokenDungeon>
         } else
           null
       }
+
+  val duplicateSymbolErrors = definitions
+      .groupBy { it.symbol.value }
+      .filter { it.value.size > 1 }
+      .map { newParsingError(TextId.duplicateSymbol, it.value.last().symbol) }
+
   val graph = TokenDungeon(
       imports = imports,
       definitions = definitions
   )
 
-  return ParsingResponse(graph, errors)
+  return ParsingResponse(graph, syntaxErrors + duplicateSymbolErrors)
 }

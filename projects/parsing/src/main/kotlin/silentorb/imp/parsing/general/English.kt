@@ -26,6 +26,7 @@ fun englishText(text: Any): String =
       TextId.missingClosingParenthesis -> "Missing closing parentheses"
       TextId.missingExpression -> "Missing expression"
       TextId.missingLefthandExpression -> "Missing left-hand expression"
+      TextId.missingRighthandExpression -> "Missing right-hand expression"
       TextId.multipleGraphOutputs -> "Multiple graph outputs"
       TextId.missingImportPath -> "Missing import path"
       TextId.missingOpeningParenthesis -> "Missing opening parentheses"

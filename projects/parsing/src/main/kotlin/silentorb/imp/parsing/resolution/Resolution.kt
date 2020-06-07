@@ -1,4 +1,4 @@
-package silentorb.imp.parsing.parser.expressions
+package silentorb.imp.parsing.resolution
 
 import silentorb.imp.core.Context
 import silentorb.imp.core.PathKey

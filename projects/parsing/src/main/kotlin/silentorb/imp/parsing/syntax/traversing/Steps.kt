@@ -5,7 +5,7 @@ import silentorb.imp.parsing.syntax.*
 val startDefinition = ParsingStep(pushMarker(BurgType.definition), ParsingMode.definitionName)
 val startImport = ParsingStep(pushMarker(BurgType.importClause), ParsingMode.importFirstPathToken)
 val startGroup = ParsingStep(skip, ParsingMode.groupStart)
-val startArgument = pushMarker(BurgType.argument)
+val startUnnamedArgument = pushMarker(BurgType.argument) + pushMarker(BurgType.argumentValue)
 
 val parameterName = ParsingStep(skip, ParsingMode.definitionParameterColon)
 val startParameter = pushMarker(BurgType.parameter) + parameterName
@@ -21,6 +21,7 @@ val skipStep = ParsingStep(skip)
 val descend = ParsingStep(skip, ParsingMode.descend, consume = false)
 val startPipingRoot = ParsingStep(skip, ParsingMode.pipingRootStart)
 val startPipingGroup = ParsingStep(skip, ParsingMode.pipingGroupedStart)
+val switchToNamedArgument = ParsingStep(skip, ParsingMode.expressionRootArgumentValueBeforeNewline)
 
 fun startApplication(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
     pushMarker(BurgType.application) +

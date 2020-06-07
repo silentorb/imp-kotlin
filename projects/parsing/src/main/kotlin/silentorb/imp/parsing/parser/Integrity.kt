@@ -3,7 +3,6 @@ package silentorb.imp.parsing.parser
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
-import silentorb.imp.parsing.parser.expressions.TokenGraph
 import java.nio.file.Path
 
 //fun validateDefinitionTokens(definitions: List<TokenizedDefinition>): ParsingErrors {

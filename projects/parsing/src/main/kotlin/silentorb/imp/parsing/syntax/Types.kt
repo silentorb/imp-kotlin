@@ -47,6 +47,7 @@ typealias NewBurg = (BurgType, ValueTranslator) -> Burg
 typealias ParsingStateTransition = (NewBurg, ParsingState) -> ParsingState
 
 typealias TokenToParsingTransition = (Token) -> ParsingStep
+typealias NullableTokenToParsingTransition = (Token) -> ParsingStep?
 
 typealias Stack<T> = List<List<T>>
 

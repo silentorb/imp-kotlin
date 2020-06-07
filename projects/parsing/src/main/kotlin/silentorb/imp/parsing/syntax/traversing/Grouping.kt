@@ -4,21 +4,23 @@ import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.syntax.*
 
 val parseSubExpressionStart: TokenToParsingTransition = { token ->
-  when {
-    isParenthesesOpen(token) -> onReturn(ParsingMode.groupArguments) + startGroup
-    isParenthesesClose(token) -> descend
-    isLet(token) -> addError(TextId.missingClosingParenthesis) + nextDefinition
-    isDot(token) -> parsingError(TextId.missingLefthandExpression)
-    else -> parseExpressionCommonStart(ParsingMode.groupArguments)(token)
-  }
+  onMatch(isLet(token)) { addError(TextId.missingClosingParenthesis) + nextDefinition }
+      ?: parseExpressionCommonStart(ParsingMode.groupArguments)(token)
+      ?: when {
+        isParenthesesOpen(token) -> onReturn(ParsingMode.groupArguments) + startGroup
+        isParenthesesClose(token) -> descend
+        isDot(token) -> parsingError(TextId.missingLefthandExpression)
+        else -> parsingError(TextId.invalidToken)
+      }
 }
 
 val parseSubExpressionArguments: TokenToParsingTransition = { token ->
-  when {
-    isParenthesesOpen(token) -> onReturn(ParsingMode.groupArguments) + startArgument + startGroup
+  onMatch(isLet(token)) { addError(TextId.missingClosingParenthesis) + nextDefinition }
+      ?: parseExpressionCommonArgument(ParsingMode.groupArguments)(token)
+      ?: when {
+    isParenthesesOpen(token) -> onReturn(ParsingMode.groupArguments) + startUnnamedArgument + startGroup
     isParenthesesClose(token) -> descend
-    isLet(token) -> addError(TextId.missingClosingParenthesis) + nextDefinition
     isDot(token) -> startPipingRoot
-    else -> parseExpressionCommonArgument(ParsingMode.groupArguments)(token)
+    else -> parsingError(TextId.invalidToken)
   }
 }

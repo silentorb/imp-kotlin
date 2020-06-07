@@ -1,7 +1,6 @@
-package silentorb.imp.parsing.parser.expressions
+package silentorb.imp.parsing.resolution
 
 import silentorb.imp.core.*
-import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.syntax.Burg
 import silentorb.imp.parsing.syntax.BurgId

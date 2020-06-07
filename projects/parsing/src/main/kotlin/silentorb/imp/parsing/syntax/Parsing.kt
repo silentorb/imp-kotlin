@@ -25,7 +25,10 @@ fun getTransition(token: Token, mode: ParsingMode, lowerMode: ParsingMode?): Par
         ParsingMode.definitionParameterType -> parseDefinitionParameterType
         ParsingMode.definitionName -> parseDefinitionName
         ParsingMode.descend -> parseDescent(lowerMode)
-        ParsingMode.expressionRootArguments -> parseRootExpressionArguments
+        ParsingMode.expressionRootArgumentValueAfterNewline -> parseRootExpressionArgumentsAfterNewline
+        ParsingMode.expressionRootArgumentValueBeforeNewline -> parseRootExpressionArgumentsBeforeNewline
+        ParsingMode.expressionRootArgumentValueOrNamedAfterNewline -> parseRootExpressionFollowingArgumentAfterNewline
+        ParsingMode.expressionRootArgumentValueOrNamedBeforeNewline -> parseRootExpressionFollowingArgumentBeforeNewline
         ParsingMode.expressionStart -> startExpression
         ParsingMode.header -> parseHeader
         ParsingMode.importFirstPathToken -> parseImportFirstPathToken
@@ -69,7 +72,7 @@ tailrec fun parsingStep(
       else
         tokens
 
-      println("${nextState.burgStack.size.toString().padStart(2)} ${(if (token.value.isEmpty()) token.rune.name else token.value).padStart(12)} ${mode.name} -> ${nextMode.name}")
+//      println("${nextState.burgStack.size.toString().padStart(2)} ${(if (token.value.isEmpty()) token.rune.name else token.value).padStart(12)} ${mode.name} -> ${nextMode.name}")
       parsingStep(file, nextTokens, nextMode, nextState)
     }
 

@@ -63,7 +63,7 @@ val liftParent: ParsingStateTransition = { _, state ->
   assert(upperLayer.size == 1)
   val oldReplacementParent = upperLayer.first()
   val argumentValue = Burg(
-      type = BurgType.argument,
+      type = BurgType.argumentValue,
       range = oldParent.range,
       file = oldParent.file,
       children = listOf(oldParent.hashCode()),

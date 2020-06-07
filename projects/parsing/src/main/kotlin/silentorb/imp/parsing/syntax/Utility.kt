@@ -49,3 +49,9 @@ fun logRealmHierarchy(realm: Realm, head: BurgId = realm.root, depth: Int = 0) {
     logRealmHierarchy(realm, child, depth + 1)
   }
 }
+
+fun onMatch(matches: Boolean, getStep: () -> ParsingStep?): ParsingStep? =
+    if (matches)
+      getStep()
+    else
+      null

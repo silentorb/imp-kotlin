@@ -11,21 +11,25 @@ fun parseExpressionElementsPiping(mode: ParsingMode) =
     }
 
 val parsePipingRootStart: TokenToParsingTransition = { token ->
-  when {
-    isParenthesesOpen(token) -> onReturn(ParsingMode.expressionRootArguments) + startPipingGroup
-    isParenthesesClose(token) -> parsingError(TextId.missingOpeningParenthesis)
-    isLet(token) -> nextDefinition
-    isDot(token) -> parsingError(TextId.missingLefthandExpression)
-    else -> parseExpressionElementsPiping(ParsingMode.expressionRootArguments)(token)
-  }
+  onMatch(isLet(token)) { addError(TextId.missingRighthandExpression) + nextDefinition }
+      ?: parseExpressionElementsPiping(ParsingMode.expressionRootArgumentValueBeforeNewline)(token)
+      ?: when {
+        isParenthesesOpen(token) -> onReturn(ParsingMode.expressionRootArgumentValueBeforeNewline) + startPipingGroup
+        isParenthesesClose(token) -> parsingError(TextId.missingOpeningParenthesis)
+        isNewline(token) -> skipStep
+        isDot(token) -> parsingError(TextId.missingLefthandExpression)
+        else -> parsingError(TextId.invalidToken)
+      }
 }
 
 val parseGroupedPipingStart: TokenToParsingTransition = { token ->
-  when {
-    isParenthesesOpen(token) -> onReturn(ParsingMode.groupArguments) + startPipingGroup
-    isParenthesesClose(token) -> descend
-    isLet(token) -> addError(TextId.missingClosingParenthesis) + nextDefinition
-    isDot(token) -> parsingError(TextId.missingLefthandExpression)
-    else -> parseExpressionElementsPiping(ParsingMode.groupArguments)(token)
-  }
+  onMatch(isLet(token)) { addError(TextId.missingClosingParenthesis) + nextDefinition }
+      ?: parseExpressionElementsPiping(ParsingMode.groupArguments)(token)
+      ?: when {
+        isParenthesesOpen(token) -> onReturn(ParsingMode.groupArguments) + startPipingGroup
+        isParenthesesClose(token) -> descend
+        isNewline(token) -> skipStep
+        isDot(token) -> parsingError(TextId.missingLefthandExpression)
+        else -> parsingError(TextId.invalidToken)
+      }
 }

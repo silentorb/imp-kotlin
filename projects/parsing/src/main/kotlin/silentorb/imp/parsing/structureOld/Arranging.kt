@@ -1,7 +1,7 @@
 package silentorb.imp.parsing.structureOld
 
-import silentorb.imp.parsing.parser.expressions.TokenIndex
-import silentorb.imp.parsing.parser.expressions.TokenParents
+import silentorb.imp.parsing.resolution.TokenIndex
+import silentorb.imp.parsing.resolution.TokenParents
 
 tailrec fun <T> nextIndex(list: List<T>, offset: Int, predicate: (T) -> Boolean): Int {
   return if (offset >= list.size)

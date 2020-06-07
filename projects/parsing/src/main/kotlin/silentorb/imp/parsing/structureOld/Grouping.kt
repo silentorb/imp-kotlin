@@ -1,9 +1,6 @@
 package silentorb.imp.parsing.structureOld
 
-import silentorb.imp.parsing.general.*
-import silentorb.imp.parsing.lexer.Rune
-import silentorb.imp.parsing.parser.expressions.TokenGraph
-import silentorb.imp.parsing.parser.expressions.TokenIndex
+import silentorb.imp.parsing.resolution.TokenIndex
 
 data class TokenGroup(
     val depth: Int,

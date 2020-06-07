@@ -1,11 +1,10 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.PathKey
-import silentorb.imp.parsing.parser.expressions.IntermediateExpression
+import silentorb.imp.parsing.resolution.IntermediateExpression
 import silentorb.imp.parsing.syntax.Burg
 import silentorb.imp.parsing.syntax.BurgId
 import silentorb.imp.parsing.syntax.Realm
-import silentorb.imp.parsing.syntax.Stack
 import java.nio.file.Path
 
 const val localPath = ""
