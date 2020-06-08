@@ -15,7 +15,7 @@ data class Burg(
   val fileRange: FileRange get() = FileRange(file, range)
 
   init {
-    assert(value == null || children.none())
+//    assert(value == null || children.none())
   }
 }
 

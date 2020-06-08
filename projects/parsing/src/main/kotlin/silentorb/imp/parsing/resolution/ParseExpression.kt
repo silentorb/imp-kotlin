@@ -38,7 +38,8 @@ fun parseExpression(context: Context, largerContext: Context, intermediate: Inte
           largerContext,
           stages,
           applications,
-          initialTypes
+          initialTypes,
+          namedArguments
       )
   val signatures = signatureOptions
       .filter { it.value.size == 1 }

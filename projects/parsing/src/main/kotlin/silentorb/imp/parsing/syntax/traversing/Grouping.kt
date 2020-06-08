@@ -18,9 +18,9 @@ val parseSubExpressionArguments: TokenToParsingTransition = { token ->
   onMatch(isLet(token)) { addError(TextId.missingClosingParenthesis) + nextDefinition }
       ?: parseExpressionCommonArgument(ParsingMode.groupArguments)(token)
       ?: when {
-    isParenthesesOpen(token) -> onReturn(ParsingMode.groupArguments) + startUnnamedArgument + startGroup
-    isParenthesesClose(token) -> descend
-    isDot(token) -> startPipingRoot
-    else -> parsingError(TextId.invalidToken)
-  }
+        isParenthesesOpen(token) -> onReturn(ParsingMode.groupArguments) + startArgument + startGroup
+        isParenthesesClose(token) -> descend
+        isDot(token) -> startPipingRoot
+        else -> parsingError(TextId.invalidToken)
+      }
 }

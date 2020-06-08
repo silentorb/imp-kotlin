@@ -8,19 +8,22 @@ import silentorb.imp.parsing.resolution.IntermediateExpression
 import silentorb.imp.parsing.resolution.resolveLiteralTypes
 import silentorb.imp.parsing.parser.getExpandedChildren
 import silentorb.imp.parsing.resolution.FunctionApplication
-import silentorb.imp.parsing.syntax.BurgType
-import silentorb.imp.parsing.syntax.Realm
-import silentorb.imp.parsing.syntax.arrangeRealm
+import silentorb.imp.parsing.syntax.*
 
-fun getNamedArguments(realm: Realm) =
+fun getNamedArguments(realm: Realm): Map<BurgId, Burg> =
     realm.burgs
         .filterValues { it.type == BurgType.argument }
-        .keys.mapNotNull { parameter ->
+        .keys
+        .mapNotNull { parameter ->
           val children = getExpandedChildren(realm, parameter)
           val argumentName = children.firstOrNull { it.type == BurgType.argumentName }
-          if (argumentName != null)
-            (parameter to argumentName)
-          else
+
+          val argumentValue = realm.burgs[children.firstOrNull { it.type == BurgType.argumentValue }
+              ?.hashCode()]?.children?.firstOrNull()
+
+          if (argumentName != null && argumentValue != null) {
+            (argumentValue to argumentName)
+          } else
             null
         }
         .associate { it }
@@ -37,7 +40,7 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): ParsingResponse<Interm
 
   val literalTokenKeys = literalTokenNodes(path, burgs.values)
   val nodeReferences = burgs.values.filter { it.type == BurgType.reference }
-  val tokenNodes = nodeReferences
+  val burgNodes = nodeReferences
       .groupBy { it.value as String }
       .flatMap { (name, burgs) ->
         burgs.mapIndexed { index, burg ->
@@ -74,8 +77,8 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): ParsingResponse<Interm
             }
 
         FunctionApplication(
-            target = tokenNodes[appliedFunction]!!,
-            arguments = arguments.map { tokenNodes[it]!! }
+            target = burgNodes[appliedFunction]!!,
+            arguments = arguments.map { burgNodes[it]!! }
         )
       }
       .mapKeys { applicationsKeys[it.key]!! }
@@ -83,7 +86,7 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): ParsingResponse<Interm
   val parents = applications
       .mapValues { it.value.arguments }
 
-  val nodeMap = tokenNodes.entries
+  val nodeMap = burgNodes.entries
       .associate { (id, pathKey) ->
         Pair(pathKey, realm.burgs[id]!!.fileRange)
       }
@@ -100,9 +103,9 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): ParsingResponse<Interm
           parents = parents,
           references = nodeReferences
               .groupBy { it.value as String }
-              .mapValues { it.value.map { tokenNodes[it.hashCode()]!! }.toSet() },
-          namedArguments = namedArguments.mapKeys { (burg, _) -> tokenNodes[burg]!! },
-          stages = stages.mapNotNull { tokenNodes[it] }.reversed(),
+              .mapValues { it.value.map { burgNodes[it.hashCode()]!! }.toSet() },
+          namedArguments = namedArguments.mapKeys { (burg, _) -> burgNodes[burg]!! },
+          stages = stages.mapNotNull { burgNodes[it] }.reversed(),
           values = literalTokenKeys.entries
               .associate { (burgId, key) ->
                 (key to realm.burgs[burgId]!!.value!!)

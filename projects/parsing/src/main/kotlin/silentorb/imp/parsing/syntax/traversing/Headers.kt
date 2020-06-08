@@ -8,7 +8,7 @@ val parseHeader: TokenToParsingTransition = { token ->
     isImport(token) -> startImport
     isLet(token) -> startDefinition
     isNewline(token) -> ParsingStep(fold, ParsingMode.header)
-    isEndOfFile(token) -> skipStep
+    isEndOfFile(token) -> ParsingStep(skip, ParsingMode.body)
     else -> parsingError(TextId.expectedImportOrLetKeywords)
   }
 }

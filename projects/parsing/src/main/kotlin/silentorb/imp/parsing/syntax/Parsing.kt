@@ -1,10 +1,7 @@
 package silentorb.imp.parsing.syntax
 
 import silentorb.imp.core.*
-import silentorb.imp.parsing.general.ParsingError
-import silentorb.imp.parsing.general.ParsingResponse
-import silentorb.imp.parsing.general.Token
-import silentorb.imp.parsing.general.Tokens
+import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.syntax.traversing.*
 
@@ -25,10 +22,9 @@ fun getTransition(token: Token, mode: ParsingMode, lowerMode: ParsingMode?): Par
         ParsingMode.definitionParameterType -> parseDefinitionParameterType
         ParsingMode.definitionName -> parseDefinitionName
         ParsingMode.descend -> parseDescent(lowerMode)
-        ParsingMode.expressionRootArgumentValueAfterNewline -> parseRootExpressionArgumentsAfterNewline
-        ParsingMode.expressionRootArgumentValueBeforeNewline -> parseRootExpressionArgumentsBeforeNewline
-        ParsingMode.expressionRootArgumentValueOrNamedAfterNewline -> parseRootExpressionFollowingArgumentAfterNewline
-        ParsingMode.expressionRootArgumentValueOrNamedBeforeNewline -> parseRootExpressionFollowingArgumentBeforeNewline
+        ParsingMode.expressionRootArgumentStart -> parseRootExpressionArgumentStart
+        ParsingMode.expressionRootNamedArgumentValue -> parseExpressionRootNamedArgumentValue
+        ParsingMode.expressionRootArgumentValueOrAssignment -> parseRootExpressionFollowingArgument
         ParsingMode.expressionStart -> startExpression
         ParsingMode.header -> parseHeader
         ParsingMode.importFirstPathToken -> parseImportFirstPathToken
@@ -72,7 +68,7 @@ tailrec fun parsingStep(
       else
         tokens
 
-//      println("${nextState.burgStack.size.toString().padStart(2)} ${(if (token.value.isEmpty()) token.rune.name else token.value).padStart(12)} ${mode.name} -> ${nextMode.name}")
+      println("${nextState.burgStack.size.toString().padStart(2)} ${(if (token.value.isEmpty()) token.rune.name else token.value).padStart(12)} ${mode.name} -> ${nextMode.name}")
       parsingStep(file, nextTokens, nextMode, nextState)
     }
 
@@ -96,13 +92,21 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): ParsingResponse<Realm> {
 
   logRealmHierarchy(realm)
 
+  val convertedErrors = state.errors.map { error ->
+    ParsingError(
+        message = error.message,
+        fileRange = FileRange(file, error.range)
+    )
+  }
+
+  val letErrors = tokens
+      .filterIndexed { index, token ->
+        isLet(token) && index > 0 && !isNewline(tokens[index - 1])
+      }
+      .map { newParsingError(TextId.expectedNewline, it) }
+
   return ParsingResponse(
       realm,
-      state.errors.map { error ->
-        ParsingError(
-            message = error.message,
-            fileRange = FileRange(file, error.range)
-        )
-      }
+      convertedErrors + letErrors
   )
 }

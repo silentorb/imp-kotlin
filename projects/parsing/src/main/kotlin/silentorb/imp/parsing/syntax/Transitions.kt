@@ -13,6 +13,17 @@ fun push(burgType: BurgType, valueTranslator: ValueTranslator): ParsingStateTran
   )
 }
 
+fun changeType(burgType: BurgType): ParsingStateTransition = { newBurg, state ->
+  val stack = state.burgStack
+  val previous = stack.last().last()
+  val next = previous.copy(
+      type = burgType
+  )
+  state.copy(
+      burgStack = stack.dropLast(1).plusElement(listOf(next))
+  )
+}
+
 fun pushMarker(burgType: BurgType) =
     push(burgType, asMarker)
 
@@ -34,6 +45,9 @@ fun popChildren(state: ParsingState): ParsingState {
   val children = stack.last()
   val newTop = shortStack.last()
   val parent = adoptChildren(newTop.last(), children)
+  if (parent.type == BurgType.argument) {
+    val k = 0
+  }
   return state.copy(
       accumulator = state.accumulator + children,
       burgStack = stack.dropLast(2).plusElement(newTop.drop(1) + parent)
@@ -54,38 +68,13 @@ val popAppend: ParsingStateTransition = { _, state ->
   )
 }
 
-val liftParent: ParsingStateTransition = { _, state ->
+fun insertBelow(burgType: BurgType, valueTranslator: ValueTranslator): ParsingStateTransition = { newBurg, state ->
   val stack = state.burgStack
-  val shortStack = stack.dropLast(1)
-  val upperLayer = stack.last()
-  val lowerLayer = shortStack.last()
-  val oldParent = lowerLayer.last()
-  assert(upperLayer.size == 1)
-  val oldReplacementParent = upperLayer.first()
-  val argumentValue = Burg(
-      type = BurgType.argumentValue,
-      range = oldParent.range,
-      file = oldParent.file,
-      children = listOf(oldParent.hashCode()),
-      value = null
-  )
-  val newArgument = Burg(
-      type = BurgType.argument,
-      range = oldParent.range,
-      file = oldParent.file,
-      children = listOf(argumentValue.hashCode()),
-      value = null
-  )
-  val newReplacementParent = upperLayer.first()
-      .copy(
-          range = oldReplacementParent.range.copy(
-              start = oldParent.range.start
-          ),
-          children = oldReplacementParent.children + newArgument.hashCode()
-      )
   state.copy(
-      accumulator = state.accumulator - oldParent + upperLayer + argumentValue + newArgument,
-      burgStack = stack.dropLast(2).plusElement(lowerLayer.drop(1) + newReplacementParent)
+      burgStack = stack
+          .dropLast(1)
+          .plusElement(listOf(newBurg(burgType, valueTranslator)))
+          .plusElement(stack.last())
   )
 }
 

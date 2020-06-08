@@ -7,6 +7,7 @@ typealias ExpressionElementStep = (BurgType, ValueTranslator) -> ParsingStep
 
 fun parseExpressionElement(step: ExpressionElementStep): NullableTokenToParsingTransition = { token ->
   when {
+    isNewline(token) -> skipStep
     isIdentifier(token) -> step(BurgType.reference, asString)
     isFloat(token) -> step(BurgType.literalFloat, asFloat)
     isInteger(token) -> step(BurgType.literalInteger, asInt)
@@ -24,70 +25,72 @@ fun parseExpressionCommonStart(mode: ParsingMode) =
 fun parseExpressionCommonArgument(mode: ParsingMode) =
     parseExpressionElement { burgType, translator ->
       ParsingStep(
-          startUnnamedArgument
-              + push(burgType, translator)
-              + pop
-              + pop
-              + pop
+          startArgument +
+              push(burgType, translator)
+//              + pop
+//              + pop
+//              + pop
+          , mode)
+    }
+
+fun parseExpressionCommonNamedArgumentValue(mode: ParsingMode) =
+    parseExpressionElement { burgType, translator ->
+      ParsingStep(
+          push(burgType, translator)
+              + closeArgumentValue
+//              + pop
+//              + pop
+//              + pop
           , mode)
     }
 
 val parseRootExpressionStart: TokenToParsingTransition = { token ->
   onMatch(isLet(token)) { addError(TextId.missingExpression) + nextDefinition }
-      ?: parseExpressionCommonStart(ParsingMode.expressionRootArgumentValueBeforeNewline)(token)
+      ?: parseExpressionCommonStart(ParsingMode.expressionRootArgumentStart)(token)
       ?: when {
-        isParenthesesOpen(token) -> onReturn(ParsingMode.expressionRootArgumentValueBeforeNewline) + startGroup
+        isParenthesesOpen(token) -> onReturn(ParsingMode.expressionRootArgumentStart) + startGroup
         isParenthesesClose(token) -> parsingError(TextId.missingOpeningParenthesis)
         isDot(token) -> parsingError(TextId.missingLefthandExpression)
-        isNewline(token) -> skipStep
         else -> parsingError(TextId.missingExpression)
       }
 }
 
 val parseRootExpressionArgumentsCommon: NullableTokenToParsingTransition = { token ->
-  parseExpressionCommonArgument(ParsingMode.expressionRootArgumentValueOrNamedBeforeNewline)(token) ?: when {
-    isParenthesesOpen(token) -> onReturn(ParsingMode.expressionRootArgumentValueBeforeNewline) + startUnnamedArgument + startGroup
+  when {
+    isParenthesesOpen(token) -> onReturn(ParsingMode.expressionRootArgumentStart) + startArgument + startGroup
     isParenthesesClose(token) -> parsingError(TextId.missingOpeningParenthesis)
-    isEndOfFile(token) -> ParsingStep(fold)
     isDot(token) -> startPipingRoot
     else -> null
   }
 }
 
-val parseRootExpressionArgumentsAfterNewline: TokenToParsingTransition = { token ->
+val parseRootExpressionArgumentStart: TokenToParsingTransition = { token ->
   onMatch(isLet(token)) { nextDefinition }
+      ?: parseExpressionCommonArgument(ParsingMode.expressionRootArgumentValueOrAssignment)(token)
       ?: parseRootExpressionArgumentsCommon(token)
       ?: when {
-        isNewline(token) -> ParsingStep(skip, ParsingMode.expressionRootArgumentValueAfterNewline)
+        isEndOfFile(token) -> ParsingStep(fold, ParsingMode.body)
         else -> parsingError(TextId.invalidToken)
       }
 }
 
-val parseRootExpressionArgumentsBeforeNewline: TokenToParsingTransition = { token ->
-  onMatch(isLet(token)) { addError(TextId.expectedNewline) + nextDefinition }
-      ?: parseRootExpressionArgumentsCommon(token)
-      ?: when {
-        isNewline(token) -> ParsingStep(skip, ParsingMode.expressionRootArgumentValueAfterNewline)
-        else -> parsingError(TextId.invalidToken)
-      }
-}
-
-val parseRootExpressionFollowingArgumentAfterNewline: TokenToParsingTransition = { token ->
+val parseRootExpressionFollowingArgument: TokenToParsingTransition = { token ->
   onMatch(isLet(token)) { nextDefinition }
+      ?: parseExpressionCommonArgument(ParsingMode.expressionRootArgumentValueOrAssignment)(token)
       ?: parseRootExpressionArgumentsCommon(token)
       ?: when {
-        isAssignment(token) -> switchToNamedArgument
-        isNewline(token) -> ParsingStep(skip, ParsingMode.expressionRootArgumentValueAfterNewline)
+        isAssignment(token) -> closeArgumentName
+        isEndOfFile(token) -> ParsingStep(closeArgumentValue + fold, ParsingMode.body)
         else -> parsingError(TextId.invalidToken)
       }
 }
 
-val parseRootExpressionFollowingArgumentBeforeNewline: TokenToParsingTransition = { token ->
-  onMatch(isLet(token)) { addError(TextId.expectedNewline) + nextDefinition }
-      ?: parseRootExpressionArgumentsCommon(token)
+val parseExpressionRootNamedArgumentValue: TokenToParsingTransition = { token ->
+  onMatch(isLet(token)) { addError(TextId.missingExpression) + nextDefinition }
+      ?: parseExpressionCommonNamedArgumentValue(ParsingMode.expressionRootArgumentStart)(token)
       ?: when {
-        isAssignment(token) -> switchToNamedArgument
-        isNewline(token) -> ParsingStep(skip, ParsingMode.expressionRootArgumentValueAfterNewline)
+        isNewline(token) -> skipStep
+        isEndOfFile(token) -> parsingError(TextId.missingExpression)
         else -> parsingError(TextId.invalidToken)
       }
 }

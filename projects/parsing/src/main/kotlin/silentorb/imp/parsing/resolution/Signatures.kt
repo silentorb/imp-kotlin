@@ -2,6 +2,7 @@ package silentorb.imp.parsing.resolution
 
 import silentorb.imp.core.*
 import silentorb.imp.core.Range
+import silentorb.imp.parsing.syntax.Burg
 
 data class FunctionInvocation(
     val type: TypeHash,
@@ -13,7 +14,8 @@ fun narrowTypeByArguments(
     context: Context,
     argumentTypes: Map<PathKey, TypeHash>,
     pathKey: PathKey,
-    children: List<PathKey>
+    children: List<PathKey>,
+    namedArguments: Map<PathKey, Burg>
 ): List<SignatureMatch> {
   val functionType = argumentTypes[pathKey]
   return if (functionType != null) {
@@ -23,7 +25,7 @@ fun narrowTypeByArguments(
       val arguments = children
           .map { childNode ->
             Argument(
-                name = childNode.name,
+                name = namedArguments[childNode]?.value as String? ?: childNode.name,
                 type = argumentTypes[childNode]!!,
                 node = childNode
             )
@@ -52,7 +54,8 @@ fun resolveFunctionSignatures(
     context: Context,
     stages: List<PathKey>,
     applications: Map<PathKey, FunctionApplication>,
-    initialTypes: Map<PathKey, TypeHash>
+    initialTypes: Map<PathKey, TypeHash>,
+    namedArguments: Map<PathKey, Burg>
 ): SignatureOptionsAndTypes {
   return stages
       .filter { applications.keys.contains(it) }
@@ -69,7 +72,7 @@ fun resolveFunctionSignatures(
           } else
             accumulator
         } else {
-          val signatureOptions = narrowTypeByArguments(newContext, argumentTypes, application.target, application.arguments)
+          val signatureOptions = narrowTypeByArguments(newContext, argumentTypes, application.target, application.arguments, namedArguments)
           val reducedNestedSignatures = signatureOptions.map { reduceSignature(it.signature, it.alignment.keys) }
           val newImplementationTypes = if (signatureOptions.any())
             mapOf(stage to signaturesToTypeHash(signatureOptions.map { it.signature }))
