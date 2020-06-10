@@ -151,7 +151,7 @@ let intermediate = 10
     val code = """
       import silentorb.imp.*.simpleFunction
     """.trimIndent()
-    expectError(TextId.invalidToken, parseTextBranchingDeprecated(emptyContext)(code))
+    expectError(TextId.expectedImportOrLetKeywords, parseTextBranchingDeprecated(emptyContext)(code))
   }
 
   @Test
@@ -167,7 +167,7 @@ let intermediate = 10
     val code = """
       import .silentorb.imp
     """.trimIndent()
-    expectError(TextId.invalidToken, parseTextBranchingDeprecated(emptyContext)(code))
+    expectError(TextId.expectedIdentifier, parseTextBranchingDeprecated(emptyContext)(code))
   }
 
   @Test
@@ -175,7 +175,7 @@ let intermediate = 10
     val code = """
       import silentorb.imp.
     """.trimIndent()
-    expectError(TextId.invalidToken, parseTextBranchingDeprecated(emptyContext)(code))
+    expectError(TextId.expectedIdentifierOrWildcard, parseTextBranchingDeprecated(emptyContext)(code))
   }
 
   @Test
@@ -183,7 +183,7 @@ let intermediate = 10
     val code = """
       import silentorb..imp
     """.trimIndent()
-    expectError(TextId.invalidToken, parseTextBranchingDeprecated(emptyContext)(code))
+    expectError(TextId.expectedIdentifierOrWildcard, parseTextBranchingDeprecated(emptyContext)(code))
   }
 
   @Test

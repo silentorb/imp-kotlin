@@ -27,7 +27,7 @@ val parseDefinitionParameterName: TokenToParsingTransition = { token ->
 val parseDefinitionParameterNameOrAssignment: TokenToParsingTransition = { token ->
   when {
     isIdentifier(token) -> startParameter
-    isAssignment(token) -> ParsingStep(skip, ParsingMode.expressionStart)
+    isAssignment(token) -> ParsingStep(skip, ParsingMode.expressionRootStart)
     else -> parsingError(TextId.expectedParameterNameOrAssignment)
   }
 }
@@ -44,7 +44,7 @@ val parseDefinitionParameterColon: TokenToParsingTransition = { token ->
 val parseDefinitionParameterSeparatorOrAssignment: TokenToParsingTransition = { token ->
   when {
     isComma(token) -> ParsingStep(skip, ParsingMode.definitionParameterName)
-    isAssignment(token) -> ParsingStep(skip, ParsingMode.expressionStart)
+    isAssignment(token) -> ParsingStep(skip, ParsingMode.expressionRootStart)
     else -> parsingError(TextId.expectedCommaOrAssignment)
   }
 }

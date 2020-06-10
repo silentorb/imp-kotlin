@@ -24,9 +24,9 @@ val parsePipingRootStart: TokenToParsingTransition = { token ->
 
 val parseGroupedPipingStart: TokenToParsingTransition = { token ->
   onMatch(isLet(token)) { addError(TextId.missingClosingParenthesis) + nextDefinition }
-      ?: parseExpressionElementsPiping(ParsingMode.groupArguments)(token)
+      ?: parseExpressionElementsPiping(ParsingMode.groupArgumentStart)(token)
       ?: when {
-        isParenthesesOpen(token) -> onReturn(ParsingMode.groupArguments) + startPipingGroup
+        isParenthesesOpen(token) -> onReturn(ParsingMode.groupArgumentStart) + startPipingGroup
         isParenthesesClose(token) -> descend
         isNewline(token) -> skipStep
         isDot(token) -> parsingError(TextId.missingLefthandExpression)

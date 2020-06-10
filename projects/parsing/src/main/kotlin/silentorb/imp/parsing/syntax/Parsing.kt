@@ -24,14 +24,16 @@ fun getTransition(token: Token, mode: ParsingMode, lowerMode: ParsingMode?): Par
         ParsingMode.descend -> parseDescent(lowerMode)
         ParsingMode.expressionRootArgumentStart -> parseRootExpressionArgumentStart
         ParsingMode.expressionRootNamedArgumentValue -> parseExpressionRootNamedArgumentValue
-        ParsingMode.expressionRootArgumentValueOrAssignment -> parseRootExpressionFollowingArgument
-        ParsingMode.expressionStart -> startExpression
+        ParsingMode.expressionRootArgumentFollowing -> parseRootExpressionFollowingArgument
+        ParsingMode.expressionRootStart -> startExpression
         ParsingMode.header -> parseHeader
         ParsingMode.importFirstPathToken -> parseImportFirstPathToken
         ParsingMode.importFollowingPathToken -> parseImportFollowingPathToken
         ParsingMode.importSeparator -> parseImportSeparator
-        ParsingMode.groupArguments -> parseSubExpressionArguments
-        ParsingMode.groupStart -> parseSubExpressionStart
+        ParsingMode.groupStart -> parseGroupStart
+        ParsingMode.groupArgumentStart -> parseGroupArgumentStart
+        ParsingMode.groupArgumentFollowing -> parseGroupFollowingArgument
+        ParsingMode.groupNamedArgumentValue -> parseGroupRootNamedArgumentValue
         ParsingMode.pipingRootStart -> parsePipingRootStart
         ParsingMode.pipingGroupedStart -> parseGroupedPipingStart
       }
@@ -78,7 +80,7 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): ParsingResponse<Realm> {
   else
     tokens
   val closedTokens = sanitizedTokens + Token(Rune.eof, emptyFileRange(), "")
-  val state = parsingStep(file, closedTokens, ParsingMode.header, newState(file))
+  val state = fold(parsingStep(file, closedTokens, ParsingMode.header, newState(file)))
 
   assert(state.burgStack.size == 1)
 
