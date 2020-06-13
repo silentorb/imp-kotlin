@@ -5,10 +5,9 @@ import silentorb.imp.parsing.syntax.*
 val startDefinition = ParsingStep(pushMarker(BurgType.definition), ParsingMode.definitionName)
 val startImport = ParsingStep(pushMarker(BurgType.importClause), ParsingMode.importFirstPathToken)
 val startGroup = ParsingStep(skip, ParsingMode.groupStart)
-val startGroupArgumentValue = ParsingStep(skip, ParsingMode.groupArgumentStart)
 val startGroupNamedArgumentValue = ParsingStep(skip, ParsingMode.groupNamedArgumentValue)
-val startArgument = pushMarker(BurgType.argument)
-val startUnnamedArgument = startArgument + pushMarker(BurgType.argumentValue)
+val startArgument = foldTo(BurgType.application) + pushMarker(BurgType.argument) + pushMarker(BurgType.argumentValue)
+val startGroupArgumentValue = startArgument + ParsingStep(skip, ParsingMode.groupStart)
 
 val parameterName = ParsingStep(skip, ParsingMode.definitionParameterColon)
 val startParameter = pushMarker(BurgType.parameter) + parameterName
@@ -26,7 +25,7 @@ val startPipingRoot = ParsingStep(skip, ParsingMode.pipingRootStart)
 val startPipingGroup = ParsingStep(skip, ParsingMode.pipingGroupedStart)
 val closeImport = ParsingStep(fold, ParsingMode.header)
 
-fun startApplication(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
+fun startSimpleApplication(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
     pushMarker(BurgType.application) +
         pushMarker(BurgType.appliedFunction) +
         push(burgType, translator) +
@@ -34,15 +33,17 @@ fun startApplication(burgType: BurgType, translator: ValueTranslator): ParsingSt
         pop
 
 val closeArgumentValue =
+    foldTo(BurgType.application)
 //    insertBelow(BurgType.argument, asMarker) +
-    insertBelow(BurgType.argumentValue, asMarker) + pop + pop + pop
+
+//    insertBelow(BurgType.argumentValue, asMarker) + pop + pop + pop
 
 val closeArgumentName =
     ParsingStep(
-        changeType(BurgType.argumentName) + pop,
+        changeType(BurgType.argumentName) + removeParent + pop + pushMarker(BurgType.argumentValue),
         ParsingMode.expressionRootNamedArgumentValue)
 
 fun applyPiping(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
     pop +
-        startApplication(burgType, translator) +
+        startSimpleApplication(burgType, translator) +
         closeArgumentValue

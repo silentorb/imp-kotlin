@@ -33,6 +33,9 @@ fun isLet(token: Token) =
 fun isIdentifier(token: Token) =
     token.rune == Rune.identifier
 
+fun isOperator(token: Token) =
+    token.rune == Rune.operator
+
 fun isNewline(token: Token) =
     token.rune == Rune.newline
 

@@ -43,6 +43,8 @@ fun popChildren(state: ParsingState): ParsingState {
   val stack = state.burgStack
   val shortStack = stack.dropLast(1)
   val children = stack.last()
+      .filter { it.children.any() || it.value != null } // Empty children are filtered out
+
   val newTop = shortStack.last()
   val parent = adoptChildren(newTop.last(), children)
   if (parent.type == BurgType.argument) {
@@ -56,6 +58,13 @@ fun popChildren(state: ParsingState): ParsingState {
 
 val pop: ParsingStateTransition = { _, state ->
   popChildren(state)
+}
+
+val removeParent: ParsingStateTransition = { _, state ->
+  val stack = state.burgStack
+  state.copy(
+      burgStack = stack.dropLast(2).plusElement(stack.last())
+  )
 }
 
 val popAppend: ParsingStateTransition = { _, state ->
@@ -86,6 +95,13 @@ fun fold(state: ParsingState): ParsingState =
 
 val fold: ParsingStateTransition = { _, state ->
   fold(state)
+}
+
+fun foldTo(burgType: BurgType): ParsingStateTransition = { newBurg, state ->
+  if (state.burgStack.size < 2 || state.burgStack.last().first().type == burgType)
+    state
+  else
+    foldTo(burgType)(newBurg, popChildren(state))
 }
 
 val skip: ParsingStateTransition = { _, state ->

@@ -8,7 +8,7 @@ typealias ExpressionElementStep = (BurgType, ValueTranslator) -> ParsingStep
 fun parseExpressionElement(step: ExpressionElementStep): NullableTokenToParsingTransition = { token ->
   when {
     isNewline(token) -> skipStep
-    isIdentifier(token) -> step(BurgType.reference, asString)
+    isIdentifier(token) || isOperator(token) -> step(BurgType.reference, asString)
     isFloat(token) -> step(BurgType.literalFloat, asFloat)
     isInteger(token) -> step(BurgType.literalInteger, asInt)
     else -> null
@@ -18,7 +18,7 @@ fun parseExpressionElement(step: ExpressionElementStep): NullableTokenToParsingT
 fun parseExpressionCommonStart(mode: ParsingMode) =
     parseExpressionElement { burgType, translator ->
       ParsingStep(
-          startApplication(burgType, translator)
+          startSimpleApplication(burgType, translator)
           , mode)
     }
 
@@ -82,10 +82,10 @@ val parseRootExpressionArgumentStart: TokenToParsingTransition = { token ->
 
 val parseRootExpressionFollowingArgument: TokenToParsingTransition = { token ->
   onMatch(isLet(token)) { nextDefinition }
+      ?: onMatch(isAssignment(token)) { closeArgumentName }
       ?: parseExpressionFollowingArgument(ParsingMode.expressionRootArgumentFollowing)(token)
       ?: parseRootExpressionArgumentsCommon(token)
       ?: when {
-        isAssignment(token) -> closeArgumentName
         isEndOfFile(token) -> ParsingStep(closeArgumentValue + fold, ParsingMode.body)
         else -> parsingError(TextId.invalidToken)
       }
