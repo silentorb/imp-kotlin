@@ -80,7 +80,10 @@ fun resolveFunctionSignatures(
             mapOf()
 
           val newTypes = if (signatureOptions.size == 1)
-            mapOf(stage to signatureOptions.first().signature.output)
+            mapOf(
+                application.target to signatureOptions.first().signature.hashCode(),
+                stage to signatureOptions.first().signature.output
+            )
           else
             mapOf()
 

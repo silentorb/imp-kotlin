@@ -49,7 +49,7 @@ fun generateNodeFunction(context: Context,
                          node: PathKey
 ): NodeImplementation {
   val reference = resolveReference(context, node) ?: node
-  val type = getReturnType(context, node)
+  val type = getReturnType(context, reference)
   val signature = if (type != null) getTypeSignature(context, type) else null
   val value = getValue(context, node)
   if (value != null) {
@@ -65,7 +65,8 @@ fun generateNodeFunction(context: Context,
       }
     }
     else {
-      val implementationKey = FunctionKey(reference, type)
+      val implementationNode = resolveReference(context, reference)!!
+      val implementationKey = FunctionKey(implementationNode, type)
       val function = functions[implementationKey]!!
       val argumentKeys = getArgumentConnections(context, node)
       return { values: NodeImplementationArguments ->
