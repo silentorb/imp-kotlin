@@ -48,22 +48,29 @@ fun generateNodeFunction(context: Context,
                          functions: FunctionImplementationMap,
                          node: PathKey
 ): NodeImplementation {
-  val reference = getConnection(context, Input(node, defaultParameter))
-  val type = getImplementationType(context, node)
-  if (reference != null && type == null) {
-    return generateNodeFunction(context, functions, reference)
-  } else if (reference == null) {
-    val value = getValue(context, node)!!
+  val reference = resolveReference(context, node) ?: node
+  val type = getReturnType(context, node)
+  val signature = if (type != null) getTypeSignature(context, type) else null
+  val value = getValue(context, node)
+  if (value != null) {
     return { _: NodeImplementationArguments ->
       value
     }
-  } else if (type != null) {
-    val implementationKey = FunctionKey(reference, type)
-    val function = functions[implementationKey]!!
-    val argumentKeys = getArgumentConnections(context, node)
-    return { values: NodeImplementationArguments ->
-      function(argumentKeys.entries.associate { it.key.parameter to values[it.value]!! })
-//      function(if (additionalArguments != null) arguments + additionalArguments else arguments)
+  } else if (type == null) {
+    return generateNodeFunction(context, functions, reference)
+  } else if (signature != null) {
+    if (signature.parameters.none()) {
+      return { values: NodeImplementationArguments ->
+        values[reference]!!
+      }
+    }
+    else {
+      val implementationKey = FunctionKey(reference, type)
+      val function = functions[implementationKey]!!
+      val argumentKeys = getArgumentConnections(context, node)
+      return { values: NodeImplementationArguments ->
+        function(argumentKeys.entries.associate { it.key.parameter to values[it.value]!! })
+      }
     }
   } else
     throw Error("Insufficient data to execute node $node")
