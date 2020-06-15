@@ -20,7 +20,7 @@ class ParserTest {
       val graph = result.graph
       assertEquals(3, graph.nodes.size)
       assertEquals(1, graph.values.size)
-      assertEquals(1, graph.connections.size)
+      assertEquals(2, graph.connections.size)
       assertEquals(10, graph.values.values.first())
     }
   }
@@ -39,7 +39,7 @@ class ParserTest {
     handleRoot(errored, parseTextBranchingDeprecated(emptyContext)(code)) { result ->
       val graph = result.graph
       assertEquals(1, graph.values.size)
-      assertEquals(1, graph.connections.size)
+      assertEquals(2, graph.connections.size)
       assertEquals(10.3f, graph.values.values.first())
     }
   }
@@ -62,7 +62,7 @@ class ParserTest {
       val graph = result.graph
       assertEquals(3, graph.nodes.size)
       assertEquals(1, graph.values.size)
-      assertEquals(1, graph.connections.size)
+      assertEquals(2, graph.connections.size)
       assertEquals(10, graph.values.values.first())
     }
   }
@@ -79,7 +79,7 @@ class ParserTest {
       val intermediate = PathKey(localPath, "intermediate")
       val intermediateReference = PathKey(joinPaths(localPath, "output"), "intermediate1")
       assertEquals(1, graph.values.size)
-      assertEquals(3, graph.connections.size)
+      assertEquals(5, graph.connections.size)
       assertEquals(10, graph.values.values.first())
       assertTrue(graph.nodes.contains(intermediate))
       assertTrue(graph.nodes.contains(PathKey(localPath, "output")))
@@ -98,7 +98,7 @@ let intermediate = 10
       val graph = result.graph
       val intermediate = PathKey(localPath, "intermediate")
       assertEquals(1, graph.values.size)
-      assertEquals(3, graph.connections.size)
+      assertEquals(5, graph.connections.size)
       assertEquals(10, graph.values.values.first())
       assertTrue(graph.nodes.contains(intermediate))
       assertTrue(graph.nodes.contains(PathKey(localPath, "output")))
@@ -256,7 +256,7 @@ let intermediate = 10
     handleRoot(errored, parseTextBranchingDeprecated(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(5, graph.nodes.size)
-      assertEquals(4, graph.connections.size)
+      assertEquals(5, graph.connections.size)
       val node2 = PathKey("output", "%application0")
       val node3 = PathKey("output", "#literal1")
       val node4 = PathKey("output", "#literal2")
@@ -288,7 +288,7 @@ let intermediate = 10
     handleRoot(errored, parseTextBranchingDeprecated(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(7, graph.nodes.size)
-      assertEquals(6, graph.connections.size)
+      assertEquals(8, graph.connections.size)
     }
   }
 
@@ -302,8 +302,8 @@ let intermediate = 10
     """.trimIndent()
     handleRoot(errored, parseTextBranchingDeprecated(simpleContext)(code)) { result ->
       val graph = result.graph
-      assertEquals(6, graph.nodes.size)
-      assertEquals(6, graph.connections.size)
+      assertEquals(8, graph.nodes.size)
+      assertEquals(8, graph.connections.size)
     }
   }
 
@@ -320,7 +320,7 @@ let output = value
       val graph = result.graph
       assertEquals(6, graph.nodes.size)
       assertEquals(1, graph.values.size)
-      assertEquals(3, graph.connections.size)
+      assertEquals(5, graph.connections.size)
       assertEquals(10, graph.values.values.first())
     }
   }
@@ -335,7 +335,7 @@ let output = value
     handleRoot(errored, parseTextBranchingDeprecated(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(5, graph.nodes.size)
-      assertEquals(4, graph.connections.size)
+      assertEquals(5, graph.connections.size)
       assertEquals(1, graph.values[graph.connections.entries.first { it.key.parameter == "second" }.value])
       assertEquals(2.1f, graph.values[graph.connections.entries.first { it.key.parameter == "first" }.value])
     }
@@ -351,7 +351,7 @@ let output = value
     handleRoot(errored, parseTextBranchingDeprecated(simpleContext)(code)) { result ->
       val graph = result.graph
       assertEquals(5, graph.nodes.size)
-      assertEquals(4, graph.connections.size)
+      assertEquals(5, graph.connections.size)
       assertEquals(1, graph.values[graph.connections.entries.first { it.key.parameter == "second" }.value])
       assertEquals(2.1f, graph.values[graph.connections.entries.first { it.key.parameter == "first" }.value])
     }
@@ -369,7 +369,7 @@ let output = simpleFunction2
 
     handleRoot(errored, parseTextBranchingDeprecated(simpleContext)(code)) { result ->
       val graph = result.graph
-      assertEquals(4, graph.connections.size)
+      assertEquals(5, graph.connections.size)
       assertEquals(1, graph.values[graph.connections.entries.first { it.key.parameter == "second" }.value])
       assertEquals(2.1f, graph.values[graph.connections.entries.first { it.key.parameter == "first" }.value])
     }
@@ -424,7 +424,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     """.trimIndent()
     handleRoot(errored, parseTextBranchingDeprecated(simpleContext)(code)) { result ->
       val graph = result.graph
-      assertEquals(8, graph.nodes.size)
+      assertEquals(11, graph.nodes.size)
     }
   }
 
@@ -444,8 +444,8 @@ let output = simpleFunction a (simpleFunction 3 3)
     """.trimIndent()
       handleRoot(errored, parseTextBranchingDeprecated(simpleContext)(pipingCode)) { result ->
         val second = result.graph
-        assertEquals(first.connections, second.connections)
-        assertEquals(first, second)
+        assertEquals(2, (first.connections - second.connections.keys).size)
+        assertEquals(3, (second.connections - first.connections.keys).size)
       }
     }
   }
@@ -457,7 +457,7 @@ let output = simpleFunction a (simpleFunction 3 3)
       let bob = simpleFunction 1 1 .
       let output = bob
 """.trimIndent()
-    expectError(TextId.missingExpression, parseTextBranchingDeprecated(simpleContext)(code))
+    expectError(TextId.missingRighthandExpression, parseTextBranchingDeprecated(simpleContext)(code))
   }
 
   @Test
@@ -466,7 +466,7 @@ let output = simpleFunction a (simpleFunction 3 3)
       import silentorb.imp.test.simpleFunction
       let output = . simpleFunction 1 1
 """.trimIndent()
-    expectError(TextId.missingExpression, parseTextBranchingDeprecated(simpleContext)(code))
+    expectError(TextId.missingLefthandExpression, parseTextBranchingDeprecated(simpleContext)(code))
   }
 
 //  @Test

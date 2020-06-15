@@ -45,6 +45,14 @@ fun parseExpression(context: Context, largerContext: Context, intermediate: Inte
       .filter { it.value.size == 1 }
       .mapValues { it.value.first() }
   val connections = arrangeConnections(parents, signatures)
+      .plus(
+          applications.map { (key, application) ->
+            Input(
+                destination = key,
+                parameter = defaultParameter
+            ) to application.target
+          }
+      )
   val nodeTypes = initialTypes + reducedTypes
   val nonNullaryFunctions = parents.filter { it.value.any() }
 //  val typeResolutionErrors = validateFunctionTypes(applications.filter { it.value.arguments.any() }.keys, implementationTypes, nodeMap)

@@ -67,6 +67,17 @@ val removeParent: ParsingStateTransition = { _, state ->
   )
 }
 
+val flipTop: ParsingStateTransition = { _, state ->
+  val stack = state.burgStack
+  val next = state.copy(
+      burgStack = stack
+          .dropLast(2)
+          .plusElement(stack.last())
+          .plusElement(stack.dropLast(1).last())
+  )
+  next
+}
+
 val popAppend: ParsingStateTransition = { _, state ->
   val stack = state.burgStack
   val shortStack = stack.dropLast(1)

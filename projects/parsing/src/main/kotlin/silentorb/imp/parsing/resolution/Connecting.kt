@@ -10,10 +10,10 @@ fun arrangeConnections(parents: Map<PathKey, List<PathKey>>, signatures: Map<Pat
           listOf()
         else
           signatureMatch.alignment.map { (parameter, sourceNode) ->
-            (Input(
+            Input(
                 destination = functionNode,
                 parameter = parameter
-            ) to sourceNode)
+            ) to sourceNode
           }
       }
       .associate { it }

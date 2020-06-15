@@ -29,14 +29,10 @@ fun startSimpleApplication(burgType: BurgType, translator: ValueTranslator): Par
     pushMarker(BurgType.application) +
         pushMarker(BurgType.appliedFunction) +
         push(burgType, translator) +
-        pop +
-        pop
+        foldTo(BurgType.application)
 
 val closeArgumentValue =
     foldTo(BurgType.application)
-//    insertBelow(BurgType.argument, asMarker) +
-
-//    insertBelow(BurgType.argumentValue, asMarker) + pop + pop + pop
 
 val closeArgumentName =
     ParsingStep(
@@ -44,6 +40,10 @@ val closeArgumentName =
         ParsingMode.expressionRootNamedArgumentValue)
 
 fun applyPiping(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
-    pop +
+    foldTo(BurgType.application) +
         startSimpleApplication(burgType, translator) +
-        closeArgumentValue
+        flipTop +
+        insertBelow(BurgType.argument, asMarker) +
+        insertBelow(BurgType.argumentValue, asMarker) +
+        foldTo(BurgType.application) +
+        pop
