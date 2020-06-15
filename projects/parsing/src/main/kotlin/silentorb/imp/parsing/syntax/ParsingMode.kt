@@ -4,8 +4,6 @@ enum class ParsingMode {
   body,
   definitionAssignment,
   definitionParameterColon,
-  definitionParameterSeparatorOrAssignment,
-  definitionParameterName,
   definitionParameterNameOrAssignment,
   definitionParameterType,
   definitionName,

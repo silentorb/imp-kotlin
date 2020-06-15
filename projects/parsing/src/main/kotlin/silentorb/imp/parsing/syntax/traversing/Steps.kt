@@ -9,8 +9,18 @@ val startGroupNamedArgumentValue = ParsingStep(skip, ParsingMode.groupNamedArgum
 val startArgument = foldTo(BurgType.application) + pushMarker(BurgType.argument) + pushMarker(BurgType.argumentValue)
 val startGroupArgumentValue = startArgument + ParsingStep(skip, ParsingMode.groupStart)
 
-val parameterName = ParsingStep(skip, ParsingMode.definitionParameterColon)
-val startParameter = pushMarker(BurgType.parameter) + parameterName
+val startParameter =
+    pushMarker(BurgType.parameter) +
+        push(BurgType.parameterName, asString) +
+        pop +
+        goto(ParsingMode.definitionParameterColon)
+
+val parameterType =
+    push(BurgType.parameterType, asString) +
+        pop +
+        pop +
+        goto(ParsingMode.definitionParameterNameOrAssignment)
+
 val startExpression = push(BurgType.expression, asMarker) + parseRootExpressionStart
 
 // Other

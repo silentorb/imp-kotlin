@@ -119,6 +119,9 @@ val skip: ParsingStateTransition = { _, state ->
   state
 }
 
+fun goto(mode: ParsingMode): ParsingStep =
+    ParsingStep(skip, mode)
+
 fun onReturn(mode: ParsingMode): ParsingStateTransition = { _, state ->
   state.copy(
       modeStack = state.modeStack + mode

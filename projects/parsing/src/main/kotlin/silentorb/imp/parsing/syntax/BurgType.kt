@@ -17,5 +17,7 @@ enum class BurgType {
   literalFloat,
   literalInteger,
   parameter,
+  parameterName,
+  parameterType,
   reference,
 }

@@ -16,8 +16,6 @@ fun getTransition(token: Token, mode: ParsingMode, lowerMode: ParsingMode?): Par
         ParsingMode.body -> parseBody
         ParsingMode.definitionAssignment -> parseDefinitionAssignment
         ParsingMode.definitionParameterColon -> parseDefinitionParameterColon
-        ParsingMode.definitionParameterSeparatorOrAssignment -> parseDefinitionParameterSeparatorOrAssignment
-        ParsingMode.definitionParameterName -> parseDefinitionParameterName
         ParsingMode.definitionParameterNameOrAssignment -> parseDefinitionParameterNameOrAssignment
         ParsingMode.definitionParameterType -> parseDefinitionParameterType
         ParsingMode.definitionName -> parseDefinitionName

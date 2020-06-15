@@ -6,6 +6,9 @@ import silentorb.imp.parsing.lexer.Rune
 fun isAssignment(token: Token) =
     token.rune == Rune.assignment
 
+fun isColon(token: Token) =
+    token.rune == Rune.colon
+
 fun isComma(token: Token) =
     token.rune == Rune.comma
 
