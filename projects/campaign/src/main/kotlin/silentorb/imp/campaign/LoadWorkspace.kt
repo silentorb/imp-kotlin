@@ -179,8 +179,8 @@ fun getModulesContext(modules: Map<ModuleId, Module>): Context {
   return dungeons.values.map { it.graph }
 }
 
-fun getModulesExecutionArtifacts(implementation: FunctionImplementationMap, modules: Map<ModuleId, Module>): Pair<Context, FunctionImplementationMap> {
-  val context = getModulesContext(modules)
+fun getModulesExecutionArtifacts(implementation: FunctionImplementationMap, baseContext: Context, modules: Map<ModuleId, Module>): Pair<Context, FunctionImplementationMap> {
+  val context = listOf(mergeNamespaces(baseContext + getModulesContext(modules)))
   val functionGraphs = modules.values
       .map { module ->
         module.dungeons.map {

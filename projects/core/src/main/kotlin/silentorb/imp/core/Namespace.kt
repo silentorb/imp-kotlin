@@ -229,9 +229,11 @@ fun namespaceFromCompleteOverloads(signatures: Map<PathKey, List<CompleteSignatu
             .associate { Pair(it.type.hash, it.type.key) }
             .plus(signature.output.hash to signature.output.key)
       }
+  val types = namespace.implementationTypes + extractedTypings.entries.associate { Pair(it.value, it.key) }
   return namespace
       .copy(
-          implementationTypes = namespace.implementationTypes + extractedTypings.entries.associate { Pair(it.value, it.key) },
+          implementationTypes = types,
+//          returnTypes = types,
           typings = namespace.typings.copy(
               typeNames = namespace.typings.typeNames + extractedTypings
           )
@@ -252,9 +254,9 @@ fun getTypeNameOrNull(context: Context, type: TypeHash, step: Int = 0): PathKey?
       if (signature != null) {
         PathKey("",
             signature.parameters.map { parameter ->
-              "${parameter.name}: ${getTypeNameOrUnknown(context, parameter.type, step + 1)}"
+              "${parameter.name}: ${getTypeNameOrUnknown(context, parameter.type, step + 1).name}"
             }
-                .plus(listOf(getTypeNameOrUnknown(context, signature.output, step + 1)))
+                .plus(listOf(getTypeNameOrUnknown(context, signature.output, step + 1).name))
                 .joinToString(" -> ")
         )
       } else {
@@ -262,7 +264,7 @@ fun getTypeNameOrNull(context: Context, type: TypeHash, step: Int = 0): PathKey?
         if (union != null) {
           PathKey("",
               union
-                  .map { option -> getTypeNameOrUnknown(context, option, step + 1) }
+                  .map { option -> getTypeNameOrUnknown(context, option, step + 1).name }
                   .joinToString(" -> ")
           )
         } else

@@ -23,7 +23,7 @@ class CampaignTest {
     assertEquals(2, modules.size)
     assertEquals(2, modules["assets"]!!.dungeons.size)
     assertEquals(1, modules["lib"]!!.dungeons.size)
-    val (context, functions) = getModulesExecutionArtifacts(library.implementation, modules)
+    val (context, functions) = getModulesExecutionArtifacts(library.implementation, listOf(library.namespace), modules)
     val assets = modules["assets"]!!.dungeons
     val mouseValue = executeToSingleValue(context, functions, assets["mouse"]!!)
     val ravenValue = executeToSingleValue(context, functions, assets["raven"]!!)

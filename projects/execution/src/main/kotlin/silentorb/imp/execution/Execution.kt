@@ -49,8 +49,6 @@ fun generateNodeFunction(context: Context,
                          node: PathKey
 ): NodeImplementation {
   val reference = resolveReference(context, node) ?: node
-  val k = getPathKeyImplementationTypes(context, reference)
-  val j = getPathKeyImplementationTypes(context, node)
   val implementationType = getReturnType(context, reference) ?: getReturnType(context, node)
   val signature = if (implementationType != null) getTypeSignature(context, implementationType) else null
   val value = getValue(context, node)
