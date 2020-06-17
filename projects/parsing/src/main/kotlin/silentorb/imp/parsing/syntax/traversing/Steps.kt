@@ -31,6 +31,7 @@ val followingImportPathToken = ParsingStep(append(BurgType.importPathToken, asSt
 val importPathWildcard = ParsingStep(append(BurgType.importPathWildcard, asString) + fold, ParsingMode.header)
 val skipStep = ParsingStep(skip)
 val descend = ParsingStep(skip, ParsingMode.descend, consume = false)
+val closeGroup = foldTo(BurgType.application) + pop + descend
 val startPipingRoot = ParsingStep(skip, ParsingMode.pipingRootStart)
 val startPipingGroup = ParsingStep(skip, ParsingMode.pipingGroupedStart)
 val closeImport = ParsingStep(fold, ParsingMode.header)

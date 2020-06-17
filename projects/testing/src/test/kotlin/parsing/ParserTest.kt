@@ -3,6 +3,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import silentorb.imp.core.Input
 import silentorb.imp.core.PathKey
+import silentorb.imp.core.defaultParameter
 import silentorb.imp.core.joinPaths
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
@@ -451,6 +452,19 @@ let output = simpleFunction a (simpleFunction 3 3)
   }
 
   @Test
+  fun supportsGroupedPiping() {
+    val code = """
+      import silentorb.imp.test.*
+      let output = simpleFunction2 1.2 (simpleFunction2 3.0 2) . simpleFunction 1
+    """.trimIndent()
+    handleRoot(errored, parseTextBranchingDeprecated(simpleContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(11, graph.nodes.size)
+      assertEquals(PathKey("output", "simpleFunction1"), graph.connections[Input(PathKey("output", "%application2"), defaultParameter)])
+    }
+  }
+
+  @Test
   fun preventsDanglingPipeOperators() {
     val code = """
       import silentorb.imp.test.simpleFunction
@@ -468,18 +482,6 @@ let output = simpleFunction a (simpleFunction 3 3)
 """.trimIndent()
     expectError(TextId.missingLefthandExpression, parseTextBranchingDeprecated(simpleContext)(code))
   }
-
-//  @Test
-//  fun supportsSelectingTheLastOutput() {
-//    val code = """
-//      import silentorb.imp.test.*
-//      let first = 1
-//      let output = first . simpleFunction 1
-//    """.trimIndent()
-//    handleRoot(errored, parseTextBranching(simpleContext)(code)) { result ->
-//      val graph = result.graph
-//    }
-//  }
 
   @Test
   fun supportsNumericTypeConstraints() {

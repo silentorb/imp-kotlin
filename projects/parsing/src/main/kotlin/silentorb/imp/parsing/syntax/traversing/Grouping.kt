@@ -15,7 +15,7 @@ val parseGroupStart: TokenToParsingTransition = { token ->
       ?: parseExpressionCommonStart(ParsingMode.groupArgumentStart)(token)
       ?: when {
         isParenthesesOpen(token) -> onReturn(ParsingMode.groupArgumentStart) + startGroup
-        isParenthesesClose(token) -> descend
+        isParenthesesClose(token) -> closeGroup
         isDot(token) -> parsingError(TextId.missingLefthandExpression)
         else -> parsingError(TextId.invalidToken)
       }
@@ -26,7 +26,7 @@ val parseGroupArgumentStart: TokenToParsingTransition = { token ->
       ?: parseExpressionCommonArgument(ParsingMode.groupArgumentStart)(token)
       ?: when {
         isParenthesesOpen(token) -> onReturn(ParsingMode.groupArgumentStart) + startArgument + startGroup
-        isParenthesesClose(token) -> descend
+        isParenthesesClose(token) -> closeGroup
         isDot(token) -> startPipingRoot
         else -> parsingError(TextId.invalidToken)
       }
@@ -39,7 +39,7 @@ val parseGroupFollowingArgument: TokenToParsingTransition = { token ->
       ?: parseRootExpressionArgumentsCommon(token)
       ?: when {
         isParenthesesOpen(token) -> onReturn(ParsingMode.groupArgumentStart) + startGroup
-        isParenthesesClose(token) -> descend
+        isParenthesesClose(token) -> closeGroup
         isEndOfFile(token) -> ParsingStep(closeArgumentValue + fold, ParsingMode.body)
         else -> parsingError(TextId.invalidToken)
       }
@@ -50,7 +50,7 @@ val parseGroupRootNamedArgumentValue: TokenToParsingTransition = { token ->
       ?: parseExpressionCommonNamedArgumentValue(ParsingMode.groupArgumentStart)(token)
       ?: when {
         isParenthesesOpen(token) -> onReturn(ParsingMode.groupArgumentStart) + startGroup
-        isParenthesesClose(token) -> descend
+        isParenthesesClose(token) -> closeGroup
         isNewline(token) -> skipStep
         isEndOfFile(token) -> parsingError(TextId.missingExpression)
         else -> parsingError(TextId.invalidToken)

@@ -44,7 +44,7 @@ fun logRealmHierarchy(realm: Realm, head: BurgId = realm.root, depth: Int = 0) {
     print("  ")
   }
   val burg = realm.burgs[head]!!
-  println(burg.type.name)
+  println(burg.type.name + if (burg.value != null) " ${burg.value}" else "")
   for (child in burg.children) {
     logRealmHierarchy(realm, child, depth + 1)
   }

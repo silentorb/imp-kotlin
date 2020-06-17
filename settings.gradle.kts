@@ -5,3 +5,5 @@ Files.list(file("projects").toPath())
       include(path.fileName.toString())
       project(":${path.fileName}").projectDir = path.toFile()
     }
+
+includeBuild("../mythic/modules/debugging")

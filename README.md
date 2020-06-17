@@ -10,12 +10,12 @@ Currently Imp is in alpha development
 
 Imp's primary goal is to bridge the gap between art and engineering, particularly for digital content creation such as graphics, sound, and music.
 
-Traditional digital art tools lack the simple power of programming languages, particularly when it comes to  abstraction.  This results in the following challenges:
+Traditional digital art tools lack the simple power of programming languages, particularly when it comes to  abstraction and organization.  This results in the following challenges:
 
 * Limited support for abstracting patterns and re-using them across projects
-* Significant redundancy within large projects
-* Destructive workflows that require manually recreating assets for any major changes
-* Heavy reliance on resolution-dependent sources
+* Redundant data
+* Destructive workflows that require manually recreating assets for major changes
+* Reliance on resolution-dependent sources
 
 The alternative is to define art in code, which out-of-the-box has several problems of its own:
 
