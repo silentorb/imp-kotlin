@@ -465,6 +465,18 @@ let output = simpleFunction a (simpleFunction 3 3)
   }
 
   @Test
+  fun supportsPipingWithinGroups() {
+    val code = """
+      import silentorb.imp.test.*
+      let output = simpleFunction2 1.2 (3.0 . simpleFunction2 2)
+    """.trimIndent()
+    handleRoot(errored, parseTextBranchingDeprecated(simpleContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(9, graph.nodes.size)
+    }
+  }
+
+  @Test
   fun preventsDanglingPipeOperators() {
     val code = """
       import silentorb.imp.test.simpleFunction

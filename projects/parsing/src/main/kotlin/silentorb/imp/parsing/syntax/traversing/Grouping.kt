@@ -27,7 +27,7 @@ val parseGroupArgumentStart: TokenToParsingTransition = { token ->
       ?: when {
         isParenthesesOpen(token) -> onReturn(ParsingMode.groupArgumentStart) + startArgument + startGroup
         isParenthesesClose(token) -> closeGroup
-        isDot(token) -> startPipingRoot
+        isDot(token) -> startPipingGroup
         else -> parsingError(TextId.invalidToken)
       }
 }
