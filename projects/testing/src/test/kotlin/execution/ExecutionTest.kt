@@ -53,4 +53,52 @@ class ExecutionTest {
       assertEquals(3, value)
     }
   }
+
+  @Test
+  fun supportsDefiningUnions() {
+    val code = """
+      import imp.standard.*
+   
+      type Number = union Int Float
+      let foo a: Number = a
+      let output = foo 1.2
+    """.trimIndent()
+    val library = standardLibrary()
+    handleRoot(errored, parseTextBranchingDeprecated(listOf(library.namespace))(code)) { result ->
+      val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
+      assertEquals(1.2f, value)
+    }
+  }
+
+  @Test
+  fun supportsDefiningStructures() {
+    val code = """
+      import imp.standard.*
+   
+      data Foo
+        a: Int
+        b: Float
+
+      let output = Foo 3 1.2
+    """.trimIndent()
+    val library = standardLibrary()
+    handleRoot(errored, parseTextBranchingDeprecated(listOf(library.namespace))(code)) { result ->
+      val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
+      assertEquals(1.2f, value)
+    }
+  }
+
+  @Test
+  fun supportsVarArgs() {
+    val code = """
+      import imp.standard.*
+      
+      let output = listOf(4, 5, 7)
+    """.trimIndent()
+    val library = standardLibrary()
+    handleRoot(errored, parseTextBranchingDeprecated(listOf(library.namespace))(code)) { result ->
+      val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
+      assertEquals(1.2f, value)
+    }
+  }
 }
