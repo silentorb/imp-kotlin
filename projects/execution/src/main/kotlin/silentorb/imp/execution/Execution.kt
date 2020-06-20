@@ -59,22 +59,21 @@ fun generateNodeFunction(context: Context,
   } else if (implementationType == null && reference != node) {
     return generateNodeFunction(context, functions, reference)
   } else if (implementationType != null && signature != null) {
-    if (signature.parameters.none()) {
-      return { values: NodeImplementationArguments ->
-        values[reference]!!
-      }
-    }
-    else {
-      val implementationNode = resolveReference(context, reference)!!
-      val implementationKey = FunctionKey(implementationNode, implementationType)
-      val function = functions[implementationKey]!!
+    val implementationNode = resolveReference(context, reference) ?: reference
+    val implementationKey = FunctionKey(implementationNode, implementationType)
+    val function = functions[implementationKey]
+    if (function != null) {
       val argumentKeys = getArgumentConnections(context, node)
       return { values: NodeImplementationArguments ->
         function(argumentKeys.entries.associate { it.key.parameter to values[it.value]!! })
       }
+    } else if (signature.parameters.none()) {
+      return { values: NodeImplementationArguments ->
+        values[reference]!!
+      }
     }
-  } else
-    throw Error("Insufficient data to execute node $node")
+  }
+  throw Error("Insufficient data to execute node $node")
 }
 
 fun executeStep(): (OutputValues, ExecutionStep) -> OutputValues = { values, step ->

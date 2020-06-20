@@ -32,7 +32,7 @@ Imp and its tooling is designed to fully support live editing and real time prev
 
 * Imp is a lightly compiled language with minimal compilation latency
 * The Imp IntelliJ plugin contains a general framework for live previews, comes packaged with a variety of previews for various data structures (2D images, 3D models, and audio streams), and can be extended to live-preview additional data structures
-* If Imp-generated assets are intended to be consumed by a JVM application, Imp is designed to be used as a library and can be easily integrated into a real-time asset generation workflow, allowing live-updates of assets while the target application is running
+* If Imp-generated assets are intended to be consumed by a JVM application, Imp is designed to be used as a getLibrary and can be easily integrated into a real-time asset generation workflow, allowing live-updates of assets while the target application is running
 
 ### Automatic GUI Integration
 

@@ -39,7 +39,11 @@ fun overloadMatches(context: Context, arguments: List<Argument>, overloads: List
         if (alignment.size < arguments.size)
           null
         else
-          SignatureMatch(signature, alignment.associate { it })
+          SignatureMatch(
+              signature = signature,
+              alignment = alignment.associate { it },
+              complete = signature.parameters.size == arguments.size
+          )
       }
   if (matches.none()) {
     val k = 0

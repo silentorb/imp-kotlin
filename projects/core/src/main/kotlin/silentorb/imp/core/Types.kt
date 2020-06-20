@@ -59,7 +59,8 @@ typealias OverloadsMap = Map<PathKey, List<Signature>>
 
 data class SignatureMatch(
     val signature: Signature,
-    val alignment: Map<String, PathKey>
+    val alignment: Map<String, PathKey>,
+    val complete: Boolean
 )
 
 typealias SignatureMatchMap = Map<PathKey, SignatureMatch>
