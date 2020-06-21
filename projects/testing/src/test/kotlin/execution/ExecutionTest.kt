@@ -1,6 +1,7 @@
 package execution
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import silentorb.imp.execution.executeToSingleValue
 import silentorb.imp.library.standard.standardLibrary
@@ -54,6 +55,7 @@ class ExecutionTest {
     }
   }
 
+  @Disabled
   @Test
   fun supportsDefiningUnions() {
     val code = """
@@ -70,6 +72,7 @@ class ExecutionTest {
     }
   }
 
+  @Disabled
   @Test
   fun supportsDefiningStructures() {
     val code = """
@@ -88,6 +91,7 @@ class ExecutionTest {
     }
   }
 
+  @Disabled
   @Test
   fun supportsVarArgs() {
     val code = """
