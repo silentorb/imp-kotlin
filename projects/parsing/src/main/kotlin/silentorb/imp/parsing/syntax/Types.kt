@@ -15,7 +15,7 @@ data class Burg(
   val fileRange: FileRange get() = FileRange(file, range)
 
   init {
-//    assert(value == null || children.none())
+    assert(children.none { it == -334534640})
   }
 }
 
@@ -35,19 +35,21 @@ data class PendingParsingError(
     val range: Range
 )
 
-data class ParsingStep(
-    val transition: ParsingStateTransition,
-    val mode: ParsingMode? = null,
-    val consume: Boolean = true
-)
-
+//data class ParsingStep(
+//    val transition: ParsingStateTransition,
+//    val mode: ParsingMode? = null,
+//    val consume: Boolean = true
+//)
 typealias ValueTranslator = (String) -> Any?
 
 typealias NewBurg = (BurgType, ValueTranslator) -> Burg
 typealias ParsingStateTransition = (NewBurg, ParsingState) -> ParsingState
+typealias ParsingStep = ParsingStateTransition
 
 typealias TokenToParsingTransition = (Token) -> ParsingStep
+typealias ContextualTokenToParsingTransition = (Token, ContextMode) -> ParsingStep
 typealias NullableTokenToParsingTransition = (Token) -> ParsingStep?
+typealias NullableContextualTokenToParsingTransition = (Token, ContextMode) -> ParsingStep?
 
 typealias Stack<T> = List<List<T>>
 

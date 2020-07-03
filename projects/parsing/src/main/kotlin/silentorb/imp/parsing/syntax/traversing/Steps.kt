@@ -1,13 +1,17 @@
 package silentorb.imp.parsing.syntax.traversing
 
+import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.syntax.*
 
-val startDefinition = ParsingStep(pushMarker(BurgType.definition), ParsingMode.definitionName)
-val startImport = ParsingStep(pushMarker(BurgType.importClause), ParsingMode.importFirstPathToken)
-val startGroup = ParsingStep(skip, ParsingMode.groupStart)
-val startGroupNamedArgumentValue = ParsingStep(skip, ParsingMode.groupNamedArgumentValue)
+val startDefinition = pushMarker(BurgType.definition) + goto(ParsingMode.definitionName)
+val startImport = pushMarker(BurgType.importClause) + goto(ParsingMode.importFirstPathToken)
+val startGroup = pushContextMode(ContextMode.group)
+val closeGroup = foldTo(BurgType.application) + pop + popContextMode
+
+//val startGroupNamedArgumentValue = goto(ParsingMode.groupNamedArgumentValue)
 val startArgument = foldTo(BurgType.application) + pushMarker(BurgType.argument) + pushMarker(BurgType.argumentValue)
-val startGroupArgumentValue = startArgument + ParsingStep(skip, ParsingMode.groupStart)
+val startGroupArgumentValue = startArgument + startGroup + goto(ParsingMode.expressionStart)
+val startBlock = pushContextMode(ContextMode.block)
 
 val startParameter =
     pushMarker(BurgType.parameter) +
@@ -21,20 +25,19 @@ val parameterType =
         pop +
         goto(ParsingMode.definitionParameterNameOrAssignment)
 
-val startExpression = push(BurgType.expression, asMarker) + parseRootExpressionStart
+val startExpression = push(BurgType.expression, asMarker)
 
 // Other
 val nextDefinition = fold + startDefinition
-val definitionName = ParsingStep(push(BurgType.definitionName, asString) + pop, ParsingMode.definitionParameterNameOrAssignment)
-val firstImportPathToken = ParsingStep(push(BurgType.importPathToken, asString), ParsingMode.importSeparator)
-val followingImportPathToken = ParsingStep(append(BurgType.importPathToken, asString), ParsingMode.importSeparator)
-val importPathWildcard = ParsingStep(append(BurgType.importPathWildcard, asString) + fold, ParsingMode.header)
-val skipStep = ParsingStep(skip)
-val descend = ParsingStep(skip, ParsingMode.descend, consume = false)
-val closeGroup = foldTo(BurgType.application) + pop + descend
-val startPipingRoot = ParsingStep(skip, ParsingMode.pipingRootStart)
-val startPipingGroup = ParsingStep(skip, ParsingMode.pipingGroupedStart)
-val closeImport = ParsingStep(fold, ParsingMode.header)
+val definitionName = push(BurgType.definitionName, asString) + pop + goto(ParsingMode.definitionParameterNameOrAssignment)
+val firstImportPathToken = push(BurgType.importPathToken, asString) + goto(ParsingMode.importSeparator)
+val followingImportPathToken = append(BurgType.importPathToken, asString) + goto(ParsingMode.importSeparator)
+val importPathWildcard = append(BurgType.importPathWildcard, asString) + fold + goto(ParsingMode.header)
+
+val startPipingRoot = goto(ParsingMode.pipingRootStart)
+
+//val startPipingGroup = goto(ParsingMode.pipingGroupedStart)
+val closeImport = fold + goto(ParsingMode.header)
 
 fun startSimpleApplication(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
     pushMarker(BurgType.application) +
@@ -46,9 +49,8 @@ val closeArgumentValue =
     foldTo(BurgType.application)
 
 val closeArgumentName =
-    ParsingStep(
-        changeType(BurgType.argumentName) + removeParent + pop + pushMarker(BurgType.argumentValue),
-        ParsingMode.expressionRootNamedArgumentValue)
+    changeType(BurgType.argumentName) + removeParent + pop + pushMarker(BurgType.argumentValue) +
+        goto(ParsingMode.expressionNamedArgumentValue)
 
 fun applyPiping(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
     foldTo(BurgType.application) +
@@ -58,3 +60,15 @@ fun applyPiping(burgType: BurgType, translator: ValueTranslator): ParsingStateTr
         insertBelow(BurgType.argumentValue, asMarker) +
         foldTo(BurgType.application) +
         pop
+
+fun checkGroupClosed(contextMode: ContextMode) =
+    if (contextMode == ContextMode.group)
+      addError(TextId.missingClosingParenthesis)
+    else
+      skip
+
+fun tryCloseGroup(contextMode: ContextMode) =
+    if (contextMode == ContextMode.group)
+      closeGroup
+    else
+      addError(TextId.missingOpeningParenthesis)

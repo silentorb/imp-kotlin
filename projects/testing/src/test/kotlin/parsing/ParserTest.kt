@@ -545,4 +545,20 @@ let output = simpleFunction a (simpleFunction 3 3)
       assertEquals(5, graph.nodes.size)
     }
   }
+
+  @Test
+  fun supportsNestedDefinitions() {
+    val code = """
+      import silentorb.imp.test.*
+      
+      let output = {
+        let nine = 9
+        simpleFunction eight nine
+      }
+    """.trimIndent()
+    handleRoot(errored, parseTextBranchingDeprecated(simpleContext)(code)) { result ->
+      val graph = result.graph
+      assertEquals(5, graph.nodes.size)
+    }
+  }
 }

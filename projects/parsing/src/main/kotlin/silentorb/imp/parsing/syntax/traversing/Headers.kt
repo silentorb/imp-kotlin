@@ -8,8 +8,8 @@ val parseHeader: TokenToParsingTransition = { token ->
     isImport(token) -> startImport
     isLet(token) -> startDefinition
     isNewline(token) -> closeImport
-    isEndOfFile(token) -> ParsingStep(skip, ParsingMode.body)
-    else -> parsingError(TextId.expectedImportOrLetKeywords)
+    isEndOfFile(token) -> goto(ParsingMode.body)
+    else -> addError(TextId.expectedImportOrLetKeywords)
   }
 }
 
@@ -18,7 +18,7 @@ val parseImportFirstPathToken: TokenToParsingTransition = { token ->
     isIdentifier(token) -> firstImportPathToken
     isWildcard(token) -> importPathWildcard
     isNewline(token) -> addError(TextId.missingImportPath) + closeImport
-    else -> parsingError(TextId.expectedIdentifier)
+    else -> addError(TextId.expectedIdentifier)
   }
 }
 
@@ -33,8 +33,8 @@ val parseImportFollowingPathToken: TokenToParsingTransition =
 
 val parseImportSeparator: TokenToParsingTransition = { token ->
   when {
-    isDot(token) -> ParsingStep(skip, ParsingMode.importFollowingPathToken)
+    isDot(token) -> goto(ParsingMode.importFollowingPathToken)
     isNewline(token) -> closeImport
-    else -> parsingError(TextId.expectedPeriodOrNewline)
+    else -> addError(TextId.expectedPeriodOrNewline)
   }
 }

@@ -6,43 +6,43 @@ import silentorb.imp.parsing.syntax.*
 val parseDefinitionName: TokenToParsingTransition = { token ->
   when {
     isIdentifier(token) -> definitionName
-    else -> parsingError(TextId.expectedIdentifier)
+    else -> addError(TextId.expectedIdentifier)
   }
 }
 
 val parseDefinitionAssignment: TokenToParsingTransition = { token ->
   when {
-    isAssignment(token) -> ParsingStep(skip, ParsingMode.definitionParameterNameOrAssignment)
-    else -> parsingError(TextId.expectedAssignment)
+    isAssignment(token) -> goto(ParsingMode.definitionParameterNameOrAssignment)
+    else -> addError(TextId.expectedAssignment)
   }
 }
 
 val parseDefinitionParameterNameOrAssignment: TokenToParsingTransition = { token ->
   when {
     isIdentifier(token) -> startParameter
-    isAssignment(token) -> ParsingStep(skip, ParsingMode.expressionRootStart)
-    else -> parsingError(TextId.expectedParameterNameOrAssignment)
+    isAssignment(token) -> startExpression + goto(ParsingMode.expressionStart)
+    else -> addError(TextId.expectedParameterNameOrAssignment)
   }
 }
 
 val parseDefinitionParameterType: TokenToParsingTransition = { token ->
   when {
     isIdentifier(token) ->  parameterType
-    else -> parsingError(TextId.expectedColon)
+    else -> addError(TextId.expectedColon)
   }
 }
 
 val parseDefinitionParameterColon: TokenToParsingTransition = { token ->
   when {
-    isColon(token) -> ParsingStep(skip, ParsingMode.definitionParameterType)
-    else -> parsingError(TextId.expectedColon)
+    isColon(token) -> goto(ParsingMode.definitionParameterType)
+    else -> addError(TextId.expectedColon)
   }
 }
 
 val parseBody: TokenToParsingTransition = { token ->
   when {
     isLet(token) -> startDefinition
-    isNewline(token) || isEndOfFile(token) -> ParsingStep(skip, ParsingMode.body)
-    else -> parsingError(TextId.expectedLetKeyword)
+    isNewline(token) || isEndOfFile(token) -> goto(ParsingMode.body)
+    else -> addError(TextId.expectedLetKeyword)
   }
 }

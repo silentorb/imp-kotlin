@@ -119,12 +119,21 @@ val skip: ParsingStateTransition = { _, state ->
   state
 }
 
-fun goto(mode: ParsingMode): ParsingStep =
-    ParsingStep(skip, mode)
-
-fun onReturn(mode: ParsingMode): ParsingStateTransition = { _, state ->
+fun goto(mode: ParsingMode): ParsingStep = { _, state ->
   state.copy(
-      modeStack = state.modeStack + mode
+      mode = mode
+  )
+}
+
+fun pushContextMode(contextMode: ContextMode): ParsingStateTransition = { _, state ->
+  state.copy(
+      contextStack = state.contextStack + contextMode
+  )
+}
+
+val popContextMode: ParsingStateTransition = { _, state ->
+  state.copy(
+      contextStack = state.contextStack.dropLast(1)
   )
 }
 
@@ -137,18 +146,10 @@ fun addError(message: TextId): ParsingStateTransition = { newBurg, state ->
   )
 }
 
-fun parsingError(message: TextId) =
-    ParsingStep(addError(message))
-
 operator fun ParsingStateTransition.plus(other: ParsingStateTransition): ParsingStateTransition = { newBurg, state ->
   val intermediate = this(newBurg, state)
   other(newBurg, intermediate)
 }
-
-operator fun ParsingStateTransition.plus(other: ParsingStep): ParsingStep =
-    other.copy(
-        transition = this + other.transition
-    )
 
 operator fun ParsingStateTransition.plus(other: TokenToParsingTransition): TokenToParsingTransition = { token ->
   this + other(token)
