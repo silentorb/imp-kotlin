@@ -3,6 +3,7 @@ package campaign
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import silentorb.imp.campaign.codeFromFile
 import silentorb.imp.campaign.getModulesExecutionArtifacts
 import silentorb.imp.campaign.loadWorkspace
 import silentorb.imp.execution.executeToSingleValue
@@ -16,7 +17,7 @@ class CampaignTest {
   fun canloadAndExecuteWorkspaces() {
     val library = standardLibrary()
     val workspaceUrl = Thread.currentThread().contextClassLoader.getResource("project1/workspace.yaml")!!
-    val (workspace, campaignErrors, parsingErrors) = loadWorkspace(library, Paths.get(workspaceUrl.toURI()).parent)
+    val (workspace, campaignErrors, parsingErrors) = loadWorkspace(codeFromFile, library, Paths.get(workspaceUrl.toURI()).parent)
     assertTrue(campaignErrors.none()) { campaignErrors.first().message.toString() }
     errored(parsingErrors)
     val modules = workspace.modules
