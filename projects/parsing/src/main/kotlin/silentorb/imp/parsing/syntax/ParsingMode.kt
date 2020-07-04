@@ -1,8 +1,9 @@
 package silentorb.imp.parsing.syntax
 
 enum class ParsingMode {
-  body,
+  block,
   definitionAssignment,
+  definitionBodyStart,
   definitionParameterColon,
   definitionParameterNameOrAssignment,
   definitionParameterType,

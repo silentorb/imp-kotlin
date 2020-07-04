@@ -8,5 +8,7 @@ fun singleCharacterTokens(character: Char): Rune? =
       '.' -> Rune.dot
       '(' -> Rune.parenthesesOpen
       ')' -> Rune.parenthesesClose
+      '{' -> Rune.braceOpen
+      '}' -> Rune.braceClose
       else -> null
     }

@@ -3,13 +3,10 @@ package silentorb.imp.parsing.syntax
 import silentorb.imp.core.Range
 import silentorb.imp.core.TokenFile
 import silentorb.imp.core.newPosition
-import silentorb.imp.parsing.general.Token
-import silentorb.imp.parsing.lexer.Rune
-import silentorb.imp.parsing.syntax.traversing.startExpression
 
 fun newRootBurg(file: TokenFile): Burg =
     Burg(
-        type = BurgType.fileRoot,
+        type = BurgType.block,
         file = file,
         range = Range(
             start = newPosition(),

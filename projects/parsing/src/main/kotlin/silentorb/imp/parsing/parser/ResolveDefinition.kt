@@ -2,7 +2,7 @@ package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.ParsingResponse
-import silentorb.imp.parsing.resolution.parseExpression
+import silentorb.imp.parsing.resolution.resolveExpression
 
 fun newParameterNamespace(context: Context, pathKey: PathKey, parameters: List<Parameter>): Namespace {
   val pathString = pathKeyToString(pathKey)
@@ -68,7 +68,10 @@ fun parseDefinitionSecondPass(namespaceContext: Context, largerContext: Context,
 
   val localContext = namespaceContext + listOfNotNull(parameterNamespace)
 
-  val (dungeon, expressionErrors) = parseExpression(localContext, largerContext, definition.intermediate)
+  val (dungeon, expressionErrors) = if (definition.definitions.any())
+    parseBlock(localContext, largerContext, definition)
+  else
+    resolveExpression(localContext, largerContext, definition.intermediate!!)
 
   val output = getGraphOutputNode(dungeon.graph)
 

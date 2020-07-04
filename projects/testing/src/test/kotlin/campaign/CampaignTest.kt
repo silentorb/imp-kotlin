@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Test
 import silentorb.imp.campaign.codeFromFile
 import silentorb.imp.campaign.getModulesExecutionArtifacts
 import silentorb.imp.campaign.loadWorkspace
+import silentorb.imp.core.PathKey
+import silentorb.imp.core.getGraphOutputNodes
+import silentorb.imp.core.mergeNamespaces
 import silentorb.imp.execution.executeToSingleValue
 import silentorb.imp.execution.mergeImplementationFunctions
 import silentorb.imp.library.standard.standardLibrary
@@ -22,12 +25,15 @@ class CampaignTest {
     errored(parsingErrors)
     val modules = workspace.modules
     assertEquals(2, modules.size)
-    assertEquals(2, modules["assets"]!!.dungeons.size)
+    assertEquals(1, modules["assets"]!!.dungeons.size)
     assertEquals(1, modules["lib"]!!.dungeons.size)
     val (context, functions) = getModulesExecutionArtifacts(library.implementation, listOf(library.namespace), modules)
-    val assets = modules["assets"]!!.dungeons
-    val mouseValue = executeToSingleValue(context, functions, assets["mouse"]!!)
-    val ravenValue = executeToSingleValue(context, functions, assets["raven"]!!)
+    val outputs = getGraphOutputNodes(mergeNamespaces(context))
+        .filter { it.path == "assets" }
+
+    assertEquals(2, outputs.size)
+    val mouseValue = executeToSingleValue(context, functions, PathKey("assets", "mouse"))
+    val ravenValue = executeToSingleValue(context, functions, PathKey("assets", "raven"))
     assertEquals(11, mouseValue)
     assertEquals(21, ravenValue)
   }

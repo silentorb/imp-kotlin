@@ -11,7 +11,8 @@ val closeGroup = foldTo(BurgType.application) + pop + popContextMode
 //val startGroupNamedArgumentValue = goto(ParsingMode.groupNamedArgumentValue)
 val startArgument = foldTo(BurgType.application) + pushMarker(BurgType.argument) + pushMarker(BurgType.argumentValue)
 val startGroupArgumentValue = startArgument + startGroup + goto(ParsingMode.expressionStart)
-val startBlock = pushContextMode(ContextMode.block)
+val startBlock = pushContextMode(ContextMode.block) + pushMarker(BurgType.block) + goto(ParsingMode.block)
+val closeBlock = foldTo(BurgType.block) + pop + foldTo(BurgType.block) + popContextMode + goto(ParsingMode.block)
 
 val startParameter =
     pushMarker(BurgType.parameter) +
@@ -25,10 +26,7 @@ val parameterType =
         pop +
         goto(ParsingMode.definitionParameterNameOrAssignment)
 
-val startExpression = push(BurgType.expression, asMarker)
-
-// Other
-val nextDefinition = fold + startDefinition
+val nextDefinition = foldTo(BurgType.block) + startDefinition
 val definitionName = push(BurgType.definitionName, asString) + pop + goto(ParsingMode.definitionParameterNameOrAssignment)
 val firstImportPathToken = push(BurgType.importPathToken, asString) + goto(ParsingMode.importSeparator)
 val followingImportPathToken = append(BurgType.importPathToken, asString) + goto(ParsingMode.importSeparator)
@@ -72,3 +70,9 @@ fun tryCloseGroup(contextMode: ContextMode) =
       closeGroup
     else
       addError(TextId.missingOpeningParenthesis)
+
+fun tryCloseBlock(contextMode: ContextMode) =
+    if (contextMode == ContextMode.block)
+      closeBlock
+    else
+      addError(TextId.invalidToken)

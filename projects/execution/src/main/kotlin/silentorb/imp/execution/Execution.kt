@@ -135,3 +135,8 @@ fun executeToSingleValue(context: Context, functions: FunctionImplementationMap,
   val newFunctions = mergeImplementationFunctions(combinedContext, dungeon.implementationGraphs, functions)
   return executeToSingleValue(context, functions + newFunctions, dungeon.graph)
 }
+
+fun executeToSingleValue(context: Context, functions: FunctionImplementationMap, root: PathKey): Any? {
+  val values = execute(context, functions, setOf(root))
+  return values[root]
+}

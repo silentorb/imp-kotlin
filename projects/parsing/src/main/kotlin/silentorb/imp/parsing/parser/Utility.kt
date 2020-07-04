@@ -48,6 +48,12 @@ fun mergeDungeons(parent: Dungeon, child: Dungeon): Dungeon {
   )
 }
 
+fun mergeDungeons(dungeons: List<Dungeon>): Dungeon? =
+    if (dungeons.size < 2)
+      dungeons.firstOrNull()
+    else
+      dungeons.reduce(::mergeDungeons)
+
 fun <T> filterIndexes(collection: Collection<T>, predicate: (T) -> Boolean): List<Int> =
     collection.mapIndexedNotNull { index, token ->
       if (predicate(token))

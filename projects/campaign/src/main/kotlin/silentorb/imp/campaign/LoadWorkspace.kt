@@ -42,31 +42,19 @@ fun loadSourceFiles(getCode: GetCode, moduleName: String, root: Path, context: C
   val lexingErrors = lexingResults.flatMap { it.second }
 
   val importMap = tokenGraphs.mapValues { it.value.imports }
-  val dungeons = if (moduleConfig.fileNamespaces)
-    tokenGraphs
-        .mapValues { (path, tokenGraph) ->
-          val namespace = namespaceFromPath(root, path.parent)
-          val definitions = tokenGraph.definitions
-              .associateBy { PathKey(namespace, it.symbol.value as String) }
+  val definitions = tokenGraphs.entries
+      .flatMap { (path, tokenGraph) ->
+        val namespace = namespaceFromPath(root, path.parent)
 
-          parseDungeon(context, importMap, definitions)
-        }
-        .mapKeys { it.key.fileName.toString().split(".").first() }
-  else {
-    val definitions = tokenGraphs.entries
-        .flatMap { (path, tokenGraph) ->
-          val namespace = namespaceFromPath(root, path.parent)
+        tokenGraph.definitions
+            .map {
+              PathKey(namespace, it.symbol.value as String) to it
+            }
+      }
+      .associate { it }
 
-          tokenGraph.definitions
-              .map {
-                PathKey(namespace, it.symbol.value as String) to it
-              }
-        }
-        .associate { it }
-
-    val dungeon = parseDungeon(context, importMap, definitions)
-    mapOf(moduleName to dungeon)
-  }
+  val dungeon = parseDungeon(context, importMap, definitions)
+  val dungeons = mapOf(moduleName to dungeon)
 
   return ParsingResponse(
       dungeons.mapValues { it.value.value },
@@ -90,8 +78,7 @@ fun loadModule(getCode: GetCode, name: String, context: Context, info: ModuleInf
   return ParsingResponse(
       Module(
           path = path,
-          dungeons = dungeons,
-          fileNamespaces = config.fileNamespaces
+          dungeons = dungeons
       ),
       errors
   )

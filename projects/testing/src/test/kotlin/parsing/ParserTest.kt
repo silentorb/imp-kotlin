@@ -551,14 +551,30 @@ let output = simpleFunction a (simpleFunction 3 3)
     val code = """
       import silentorb.imp.test.*
       
-      let output = {
+      let first = {
         let nine = 9
-        simpleFunction eight nine
+        let result = simpleFunction eight nine
       }
+      let output = first
     """.trimIndent()
     handleRoot(errored, parseTextBranchingDeprecated(simpleContext)(code)) { result ->
       val graph = result.graph
-      assertEquals(5, graph.nodes.size)
+      assertEquals(12, graph.nodes.size)
     }
+  }
+
+  @Test
+  fun preventsLeakingOfNestedDefinitionSymbols() {
+    val code = """
+      import silentorb.imp.test.*
+      
+      let first = {
+        let nine = 9
+        let result = simpleFunction eight nine
+      }
+      
+      let output = simpleFunction first nine
+    """.trimIndent()
+    expectError(TextId.unknownFunction, parseTextBranchingDeprecated(simpleContext)(code))
   }
 }

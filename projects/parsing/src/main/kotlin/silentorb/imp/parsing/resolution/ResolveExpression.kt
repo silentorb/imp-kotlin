@@ -5,7 +5,7 @@ import silentorb.imp.parsing.general.ParsingResponse
 import silentorb.imp.parsing.parser.validateFunctionTypes
 import silentorb.imp.parsing.parser.validateSignatures
 
-fun parseExpression(context: Context, largerContext: Context, intermediate: IntermediateExpression): ParsingResponse<Dungeon> {
+fun resolveExpression(context: Context, largerContext: Context, intermediate: IntermediateExpression): ParsingResponse<Dungeon> {
   val (
       applications,
       literalTypes,

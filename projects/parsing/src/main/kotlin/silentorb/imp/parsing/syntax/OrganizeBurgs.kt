@@ -27,6 +27,57 @@ fun arrangeRealm(realm: Realm): Pair<List<BurgId>, List<DependencyError>> {
 fun withoutComments(tokens: Tokens): Tokens =
     tokens.filter { it.rune != Rune.comment }
 
+fun definitionToTokenGraph(realm: Realm, file: TokenFile): (Burg) -> TokenizedDefinition? = { definition ->
+  val definitionChildren = getExpandedChildren(realm, definition.hashCode())
+
+  val name = definitionChildren.firstOrNull { it.type == BurgType.definitionName }
+  if (name != null) {
+    val parameters = definitionChildren
+        .filter { it.type == BurgType.parameter }
+        .mapNotNull { parameter ->
+          val parameterChildren = getExpandedChildren(realm, parameter.hashCode())
+          if (parameterChildren.size == 2)
+            TokenParameter(
+                parameterChildren.first(),
+                parameterChildren.last()
+            )
+          else
+            null
+        }
+
+    val expressionBurg = definitionChildren.firstOrNull { it.type == BurgType.application }
+
+    if (expressionBurg != null) {
+      val suburbs = subRealm(realm.roads, expressionBurg.hashCode())
+      val expression = realm.copy(
+          root = expressionBurg.hashCode(),
+          burgs = realm.burgs.filterKeys { suburbs.contains(it) }
+      )
+      TokenizedDefinition(
+          file = Paths.get(file),
+          symbol = name,
+          parameters = parameters,
+          expression = expression
+      )
+    } else {
+      val blockBurg = definitionChildren.firstOrNull { it.type == BurgType.block }
+      if (blockBurg != null) {
+        val definitions = getExpandedChildren(realm, blockBurg.hashCode())
+            .mapNotNull(definitionToTokenGraph(realm, file))
+        assert(definitions.any())
+        TokenizedDefinition(
+            file = Paths.get(file),
+            symbol = name,
+            parameters = parameters,
+            definitions = definitions
+        )
+      } else
+        null
+    }
+  } else
+    null
+}
+
 fun toTokenGraph(file: TokenFile, tokens: Tokens): ParsingResponse<TokenDungeon> {
   val (realm, syntaxErrors) = parseSyntax(file, tokens)
   val burgs = realm.burgs
@@ -43,42 +94,7 @@ fun toTokenGraph(file: TokenFile, tokens: Tokens): ParsingResponse<TokenDungeon>
 
   val definitions = rootChildren
       .filter { it.type == BurgType.definition }
-      .mapNotNull { definition ->
-        val definitionChildren = getExpandedChildren(realm, definition.hashCode())
-
-        val name = definitionChildren.firstOrNull { it.type == BurgType.definitionName }
-        if (name != null) {
-          val parameters = definitionChildren
-              .filter { it.type == BurgType.parameter }
-              .mapNotNull { parameter ->
-                val parameterChildren = getExpandedChildren(realm, parameter.hashCode())
-                if (parameterChildren.size == 2)
-                  TokenParameter(
-                      parameterChildren.first(),
-                      parameterChildren.last()
-                  )
-                else
-                  null
-              }
-
-          val expressionBurg = definitionChildren.firstOrNull { it.type == BurgType.expression }
-          if (expressionBurg != null) {
-            val suburbs = subRealm(realm.roads, expressionBurg.hashCode())
-            val expression = realm.copy(
-                root = expressionBurg.hashCode(),
-                burgs = realm.burgs.filterKeys { suburbs.contains(it) }
-            )
-            TokenizedDefinition(
-                file = Paths.get(file),
-                symbol = name,
-                parameters = parameters,
-                expression = expression
-            )
-          } else
-            null
-        } else
-          null
-      }
+      .mapNotNull(definitionToTokenGraph(realm, file))
 
   val duplicateSymbolErrors = definitions
       .groupBy { it.symbol.value }

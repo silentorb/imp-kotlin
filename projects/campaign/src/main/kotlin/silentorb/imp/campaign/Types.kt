@@ -11,8 +11,7 @@ typealias DungeonId = String
 
 data class Module(
     val path: Path,
-    val dungeons: Map<DungeonId, Dungeon>,
-    val fileNamespaces: Boolean
+    val dungeons: Map<DungeonId, Dungeon>
 )
 
 typealias ModuleDependency = Dependency<ModuleId>
@@ -30,8 +29,7 @@ val emptyWorkspace = Workspace(
 )
 
 data class ModuleConfig(
-    val dependencies: List<String> = listOf(),
-    val fileNamespaces: Boolean = false
+    val dependencies: List<String> = listOf()
 )
 
 data class WorkspaceConfig(

@@ -27,7 +27,8 @@ data class TokenizedDefinition(
     val file: Path,
     val symbol: Burg,
     val parameters: List<TokenParameter>,
-    val expression: Realm
+    val expression: Realm? = null,
+    val definitions: List<TokenizedDefinition> = listOf()
 )
 
 data class TokenDungeon(
@@ -39,5 +40,6 @@ data class DefinitionFirstPass(
     val file: Path,
     val key: PathKey,
     val tokenized: TokenizedDefinition,
-    val intermediate: IntermediateExpression
+    val intermediate: IntermediateExpression?,
+    val definitions: List<DefinitionFirstPass>
 )

@@ -61,8 +61,39 @@ fun newImportedContext(
   )
 }
 
-tailrec fun resolveDefinitions(
-    defaultContext: Context,
+fun parseBlock(context: Context, largerContext: Context, definition: DefinitionFirstPass): ParsingResponse<Dungeon> {
+  val definitions = definition.definitions
+//      .associateBy { PathKey(formatPathKey(definition.key), it.tokenized.symbol.value as String) }
+
+  val responses = resolveSubDefinitions(context, definitions, largerContext, listOf())
+  val dungeons = mergeDungeons(responses.map { it.value })!!
+  val errors = responses.flatMap { it.errors }
+  return ParsingResponse(dungeons, errors)
+}
+
+tailrec fun resolveSubDefinitions(
+    baseContext: Context,
+    definitions: List<DefinitionFirstPass>,
+    contextAccumulator: Context,
+    accumulator: List<ParsingResponse<Dungeon>>
+): List<ParsingResponse<Dungeon>> =
+    if (definitions.none())
+      accumulator
+    else {
+      val next = definitions.first()
+      val response = parseDefinitionSecondPass(baseContext, contextAccumulator, next)
+
+      val dungeon = response.value
+      resolveSubDefinitions(
+          baseContext + dungeon.graph,
+          definitions.drop(1),
+          contextAccumulator + dungeon.graph,
+          accumulator + response.copy(errors = response.errors)
+      )
+    }
+
+tailrec fun resolveDefinitionsRecursive(
+    baseContext: Context,
     importMap: Map<Path, List<TokenizedImport>>,
     definitions: List<DefinitionFirstPass>,
     fileContexts: Map<Path, Context>,
@@ -78,24 +109,34 @@ tailrec fun resolveDefinitions(
       val (context, importErrors) = if (fileContexts.contains(file))
         ParsingResponse(fileContexts[file]!!, listOf())
       else
-        newImportedContext(next.key.path, defaultContext, importMap[file]!!, contextAccumulator)
+        newImportedContext(next.key.path, baseContext, importMap[file]!!, contextAccumulator)
 
       val namespaceContext = namespaceContexts[next.key.path] ?: listOf()
 
       val response = parseDefinitionSecondPass(context + namespaceContext, contextAccumulator, next)
+
       val dungeon = response.value
-      resolveDefinitions(
-          defaultContext,
+      val output = getGraphOutputNode(dungeon.graph)
+      val externalGraph = if (output != null)
+        newNamespace().copy(
+            returnTypes = dungeon.graph.returnTypes.filterKeys { it == output },
+            values = dungeon.graph.values.filterKeys { it == output }
+        )
+      else
+        newNamespace() // Reaching this line is an error but the error should be flagged in other places
+
+      resolveDefinitionsRecursive(
+          baseContext,
           importMap,
           definitions.drop(1),
           fileContexts + (file to (context)),
-          namespaceContexts + (next.key.path to namespaceContext + dungeon.graph),
+          namespaceContexts + (next.key.path to namespaceContext + externalGraph),
           contextAccumulator + dungeon.graph,
           accumulator + response.copy(errors = response.errors + importErrors)
       )
     }
 
-fun resolveDefinitions(importMap: Map<Path, List<TokenizedImport>>, tokenDefinitions: Map<PathKey, TokenizedDefinition>, context: Context): ParsingResponse<List<Dungeon>> {
+fun resolveDefinitions(importMap: Map<Path, List<TokenizedImport>>, tokenDefinitions: Map<PathKey, TokenizedDefinition>, baseContext: Context, largerContext: Context): ParsingResponse<List<Dungeon>> {
   val firstPass = tokenDefinitions
       .mapValues { (pathKey, definition) ->
         parseDefinitionFirstPass(pathKey, definition)
@@ -110,16 +151,21 @@ fun resolveDefinitions(importMap: Map<Path, List<TokenizedImport>>, tokenDefinit
   val definitionMap = definitions.associateBy { it.key }
   val dependencies = definitions
       .flatMap { definition ->
-        definition.intermediate.references.keys
-            .mapNotNull { referenceName ->
-              val provider = definitionMap.keys.firstOrNull() { it.name == referenceName }
-              if (provider != null)
-                Dependency(
-                    dependent = definition.key,
-                    provider = provider
-                )
-              else
-                null
+        definition.definitions
+            .mapNotNull { it.intermediate }
+            .plus(listOfNotNull(definition.intermediate))
+            .flatMap { intermediate ->
+              intermediate.references.keys
+                  .mapNotNull { referenceName ->
+                    val provider = definitionMap.keys.firstOrNull() { it.name == referenceName }
+                    if (provider != null)
+                      Dependency(
+                          dependent = definition.key,
+                          provider = provider
+                      )
+                    else
+                      null
+                  }
             }
       }
       .toSet()
@@ -128,14 +174,13 @@ fun resolveDefinitions(importMap: Map<Path, List<TokenizedImport>>, tokenDefinit
 
   // Keep it as a lambda so that the burg resolution code is not called unless there are items in the list
   val dependencyParsingErrors = dependencyErrors.map { newParsingError(tokenDefinitions.values.first().symbol)(it) }
-  val defaultContext = listOf(newNamespace())
   val arrangedDefinitions = arrangedDefinitionKeys.map { definitionMap[it]!! }
-  val resolutions = resolveDefinitions(defaultContext, importMap, arrangedDefinitions, mapOf(), mapOf(), context, listOf())
+  val resolutions = resolveDefinitionsRecursive(baseContext, importMap, arrangedDefinitions, mapOf(), mapOf(), largerContext, listOf())
   val result = flattenResponses(resolutions)
   return result
       .copy(
           errors = result.errors + firstPassErrors + dependencyParsingErrors
-  )
+      )
 }
 
 fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinition>): (List<Dungeon>) -> ParsingResponse<Dungeon> =
@@ -179,7 +224,8 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
     }
 
 fun parseDungeon(context: Context, importMap: Map<Path, List<TokenizedImport>>, definitions: Map<PathKey, TokenizedDefinition>): ParsingResponse<Dungeon> {
-  val (dungeons, definitionErrors) = resolveDefinitions(importMap, definitions, context)
+  val baseContext = listOf(newNamespace())
+  val (dungeons, definitionErrors) = resolveDefinitions(importMap, definitions, baseContext, context)
   val importErrors = validateUnusedImports(context, importMap, definitions)
   val (dungeon, dungeonErrors) = finalizeDungeons(context, definitions)(dungeons)
   return ParsingResponse(

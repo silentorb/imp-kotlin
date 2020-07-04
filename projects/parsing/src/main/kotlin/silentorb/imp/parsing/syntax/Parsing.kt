@@ -9,8 +9,8 @@ import silentorb.mythic.debugging.getDebugBoolean
 fun getTransition(token: Token, mode: ParsingMode, contextMode: ContextMode): ParsingStep {
   val contextAction: ContextualTokenToParsingTransition? =
       when (mode) {
-        ParsingMode.expressionArgumentStart -> parseRootExpressionArgumentStart
-        ParsingMode.expressionArgumentFollowing -> parseRootExpressionFollowingArgument
+        ParsingMode.expressionArgumentStart -> parseExpressionArgumentStart
+        ParsingMode.expressionArgumentFollowing -> parseExpressionFollowingArgument
         ParsingMode.pipingRootStart -> parsePipingRootStart
         else -> null
       }
@@ -20,14 +20,15 @@ fun getTransition(token: Token, mode: ParsingMode, contextMode: ContextMode): Pa
 
   val simpleAction: TokenToParsingTransition =
       when (mode) {
-        ParsingMode.body -> parseBody
+        ParsingMode.block -> parseBody
         ParsingMode.definitionAssignment -> parseDefinitionAssignment
+        ParsingMode.definitionBodyStart -> parseDefinitionBodyStart
         ParsingMode.definitionParameterColon -> parseDefinitionParameterColon
         ParsingMode.definitionParameterNameOrAssignment -> parseDefinitionParameterNameOrAssignment
         ParsingMode.definitionParameterType -> parseDefinitionParameterType
         ParsingMode.definitionName -> parseDefinitionName
-        ParsingMode.expressionNamedArgumentValue -> parseExpressionRootNamedArgumentValue
-        ParsingMode.expressionStart -> parseRootExpressionStart
+        ParsingMode.expressionNamedArgumentValue -> parseExpressionNamedArgumentValue
+        ParsingMode.expressionStart -> parseExpressionStart
         ParsingMode.header -> parseHeader
         ParsingMode.importFirstPathToken -> parseImportFirstPathToken
         ParsingMode.importFollowingPathToken -> parseImportFollowingPathToken
@@ -48,6 +49,16 @@ fun newBurg(file: TokenFile, token: Token): NewBurg = { burgType, valueTranslato
   )
 }
 
+fun logTransition(token: Token, previousState: ParsingState, nextState: ParsingState) {
+  val value = if (token.value.isEmpty())
+    token.rune.name
+  else
+    token.value
+
+  val burgStack = nextState.burgStack.map { it.first().type.name }.joinToString(", ").padEnd(100)
+  println("[$burgStack] ${(value).padStart(12)} ${previousState.mode.name} -> ${nextState.mode.name}")
+}
+
 tailrec fun parsingStep(
     file: TokenFile,
     tokens: Tokens,
@@ -62,9 +73,9 @@ tailrec fun parsingStep(
       val nextState = transition(newBurg(file, token), state)
       val nextTokens = tokens.drop(1)
 
-      if (getDebugBoolean("IMP_PARSING_LOG_TRANSITIONS"))
-        println("${nextState.burgStack.size.toString().padStart(2)} ${(if (token.value.isEmpty()) token.rune.name else token.value).padStart(12)} ${state.mode.name} -> ${nextState.mode.name}")
-
+      if (getDebugBoolean("IMP_PARSING_LOG_TRANSITIONS")) {
+        logTransition(token, state, nextState)
+      }
       parsingStep(file, nextTokens, nextState)
     }
 
@@ -98,7 +109,7 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): ParsingResponse<Realm> {
 
   val letErrors = tokens
       .filterIndexed { index, token ->
-        isLet(token) && index > 0 && !isNewline(tokens[index - 1])
+        isLet(token) && index > 0 && !(isNewline(tokens[index - 1]) || isBraceOpen(tokens[index - 1]))
       }
       .map { newParsingError(TextId.expectedNewline, it) }
 
