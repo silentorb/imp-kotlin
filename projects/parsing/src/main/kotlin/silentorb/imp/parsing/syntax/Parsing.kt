@@ -1,6 +1,7 @@
 package silentorb.imp.parsing.syntax
 
 import silentorb.imp.core.*
+import silentorb.imp.core.Response
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.syntax.traversing.*
@@ -79,7 +80,7 @@ tailrec fun parsingStep(
       parsingStep(file, nextTokens, nextState)
     }
 
-fun parseSyntax(file: TokenFile, tokens: Tokens): ParsingResponse<Realm> {
+fun parseSyntax(file: TokenFile, tokens: Tokens): Response<Realm> {
   val sanitizedTokens = if (tokens.size == 0 || tokens.last().rune != Rune.newline)
     tokens + Token(Rune.newline, FileRange("", Range(newPosition(), newPosition())), "")
   else
@@ -101,7 +102,7 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): ParsingResponse<Realm> {
     logRealmHierarchy(realm)
 
   val convertedErrors = state.errors.map { error ->
-    ParsingError(
+    ImpError(
         message = error.message,
         fileRange = FileRange(file, error.range)
     )
@@ -113,7 +114,7 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): ParsingResponse<Realm> {
       }
       .map { newParsingError(TextId.expectedNewline, it) }
 
-  return ParsingResponse(
+  return Response(
       realm,
       convertedErrors + letErrors
   )

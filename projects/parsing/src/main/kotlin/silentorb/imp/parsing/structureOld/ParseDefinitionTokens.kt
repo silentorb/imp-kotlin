@@ -2,20 +2,16 @@ package silentorb.imp.parsing.structureOld
 
 import silentorb.imp.core.PathKey
 import silentorb.imp.core.formatPathKey
-import silentorb.imp.parsing.general.ParsingResponse
-import silentorb.imp.parsing.general.TextId
-import silentorb.imp.parsing.general.flattenResponses
-import silentorb.imp.parsing.general.newParsingError
-import silentorb.imp.parsing.lexer.Rune
+import silentorb.imp.core.Response
+import silentorb.imp.core.flattenResponses
 import silentorb.imp.parsing.parser.DefinitionFirstPass
 import silentorb.imp.parsing.parser.TokenizedDefinition
-import silentorb.imp.parsing.parser.checkMatchingParentheses
 
-fun parseDefinitionFirstPass(key: PathKey, definition: TokenizedDefinition): ParsingResponse<DefinitionFirstPass?> {
+fun parseDefinitionFirstPass(key: PathKey, definition: TokenizedDefinition): Response<DefinitionFirstPass?> {
   val (intermediate, tokenErrors) = if (definition.expression != null)
     expressionTokensToNodes(key, definition.expression)
   else
-    ParsingResponse(null, listOf())
+    Response(null, listOf())
 
   val (definitions, subErrors) = flattenResponses(
       definition.definitions
@@ -25,7 +21,7 @@ fun parseDefinitionFirstPass(key: PathKey, definition: TokenizedDefinition): Par
           }
   )
   assert(definitions.filterNotNull().any() || intermediate != null)
-  return ParsingResponse(
+  return Response(
       DefinitionFirstPass(
           file = definition.file,
           key = key,

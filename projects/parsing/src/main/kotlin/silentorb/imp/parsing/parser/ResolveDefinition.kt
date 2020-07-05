@@ -1,7 +1,7 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
-import silentorb.imp.parsing.general.ParsingResponse
+import silentorb.imp.core.Response
 import silentorb.imp.parsing.resolution.resolveExpression
 
 fun newParameterNamespace(context: Context, pathKey: PathKey, parameters: List<Parameter>): Namespace {
@@ -55,7 +55,7 @@ fun prepareDefinitionFunction(
   )
 }
 
-fun parseDefinitionSecondPass(namespaceContext: Context, largerContext: Context, definition: DefinitionFirstPass): ParsingResponse<Dungeon> {
+fun parseDefinitionSecondPass(namespaceContext: Context, largerContext: Context, definition: DefinitionFirstPass): Response<Dungeon> {
   val parameters = definition.tokenized.parameters.map { parameter ->
     val type = getImplementationType(namespaceContext, parameter.type.value as String)
         ?: unknownType.hash
@@ -101,7 +101,7 @@ fun parseDefinitionSecondPass(namespaceContext: Context, largerContext: Context,
   } else
     dungeon
 
-  return ParsingResponse(
+  return Response(
       nextDungeon,
       expressionErrors
   )

@@ -17,7 +17,7 @@ import java.nio.file.Path
 //  }
 //}
 
-fun checkMatchingParentheses(tokens: Tokens): ParsingErrors {
+fun checkMatchingParentheses(tokens: Tokens): ImpErrors {
   val openCount = tokens.count { it.rune == Rune.parenthesesOpen }
   val closeCount = tokens.count { it.rune == Rune.parenthesesClose }
   return if (openCount > closeCount)
@@ -29,7 +29,7 @@ fun checkMatchingParentheses(tokens: Tokens): ParsingErrors {
     listOf()
 }
 
-fun validateFunctionTypes(nodes: Set<PathKey>, types: Map<PathKey, TypeHash>, nodeMap: NodeMap): ParsingErrors {
+fun validateFunctionTypes(nodes: Set<PathKey>, types: Map<PathKey, TypeHash>, nodeMap: NodeMap): ImpErrors {
   return nodes
       .filter { !types.containsKey(it) || types[it]!! == unknownType.hash }
       .map { node ->
@@ -39,7 +39,7 @@ fun validateFunctionTypes(nodes: Set<PathKey>, types: Map<PathKey, TypeHash>, no
 }
 
 fun validateSignatures(context: Context, types: Map<PathKey, TypeHash>, parents: Map<PathKey, List<PathKey>>, signatureOptions: Map<PathKey, List<SignatureMatch>>,
-                       nodeMap: NodeMap): ParsingErrors {
+                       nodeMap: NodeMap): ImpErrors {
   return parents
       .mapNotNull { (pathKey, arguments) ->
         val options = signatureOptions[pathKey] ?: listOf()
@@ -55,9 +55,9 @@ fun validateSignatures(context: Context, types: Map<PathKey, TypeHash>, parents:
           }
 
           val argumentClause = argumentTypeNames.joinToString(", ")
-          ParsingError(TextId.noMatchingSignature, fileRange = nodeMap[pathKey]!!, arguments = listOf(argumentClause))
+          ImpError(TextId.noMatchingSignature, fileRange = nodeMap[pathKey]!!, arguments = listOf(argumentClause))
         } else
-          ParsingError(TextId.ambiguousOverload, fileRange = nodeMap[pathKey]!!)
+          ImpError(TextId.ambiguousOverload, fileRange = nodeMap[pathKey]!!)
       }
 }
 
@@ -99,7 +99,7 @@ fun isValueWithinConstraint(constraint: NumericTypeConstraint, value: Any): Bool
     doubleValue >= constraint.minimum && doubleValue <= constraint.maximum
 }
 
-fun validateTypeConstraints(values: Map<PathKey, Any>, context: Context, constraints: ConstrainedLiteralMap, nodeMap: NodeMap): ParsingErrors {
+fun validateTypeConstraints(values: Map<PathKey, Any>, context: Context, constraints: ConstrainedLiteralMap, nodeMap: NodeMap): ImpErrors {
   return values.mapNotNull { (node, value) ->
     val constraintType = constraints[node]
     if (constraintType != null) {
@@ -112,7 +112,7 @@ fun validateTypeConstraints(values: Map<PathKey, Any>, context: Context, constra
   }
 }
 
-fun validateUnusedImports(context: Context, importMap: Map<Path, List<TokenizedImport>>, definitions: Map<PathKey, TokenizedDefinition>): ParsingErrors {
+fun validateUnusedImports(context: Context, importMap: Map<Path, List<TokenizedImport>>, definitions: Map<PathKey, TokenizedDefinition>): ImpErrors {
   val unusedImports = importMap
       .filter { (key, _) ->
         definitions.none { it.value.file == key }

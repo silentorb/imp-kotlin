@@ -2,11 +2,12 @@ package silentorb.imp.testing
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import silentorb.imp.parsing.general.ParsingError
-import silentorb.imp.parsing.general.formatError
+import silentorb.imp.core.ImpError
+import silentorb.imp.core.Response
+import silentorb.imp.core.formatError
 import silentorb.imp.parsing.general.*
 
-val errored = { errors: List<ParsingError> ->
+val errored = { errors: List<ImpError> ->
   val error = errors.firstOrNull()
   val message = if (error != null) {
     "[TextId.${error.message}] ${formatError(::englishText, error)}"
@@ -20,11 +21,11 @@ val shouldHaveErrored = { ->
   assertTrue(false)
 }
 
-fun <I> expectErrors(onSuccess: () -> Unit, response: Response<I>, onFailure: (List<ParsingError>) -> Unit) {
-  when (response) {
-    is Response.Success -> onSuccess()
-    is Response.Failure -> onFailure(response.errors)
-  }
+fun <I> expectErrors(onSuccess: () -> Unit, response: Response<I>, onFailure: (List<ImpError>) -> Unit) {
+  if (response.errors.any())
+    onFailure(response.errors)
+  else
+    onSuccess()
 }
 
 fun <I> expectError(textId: TextId, response: Response<I>) =

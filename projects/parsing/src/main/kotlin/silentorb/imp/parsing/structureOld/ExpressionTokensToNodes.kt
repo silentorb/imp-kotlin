@@ -2,7 +2,7 @@ package silentorb.imp.parsing.structureOld
 
 import silentorb.imp.core.PathKey
 import silentorb.imp.core.pathKeyToString
-import silentorb.imp.parsing.general.ParsingResponse
+import silentorb.imp.core.Response
 import silentorb.imp.parsing.general.newParsingError
 import silentorb.imp.parsing.resolution.IntermediateExpression
 import silentorb.imp.parsing.resolution.resolveLiteralTypes
@@ -28,7 +28,7 @@ fun getNamedArguments(realm: Realm): Map<BurgId, Burg> =
         }
         .associate { it }
 
-fun expressionTokensToNodes(root: PathKey, realm: Realm): ParsingResponse<IntermediateExpression> {
+fun expressionTokensToNodes(root: PathKey, realm: Realm): Response<IntermediateExpression> {
   val path = pathKeyToString(root)
   val namedArguments = getNamedArguments(realm)
   val burgs = realm.burgs
@@ -95,7 +95,7 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): ParsingResponse<Interm
 
   val (stages, dependencyErrors) = arrangeRealm(realm)
 
-  return ParsingResponse(
+  return Response(
       IntermediateExpression(
           applications = applications,
           literalTypes = literalTypes,

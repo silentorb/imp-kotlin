@@ -1,12 +1,12 @@
 package execution
 
+import handleRoot
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import silentorb.imp.execution.executeToSingleValue
 import silentorb.imp.library.standard.standardLibrary
-import silentorb.imp.parsing.general.handleRoot
-import silentorb.imp.parsing.parser.parseTextBranchingDeprecated
+import silentorb.imp.parsing.parser.parseToDungeon
 import silentorb.imp.testing.errored
 
 class ExecutionTest {
@@ -17,7 +17,7 @@ class ExecutionTest {
       
       let output = + 10 6
     """.trimIndent()
-    handleRoot(errored, parseTextBranchingDeprecated(simpleContext())(code)) { result ->
+    handleRoot(errored, parseToDungeon(simpleContext(), code)) { result ->
       val graph = result.graph
       val library = standardLibrary()
       val value = executeToSingleValue(listOf(library.namespace), library.implementation, graph)
@@ -33,7 +33,7 @@ class ExecutionTest {
       let main = newMonkey 1 -- The banana count logic is arbitrary
     """.trimIndent()
     val library = customLibrary()
-    handleRoot(errored, parseTextBranchingDeprecated(listOf(library.namespace))(code)) { dungeon ->
+    handleRoot(errored, parseToDungeon(listOf(library.namespace), code)) { dungeon ->
       val value = executeToSingleValue(listOf(library.namespace), library.implementation, dungeon)
       assertEquals(2, value)
     }
@@ -49,7 +49,7 @@ class ExecutionTest {
       let output = add 1 2
     """.trimIndent()
     val library = standardLibrary()
-    handleRoot(errored, parseTextBranchingDeprecated(listOf(library.namespace))(code)) { result ->
+    handleRoot(errored, parseToDungeon(listOf(library.namespace), code)) { result ->
       val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
       assertEquals(3, value)
     }
@@ -66,7 +66,7 @@ class ExecutionTest {
       let output = foo 1.2
     """.trimIndent()
     val library = standardLibrary()
-    handleRoot(errored, parseTextBranchingDeprecated(listOf(library.namespace))(code)) { result ->
+    handleRoot(errored, parseToDungeon(listOf(library.namespace), code)) { result ->
       val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
       assertEquals(1.2f, value)
     }
@@ -85,7 +85,7 @@ class ExecutionTest {
       let output = Foo 3 1.2
     """.trimIndent()
     val library = standardLibrary()
-    handleRoot(errored, parseTextBranchingDeprecated(listOf(library.namespace))(code)) { result ->
+    handleRoot(errored, parseToDungeon(listOf(library.namespace), code)) { result ->
       val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
       assertEquals(1.2f, value)
     }
@@ -100,7 +100,7 @@ class ExecutionTest {
       let output = listOf(4, 5, 7)
     """.trimIndent()
     val library = standardLibrary()
-    handleRoot(errored, parseTextBranchingDeprecated(listOf(library.namespace))(code)) { result ->
+    handleRoot(errored, parseToDungeon(listOf(library.namespace), code)) { result ->
       val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
       assertEquals(1.2f, value)
     }

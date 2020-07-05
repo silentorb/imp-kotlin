@@ -4,7 +4,7 @@ import silentorb.imp.core.Dependency
 import silentorb.imp.core.DependencyError
 import silentorb.imp.core.TokenFile
 import silentorb.imp.core.arrangeDependencies
-import silentorb.imp.parsing.general.ParsingResponse
+import silentorb.imp.core.Response
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.general.newParsingError
@@ -78,7 +78,7 @@ fun definitionToTokenGraph(realm: Realm, file: TokenFile): (Burg) -> TokenizedDe
     null
 }
 
-fun toTokenGraph(file: TokenFile, tokens: Tokens): ParsingResponse<TokenDungeon> {
+fun toTokenGraph(file: TokenFile, tokens: Tokens): Response<TokenDungeon> {
   val (realm, syntaxErrors) = parseSyntax(file, tokens)
   val burgs = realm.burgs
   val lookUpBurg = { id: BurgId -> burgs[id]!! }
@@ -106,5 +106,5 @@ fun toTokenGraph(file: TokenFile, tokens: Tokens): ParsingResponse<TokenDungeon>
       definitions = definitions
   )
 
-  return ParsingResponse(graph, syntaxErrors + duplicateSymbolErrors)
+  return Response(graph, syntaxErrors + duplicateSymbolErrors)
 }

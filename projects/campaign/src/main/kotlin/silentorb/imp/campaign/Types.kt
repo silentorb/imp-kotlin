@@ -2,7 +2,7 @@ package silentorb.imp.campaign
 
 import silentorb.imp.core.Dependency
 import silentorb.imp.core.Dungeon
-import silentorb.imp.parsing.general.ParsingErrors
+import silentorb.imp.core.ImpErrors
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -34,19 +34,6 @@ data class ModuleConfig(
 
 data class WorkspaceConfig(
     val modules: List<String> = listOf() // Module directory patterns
-)
-
-data class CampaignError(
-    val message: Any,
-    val arguments: List<Any> = listOf()
-)
-
-typealias CampaignErrors = List<CampaignError>
-
-data class CampaignResponse<T>(
-    val value: T,
-    val campaignErrors: CampaignErrors,
-    val parsingErrors: ParsingErrors
 )
 
 data class ModuleInfo(

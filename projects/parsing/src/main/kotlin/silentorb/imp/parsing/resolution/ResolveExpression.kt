@@ -1,11 +1,11 @@
 package silentorb.imp.parsing.resolution
 
 import silentorb.imp.core.*
-import silentorb.imp.parsing.general.ParsingResponse
+import silentorb.imp.core.Response
 import silentorb.imp.parsing.parser.validateFunctionTypes
 import silentorb.imp.parsing.parser.validateSignatures
 
-fun resolveExpression(context: Context, largerContext: Context, intermediate: IntermediateExpression): ParsingResponse<Dungeon> {
+fun resolveExpression(context: Context, largerContext: Context, intermediate: IntermediateExpression): Response<Dungeon> {
   val (
       applications,
       literalTypes,
@@ -70,5 +70,5 @@ fun resolveExpression(context: Context, largerContext: Context, intermediate: In
       ),
       nodeMap = nodeMap
   )
-  return ParsingResponse(dungeon, errors)
+  return Response(dungeon, errors)
 }

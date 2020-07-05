@@ -17,12 +17,12 @@ import java.nio.file.Paths
 
 class CampaignTest {
   @Test
-  fun canloadAndExecuteWorkspaces() {
+  fun canLoadAndExecuteWorkspaces() {
     val library = standardLibrary()
     val workspaceUrl = Thread.currentThread().contextClassLoader.getResource("project1/workspace.yaml")!!
-    val (workspace, campaignErrors, parsingErrors) = loadWorkspace(codeFromFile, library, Paths.get(workspaceUrl.toURI()).parent)
-    assertTrue(campaignErrors.none()) { campaignErrors.first().message.toString() }
-    errored(parsingErrors)
+    val (workspace, errors) = loadWorkspace(codeFromFile, library, Paths.get(workspaceUrl.toURI()).parent)
+    assertTrue(errors.none()) { errors.first().message.toString() }
+    errored(errors)
     val modules = workspace.modules
     assertEquals(2, modules.size)
     assertEquals(1, modules["assets"]!!.dungeons.size)

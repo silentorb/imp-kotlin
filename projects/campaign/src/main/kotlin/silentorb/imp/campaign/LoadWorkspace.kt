@@ -4,7 +4,7 @@ import silentorb.imp.core.*
 import silentorb.imp.execution.Library
 import silentorb.imp.execution.mergeImplementationFunctions
 import silentorb.imp.parsing.general.GetCode
-import silentorb.imp.parsing.general.ParsingResponse
+import silentorb.imp.core.Response
 import silentorb.imp.parsing.parser.parseDungeon
 import silentorb.imp.parsing.parser.tokenizeAndSanitize
 import silentorb.imp.parsing.syntax.toTokenGraph
@@ -30,7 +30,7 @@ val codeFromFile: GetCode = { path ->
   Files.readString(path, StandardCharsets.UTF_8)
 }
 
-fun loadSourceFiles(getCode: GetCode, moduleName: String, root: Path, context: Context, moduleConfig: ModuleConfig, sourceFiles: List<Path>): ParsingResponse<Map<DungeonId, Dungeon>> {
+fun loadSourceFiles(getCode: GetCode, moduleName: String, root: Path, context: Context, moduleConfig: ModuleConfig, sourceFiles: List<Path>): Response<Map<DungeonId, Dungeon>> {
   val lexingResults = sourceFiles
       .map { path ->
         val code = getCode(path)?.replace("\r\n", "\n") ?: ""
@@ -56,7 +56,7 @@ fun loadSourceFiles(getCode: GetCode, moduleName: String, root: Path, context: C
   val dungeon = parseDungeon(context, importMap, definitions)
   val dungeons = mapOf(moduleName to dungeon)
 
-  return ParsingResponse(
+  return Response(
       dungeons.mapValues { it.value.value },
       lexingErrors + dungeons.values.flatMap { it.errors }
   )
@@ -70,12 +70,12 @@ fun loadModuleInfo(path: Path): ModuleInfo {
   )
 }
 
-fun loadModule(getCode: GetCode, name: String, context: Context, info: ModuleInfo): ParsingResponse<Module> {
+fun loadModule(getCode: GetCode, name: String, context: Context, info: ModuleInfo): Response<Module> {
   val path = info.path
   val config = info.config
   val sourceFiles = info.sourceFiles
   val (dungeons, errors) = loadSourceFiles(getCode, name, path, context, config, sourceFiles)
-  return ParsingResponse(
+  return Response(
       Module(
           path = path,
           dungeons = dungeons
@@ -96,7 +96,7 @@ fun loadModuleInfos(root: URI, globPattern: String): Map<ModuleId, ModuleInfo> {
       }
 }
 
-tailrec fun loadModules(getCode: GetCode, root: URI, infos: Map<ModuleId, ModuleInfo>, context: Context, accumulator: Map<ModuleId, ParsingResponse<Module>>): Map<ModuleId, ParsingResponse<Module>> =
+tailrec fun loadModules(getCode: GetCode, root: URI, infos: Map<ModuleId, ModuleInfo>, context: Context, accumulator: Map<ModuleId, Response<Module>>): Map<ModuleId, Response<Module>> =
     if (infos.none())
       accumulator
     else {
@@ -107,14 +107,13 @@ tailrec fun loadModules(getCode: GetCode, root: URI, infos: Map<ModuleId, Module
       loadModules(getCode, root, infos - name, newContext, accumulator + (name to response))
     }
 
-fun loadWorkspace(getCode: GetCode, library: Library, root: Path): CampaignResponse<Workspace> {
+fun loadWorkspace(getCode: GetCode, library: Library, root: Path): Response<Workspace> {
   val workspaceFilePath = root.resolve(workspaceFileName)
   val workspaceConfig = loadYamlFile<WorkspaceConfig>(workspaceFilePath)
   return if (workspaceConfig == null)
-    CampaignResponse(
+    Response(
         value = emptyWorkspace,
-        campaignErrors = listOf(CampaignError(CampaignText.fileNotFound, arguments = listOf(workspaceFilePath))),
-        parsingErrors = listOf()
+        errors = listOf(ImpError(CampaignText.fileNotFound, arguments = listOf(workspaceFilePath)))
     )
   else {
     val infos = workspaceConfig.modules
@@ -140,19 +139,18 @@ fun loadWorkspace(getCode: GetCode, library: Library, root: Path): CampaignRespo
     val modules = loadingResponse
         .mapValues { it.value.value }
 
-    return CampaignResponse(
+    return Response(
         value = Workspace(
             path = root,
             modules = modules,
             dependencies = dependencies
         ),
-        campaignErrors = dependencyErrors.map { CampaignError(it) },
-        parsingErrors = loadingResponse.flatMap { it.value.errors }
+        errors = dependencyErrors.map { ImpError(it) } + loadingResponse.flatMap { it.value.errors }
     )
   }
 }
 
-fun loadContainingWorkspace(getCode: GetCode, library: Library, root: Path): CampaignResponse<Workspace>? {
+fun loadContainingWorkspace(getCode: GetCode, library: Library, root: Path): Response<Workspace>? {
   val moduleDirectory = findContainingModule(root)
   return if (moduleDirectory == null)
     null

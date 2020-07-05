@@ -1,6 +1,7 @@
 package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
+import silentorb.imp.core.Response
 import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.structureOld.parseDefinitionFirstPass
 import java.nio.file.Path
@@ -42,7 +43,7 @@ fun newImportedContext(
     baseContext: Context,
     tokenImports: List<TokenizedImport>,
     sourceContext: Context
-): ParsingResponse<Context> {
+): Response<Context> {
   val (rawImportedFunctions, importErrors) = flattenResponses(
       tokenImports
           .map(parseImport(sourceContext))
@@ -55,28 +56,28 @@ fun newImportedContext(
           .map { namespace -> namespace.returnTypes.filterKeys { it.path == namespacePath } }
           .reduce { a, b -> a + b }
   )
-  return ParsingResponse(
+  return Response(
       newDefinitionContext(rawImportedFunctions + sameNamespaceBundle, baseContext),
       importErrors
   )
 }
 
-fun parseBlock(context: Context, largerContext: Context, definition: DefinitionFirstPass): ParsingResponse<Dungeon> {
+fun parseBlock(context: Context, largerContext: Context, definition: DefinitionFirstPass): Response<Dungeon> {
   val definitions = definition.definitions
 //      .associateBy { PathKey(formatPathKey(definition.key), it.tokenized.symbol.value as String) }
 
   val responses = resolveSubDefinitions(context, definitions, largerContext, listOf())
   val dungeons = mergeDungeons(responses.map { it.value })!!
   val errors = responses.flatMap { it.errors }
-  return ParsingResponse(dungeons, errors)
+  return Response(dungeons, errors)
 }
 
 tailrec fun resolveSubDefinitions(
     baseContext: Context,
     definitions: List<DefinitionFirstPass>,
     contextAccumulator: Context,
-    accumulator: List<ParsingResponse<Dungeon>>
-): List<ParsingResponse<Dungeon>> =
+    accumulator: List<Response<Dungeon>>
+): List<Response<Dungeon>> =
     if (definitions.none())
       accumulator
     else {
@@ -99,15 +100,15 @@ tailrec fun resolveDefinitionsRecursive(
     fileContexts: Map<Path, Context>,
     namespaceContexts: Map<String, Context>,
     contextAccumulator: Context,
-    accumulator: List<ParsingResponse<Dungeon>>
-): List<ParsingResponse<Dungeon>> =
+    accumulator: List<Response<Dungeon>>
+): List<Response<Dungeon>> =
     if (definitions.none())
       accumulator
     else {
       val next = definitions.first()
       val file = next.file
       val (context, importErrors) = if (fileContexts.contains(file))
-        ParsingResponse(fileContexts[file]!!, listOf())
+        Response(fileContexts[file]!!, listOf())
       else
         newImportedContext(next.key.path, baseContext, importMap[file]!!, contextAccumulator)
 
@@ -136,7 +137,7 @@ tailrec fun resolveDefinitionsRecursive(
       )
     }
 
-fun resolveDefinitions(importMap: Map<Path, List<TokenizedImport>>, tokenDefinitions: Map<PathKey, TokenizedDefinition>, baseContext: Context, largerContext: Context): ParsingResponse<List<Dungeon>> {
+fun resolveDefinitions(importMap: Map<Path, List<TokenizedImport>>, tokenDefinitions: Map<PathKey, TokenizedDefinition>, baseContext: Context, largerContext: Context): Response<List<Dungeon>> {
   val firstPass = tokenDefinitions
       .mapValues { (pathKey, definition) ->
         parseDefinitionFirstPass(pathKey, definition)
@@ -183,7 +184,7 @@ fun resolveDefinitions(importMap: Map<Path, List<TokenizedImport>>, tokenDefinit
       )
 }
 
-fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinition>): (List<Dungeon>) -> ParsingResponse<Dungeon> =
+fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinition>): (List<Dungeon>) -> Response<Dungeon> =
     { expressionDungeons ->
       val nodeMap = nodeRanges
           .mapValues { (_, definition) -> definition.symbol.fileRange }
@@ -210,7 +211,7 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
       val constraintErrors = validateTypeConstraints(dungeon.graph.values, context, propagations, dungeon.nodeMap)
       val typeNames = gatherTypeNames(context, dungeon.graph.returnTypes)
 
-      ParsingResponse(
+      Response(
           dungeon
               .copy(
                   graph = dungeon.graph.copy(
@@ -223,12 +224,12 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
       )
     }
 
-fun parseDungeon(context: Context, importMap: Map<Path, List<TokenizedImport>>, definitions: Map<PathKey, TokenizedDefinition>): ParsingResponse<Dungeon> {
+fun parseDungeon(context: Context, importMap: Map<Path, List<TokenizedImport>>, definitions: Map<PathKey, TokenizedDefinition>): Response<Dungeon> {
   val baseContext = listOf(newNamespace())
   val (dungeons, definitionErrors) = resolveDefinitions(importMap, definitions, baseContext, context)
   val importErrors = validateUnusedImports(context, importMap, definitions)
   val (dungeon, dungeonErrors) = finalizeDungeons(context, definitions)(dungeons)
-  return ParsingResponse(
+  return Response(
       dungeon,
       definitionErrors + dungeonErrors + importErrors
   )
