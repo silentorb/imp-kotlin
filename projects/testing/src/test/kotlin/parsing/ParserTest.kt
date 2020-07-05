@@ -8,6 +8,8 @@ import silentorb.imp.core.joinPaths
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.handleRoot
 import silentorb.imp.parsing.parser.*
+import silentorb.imp.parsing.syntax.BurgType
+import silentorb.imp.parsing.syntax.parseSyntax
 import silentorb.imp.testing.errored
 import silentorb.imp.testing.expectError
 
@@ -576,5 +578,27 @@ let output = simpleFunction a (simpleFunction 3 3)
       let output = simpleFunction first nine
     """.trimIndent()
     expectError(TextId.unknownFunction, parseTextBranchingDeprecated(simpleContext)(code))
+  }
+
+  @Test
+  fun returnsCorrectRangesWhenPiping() {
+    val code1 = "let x = + 10 2"
+    val (tokens1, tokenErrors1) = tokenizeAndSanitize("", code1)
+    val (realm1, syntaxErrors1) = parseSyntax("", tokens1)
+    val code2 = "let x = 1 .+ 2"
+    val (tokens2, tokenErrors2) = tokenizeAndSanitize("", code2)
+    val (realm2, syntaxErrors2) = parseSyntax("", tokens2)
+    assert(tokenErrors1.plus(syntaxErrors1).plus(tokenErrors2).plus(syntaxErrors2).none())
+    
+    val block1 = realm1.burgs.values.first { it.type == BurgType.block }
+    val block2 = realm2.burgs.values.first { it.type == BurgType.block }
+    assertEquals(block1.range.end.index, block2.range.end.index)
+
+    val application1 = realm1.burgs.values
+        .filter { it.type == BurgType.application }.maxBy { it.range.length }!!
+    val application2 = realm2.burgs.values
+        .filter { it.type == BurgType.application }.maxBy { it.range.length }!!
+    assertEquals(application1.range.start.index, application2.range.start.index)
+    assertEquals(application1.range.end.index, application2.range.end.index)
   }
 }

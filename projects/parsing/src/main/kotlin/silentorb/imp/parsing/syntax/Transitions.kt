@@ -115,6 +115,24 @@ fun foldTo(burgType: BurgType): ParsingStateTransition = { newBurg, state ->
     foldTo(burgType)(newBurg, popChildren(state))
 }
 
+fun foldToInclusive(burgType: BurgType): ParsingStateTransition = { newBurg, state ->
+  if (state.burgStack.size < 2 || state.burgStack.last().first().type == burgType) {
+    val stack = state.burgStack
+    val head = stack.last().last()
+    val newRange = head.range.copy(
+        end = head.range.end.copy(
+            index = head.range.end.index + newBurg(BurgType.block, asString).range.length
+        )
+    )
+    val newHead = head.copy(range = newRange)
+    val newTop = stack.last().dropLast(1).plus(newHead)
+    state.copy(
+        burgStack = stack.dropLast(1).plusElement(newTop)
+    )
+  } else
+    foldToInclusive(burgType)(newBurg, popChildren(state))
+}
+
 val skip: ParsingStateTransition = { _, state ->
   state
 }

@@ -6,13 +6,13 @@ import silentorb.imp.parsing.syntax.*
 val startDefinition = pushMarker(BurgType.definition) + goto(ParsingMode.definitionName)
 val startImport = pushMarker(BurgType.importClause) + goto(ParsingMode.importFirstPathToken)
 val startGroup = pushContextMode(ContextMode.group)
-val closeGroup = foldTo(BurgType.application) + pop + popContextMode
+val closeGroup = foldToInclusive(BurgType.application) + pop + popContextMode
 
 //val startGroupNamedArgumentValue = goto(ParsingMode.groupNamedArgumentValue)
 val startArgument = foldTo(BurgType.application) + pushMarker(BurgType.argument) + pushMarker(BurgType.argumentValue)
 val startGroupArgumentValue = startArgument + startGroup + goto(ParsingMode.expressionStart)
 val startBlock = pushContextMode(ContextMode.block) + pushMarker(BurgType.block) + goto(ParsingMode.block)
-val closeBlock = foldTo(BurgType.block) + pop + foldTo(BurgType.block) + popContextMode + goto(ParsingMode.block)
+val closeBlock = foldToInclusive(BurgType.block) + pop + foldTo(BurgType.block) + popContextMode + goto(ParsingMode.block)
 
 val startParameter =
     pushMarker(BurgType.parameter) +
@@ -34,7 +34,6 @@ val importPathWildcard = append(BurgType.importPathWildcard, asString) + fold + 
 
 val startPipingRoot = goto(ParsingMode.pipingRootStart)
 
-//val startPipingGroup = goto(ParsingMode.pipingGroupedStart)
 val closeImport = fold + goto(ParsingMode.header)
 
 fun startSimpleApplication(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =

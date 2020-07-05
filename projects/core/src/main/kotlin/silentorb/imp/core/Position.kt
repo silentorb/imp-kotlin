@@ -23,7 +23,9 @@ fun newPosition(file: TokenFile = "") =
 data class Range(
     val start: Position,
     val end: Position = start
-)
+) {
+  val length: Int get() = end.index - start.index
+}
 
 typealias TokenFile = String
 

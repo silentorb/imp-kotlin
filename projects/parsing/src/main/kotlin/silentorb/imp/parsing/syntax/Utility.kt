@@ -22,13 +22,15 @@ fun <T> stackAppend(stack: Stack<T>, item: T): Stack<T> =
 fun adoptChildren(parent: Burg, children: List<Burg>) =
     if (children.none())
       parent
-    else
+    else {
       parent.copy(
           range = parent.range.copy(
-              end = children.last().range.end
+              start = children.map { it.range.start }.plus(parent.range.start).minBy { it.index }!!,
+              end = children.map { it.range.end }.plus(parent.range.end).maxBy { it.index }!!
           ),
           children = parent.children + children.map { it.hashCode() }
       )
+    }
 
 fun <T> replaceTop(stack: Stack<T>, newTop: List<T>): Stack<T> =
     stack.dropLast(1).plusElement(newTop)
