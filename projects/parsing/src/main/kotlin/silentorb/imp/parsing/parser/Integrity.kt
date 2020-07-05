@@ -5,7 +5,7 @@ import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import java.nio.file.Path
 
-//fun validateDefinitionTokens(definitions: List<TokenizedDefinition>): ParsingErrors {
+//fun validateDefinitionTokens(definitions: List<TokenizedDefinition>): ImpErrors {
 //  val duplicateSymbols = definitions
 //      .groupBy { it.symbol.value }
 //      .filter { it.value.size > 1 }
@@ -61,7 +61,7 @@ fun validateSignatures(context: Context, types: Map<PathKey, TypeHash>, parents:
       }
 }
 
-//fun validatePiping(tokens: Tokens, tokenGraph: TokenGraph): ParsingErrors {
+//fun validatePiping(tokens: Tokens, tokenGraph: TokenGraph): ImpErrors {
 //  val pipingParents = getPipingParents(tokens, tokenGraph)
 //  val pipeTokens = filterIndices(tokens) { it.rune == Rune.dot }
 //  val flattenedPipeParentChildren = pipingParents.flatMap { it.value }
