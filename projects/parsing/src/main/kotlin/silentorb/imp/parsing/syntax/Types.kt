@@ -13,10 +13,6 @@ data class Burg(
     val value: Any?
 ) {
   val fileRange: FileRange get() = FileRange(file, range)
-
-  init {
-    assert(children.none { it == -334534640})
-  }
 }
 
 typealias BurgId = Int

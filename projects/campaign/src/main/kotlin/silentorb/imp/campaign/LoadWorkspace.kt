@@ -34,8 +34,8 @@ fun loadSourceFiles(getCode: GetCode, moduleName: String, root: Path, context: C
   val lexingResults = sourceFiles
       .map { path ->
         val code = getCode(path)?.replace("\r\n", "\n") ?: ""
-        val (tokens, lexingErrors) = tokenizeAndSanitize(root.relativize(path).toString(), code)
-        val (tokenizedGraph, tokenGraphErrors) = toTokenGraph(path.toString(), tokens)
+        val (tokens, lexingErrors) = tokenizeAndSanitize(pathToString(root), code)
+        val (tokenizedGraph, tokenGraphErrors) = toTokenGraph(pathToString(path), tokens)
         Pair(Pair(path, tokenizedGraph), lexingErrors + tokenGraphErrors)
       }
   val tokenGraphs = lexingResults.associate { it.first }

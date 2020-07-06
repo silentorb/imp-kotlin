@@ -52,3 +52,6 @@ fun findContainingWorkspaceDirectory(path: Path): Path? =
 
 fun findContainingModule(path: Path): Path? =
     findContainingDirectory(moduleFilePath, path)
+
+fun pathToString(path: Path): String =
+    path.toString().replace('\\', '/')
