@@ -124,6 +124,24 @@ fun executeToSingleValue(
   }
 }
 
+fun prepareExecutionUnit(
+    context: Context,
+    functions: FunctionImplementationMap,
+    output: PathKey
+): ExecutionUnit {
+
+  return ExecutionUnit(
+      steps = prepareExecutionSteps(context, functions, setOf(output)),
+      values = mapOf(),
+      output = output
+  )
+}
+
+fun executeToSingleValue(unit: ExecutionUnit): Any? {
+  val values = executeSteps(unit.steps, unit.values)
+  return values[unit.output]!!
+}
+
 fun mergeImplementationFunctions(context: Context, implementationGraphs: Map<FunctionKey, Graph>, functions: FunctionImplementationMap): FunctionImplementationMap {
   var newFunctions: FunctionImplementationMap = mapOf()
   newFunctions = functions + getImplementationFunctions(context, implementationGraphs) { newFunctions }

@@ -18,3 +18,9 @@ data class ExecutionStep(
     val node: PathKey,
     val execute: NodeImplementation
 )
+
+data class ExecutionUnit(
+    val steps: List<ExecutionStep>,
+    val values: OutputValues,
+    val output: PathKey
+)
