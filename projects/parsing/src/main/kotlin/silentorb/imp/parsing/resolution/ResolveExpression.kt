@@ -65,12 +65,16 @@ fun resolveExpression(context: Context, largerContext: Context, intermediate: In
 
   val referenceConnections = referencePairs.entries
       .mapNotNull { (key, reference) ->
-        val options = reference.second
-        val application = applications.entries.firstOrNull { it.value.target == key }
-        val signature = signatures[application?.key]?.signature
-        val match = options[signature.hashCode()]
-        if (match != null)
-          Input(key, defaultParameter) to match
+        val target = if (reference.second.size < 2)
+          reference.second.values.firstOrNull()
+        else {
+          val options = reference.second
+          val application = applications.entries.firstOrNull { it.value.target == key }
+          val signature = signatures[application?.key]?.signature
+          options[signature.hashCode()]
+        }
+        if (target != null)
+          Input(key, defaultParameter) to target
         else
           null
       }
@@ -81,6 +85,8 @@ fun resolveExpression(context: Context, largerContext: Context, intermediate: In
   val typeResolutionErrors = validateFunctionTypes(referencePairs.keys, referencePairs.mapValues { it.value.first } + implementationTypes, nodeMap)
   val signatureErrors = validateSignatures(largerContext, nodeTypes, nonNullaryFunctions, signatureOptions, nodeMap)// +
   val errors = signatureErrors + typeResolutionErrors
+
+  assert(referenceConnections.size == referencePairs.size || errors.any())
 
   val dungeon = emptyDungeon.copy(
       graph = newNamespace().copy(
