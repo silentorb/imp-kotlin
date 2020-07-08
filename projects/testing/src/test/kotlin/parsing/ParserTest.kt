@@ -600,4 +600,17 @@ let output = simpleFunction a (simpleFunction 3 3)
     assertEquals(application1.range.start.index, application2.range.start.index)
     assertEquals(application1.range.end.index, application2.range.end.index)
   }
+
+  @Test
+  fun supportsOverloadsAcrossNamespaces() {
+    val code = """
+      import silentorb.imp.test.*
+      import silentorb.imp.cat.*
+      let output = overload 1
+    """.trimIndent()
+    handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
+      val graph = result.graph
+      assertEquals(4, graph.nodes.size)
+    }
+  }
 }

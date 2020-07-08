@@ -42,7 +42,7 @@ fun signaturesToTypeHash(signatures: List<Signature>): TypeHash {
     signatures.toSet().hashCode()
 }
 
-fun typesToTypeHash(types: List<TypeHash>): TypeHash? {
+fun typesToTypeHash(types: Collection<TypeHash>): TypeHash? {
   return if (types.none())
     null
   else if (types.size == 1)

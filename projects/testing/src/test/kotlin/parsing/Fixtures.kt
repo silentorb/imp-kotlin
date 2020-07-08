@@ -53,6 +53,22 @@ val simpleContext = listOf(
                 output = intType
             )
         ),
+        PathKey(testPath, "overload") to listOf(
+            CompleteSignature(
+                parameters = listOf(
+                    CompleteParameter("value", floatType)
+                ),
+                output = intType
+            )
+        ),
+        PathKey(testPath2, "overload") to listOf(
+            CompleteSignature(
+                parameters = listOf(
+                    CompleteParameter("value", intType)
+                ),
+                output = intType
+            )
+        ),
         vector2iType.key to listOf(
             CompleteSignature(
                 parameters = listOf(

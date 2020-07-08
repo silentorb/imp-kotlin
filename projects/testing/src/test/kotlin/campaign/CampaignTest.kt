@@ -10,7 +10,6 @@ import silentorb.imp.core.PathKey
 import silentorb.imp.core.getGraphOutputNodes
 import silentorb.imp.core.mergeNamespaces
 import silentorb.imp.execution.executeToSingleValue
-import silentorb.imp.execution.mergeImplementationFunctions
 import silentorb.imp.library.standard.standardLibrary
 import silentorb.imp.testing.errored
 import java.nio.file.Paths

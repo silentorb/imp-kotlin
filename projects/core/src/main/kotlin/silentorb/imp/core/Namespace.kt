@@ -172,12 +172,13 @@ fun getTypeUnion(context: Context, type: TypeHash): Union? =
 fun getValue(context: Context, key: PathKey): Any? =
     resolveContextField(context) { namespace -> namespace.values[key] }
 
+fun getSymbolTypes(context: Context, name: String): Map<PathKey, TypeHash> =
+    resolveContextFieldMap(context) { namespace ->
+      namespace.returnTypes.filterKeys { it.name == name }
+    }
+
 fun getSymbolType(context: Context, name: String): TypeHash? =
-    typesToTypeHash(
-        resolveContextFieldGreedy(context) { namespace ->
-          namespace.returnTypes.filterKeys { it.name == name }.values.toList()
-        }
-    )
+    typesToTypeHash(getSymbolTypes(context, name).values)
 
 fun getImplementationType(context: Context, name: String): TypeHash? =
     typesToTypeHash(
