@@ -51,3 +51,6 @@ fun rangeString(fileRange: FileRange): String =
 
 fun isInRange(range: Range, offset: Int): Boolean =
     offset >= range.start.index && offset <= range.end.index
+
+fun isInRange(fileRange: FileRange, file: String, offset: Int): Boolean =
+    fileRange.file == file && offset >= fileRange.range.start.index && offset <= fileRange.range.end.index

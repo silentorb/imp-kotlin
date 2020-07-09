@@ -4,13 +4,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import silentorb.imp.core.ImpError
 import silentorb.imp.core.Response
-import silentorb.imp.core.formatError
+import silentorb.imp.core.formatErrorWithRange
 import silentorb.imp.parsing.general.*
 
 val errored = { errors: List<ImpError> ->
   val error = errors.firstOrNull()
   val message = if (error != null) {
-    "[TextId.${error.message}] ${formatError(::englishText, error)}"
+    "[TextId.${error.message}] ${formatErrorWithRange(::englishText, error)}"
   } else
     ""
   assertEquals(0, errors.size, message)
@@ -31,7 +31,7 @@ fun <I> expectErrors(onSuccess: () -> Unit, response: Response<I>, onFailure: (L
 fun <I> expectError(textId: TextId, response: Response<I>) =
     expectErrors(shouldHaveErrored, response) { errors ->
       if (errors.any { it.message == textId }) {
-        formatError(::englishText, errors.first())
+        formatErrorWithRange(::englishText, errors.first())
         assertTrue(true)
       } else
         assertEquals(textId, errors.firstOrNull()?.message)
