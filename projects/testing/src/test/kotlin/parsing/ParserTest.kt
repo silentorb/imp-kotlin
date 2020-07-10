@@ -193,7 +193,7 @@ let intermediate = 10
     val code = """
       let output = simpleFunction
     """.trimIndent()
-    expectError(TextId.unknownFunction, parseToDungeon(emptyContext, code))
+    assertUnknownFunctionError(parseToDungeon(emptyContext, code))
   }
 
   @Test
@@ -201,7 +201,7 @@ let intermediate = 10
     val code = """
       let output = + 10
     """.trimIndent()
-    expectError(TextId.unknownFunction, parseToDungeon(emptyContext, code))
+    assertUnknownFunctionError(parseToDungeon(emptyContext, code))
   }
 
   @Test
@@ -209,7 +209,7 @@ let intermediate = 10
     val code = """
       let output = simpleFunction 1 1
     """.trimIndent()
-    expectError(TextId.unknownFunction, parseToDungeon(simpleContext, code))
+    assertUnknownFunctionError(parseToDungeon(emptyContext, code))
   }
 
   @Test

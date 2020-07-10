@@ -42,8 +42,8 @@ fun validateSignatures(context: Context, types: Map<PathKey, TypeHash>, parents:
                        nodeMap: NodeMap): ImpErrors {
   return parents
       .mapNotNull { (pathKey, arguments) ->
-        val options = signatureOptions[pathKey] ?: listOf()
-        if (options.size == 1)
+        val options = signatureOptions[pathKey]
+        if (options == null || options.size == 1)
           null
         else if (options.none()) {
           val argumentTypeNames = arguments.map { argumentKey ->

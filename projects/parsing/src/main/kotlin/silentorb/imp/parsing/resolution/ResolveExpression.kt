@@ -46,7 +46,10 @@ fun resolveExpression(context: Context, largerContext: Context, intermediate: In
       resolveFunctionSignatures(
           appendedContext,
           stages,
-          applications,
+          applications.filter {
+            val type = initialTypes[it.value.target]
+            type != null && type != unknownType.hash
+          },
           initialTypes,
           namedArguments
       )
