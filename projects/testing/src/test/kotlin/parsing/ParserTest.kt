@@ -588,7 +588,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     val (tokens2, tokenErrors2) = tokenizeAndSanitize("", code2)
     val (realm2, syntaxErrors2) = parseSyntax("", tokens2)
     assert(tokenErrors1.plus(syntaxErrors1).plus(tokenErrors2).plus(syntaxErrors2).none())
-    
+
     val block1 = realm1.burgs.values.first { it.type == BurgType.block }
     val block2 = realm2.burgs.values.first { it.type == BurgType.block }
     assertEquals(block1.range.end.index, block2.range.end.index)
@@ -612,5 +612,13 @@ let output = simpleFunction a (simpleFunction 3 3)
       val graph = result.graph
       assertEquals(4, graph.nodes.size)
     }
+  }
+
+  @Test
+  fun preventsUnknownParameterTypes() {
+    val code = """
+      let method a: Madness = 1
+    """.trimIndent()
+    assertUnknownFunctionError(parseToDungeon(simpleContext, code))
   }
 }

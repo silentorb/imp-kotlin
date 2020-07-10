@@ -2,6 +2,8 @@ package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
 import silentorb.imp.core.Response
+import silentorb.imp.parsing.general.TextId
+import silentorb.imp.parsing.general.newParsingError
 import silentorb.imp.parsing.resolution.resolveExpression
 
 fun newParameterNamespace(context: Context, pathKey: PathKey, parameters: List<Parameter>): Namespace {
@@ -66,6 +68,12 @@ fun parseDefinitionSecondPass(namespaceContext: Context, largerContext: Context,
   } else
     null
 
+  val parameterErrors = parameters
+      .filter { it.type == unknownType.hash }
+      .map { parameter->
+        val details = definition.tokenized.parameters.first { it.name.value == parameter.name }
+        newParsingError(TextId.unknownFunction, details.type)
+      }
   val localContext = namespaceContext + listOfNotNull(parameterNamespace)
 
   val (dungeon, expressionErrors) = if (definition.definitions.any())
@@ -103,6 +111,6 @@ fun parseDefinitionSecondPass(namespaceContext: Context, largerContext: Context,
 
   return Response(
       nextDungeon,
-      expressionErrors
+      expressionErrors + parameterErrors
   )
 }

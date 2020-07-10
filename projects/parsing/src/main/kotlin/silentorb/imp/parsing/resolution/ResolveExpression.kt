@@ -5,7 +5,11 @@ import silentorb.imp.core.Response
 import silentorb.imp.parsing.parser.validateFunctionTypes
 import silentorb.imp.parsing.parser.validateSignatures
 
-fun resolveExpression(context: Context, largerContext: Context, intermediate: IntermediateExpression): Response<Dungeon> {
+fun resolveExpression(
+    context: Context,
+    largerContext: Context,
+    intermediate: IntermediateExpression
+): Response<Dungeon> {
   val (
       applications,
       literalTypes,
@@ -85,7 +89,10 @@ fun resolveExpression(context: Context, largerContext: Context, intermediate: In
 
   val nodeTypes = initialTypes + reducedTypes
   val nonNullaryFunctions = parents.filter { it.value.any() }
-  val typeResolutionErrors = validateFunctionTypes(referencePairs.keys, referencePairs.mapValues { it.value.first } + implementationTypes, nodeMap)
+  val typeResolutionErrors = validateFunctionTypes(
+      referencePairs.keys,
+      referencePairs.mapValues { it.value.first } + implementationTypes,
+      nodeMap)
   val signatureErrors = validateSignatures(largerContext, nodeTypes, nonNullaryFunctions, signatureOptions, nodeMap)// +
   val errors = signatureErrors + typeResolutionErrors
 

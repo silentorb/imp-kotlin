@@ -55,6 +55,24 @@ class ExecutionTest {
     }
   }
 
+  @Test
+  fun supportsNestedCustomFunctions() {
+    val code = """
+      import imp.standard.*
+      import imp.standard.math.*
+      
+      let output = { 
+        let add a:Float = + a 2.0
+        let main = add 1.0
+      }
+    """.trimIndent()
+    val library = standardLibrary()
+    handleRoot(errored, parseToDungeon(listOf(library.namespace), code)) { result ->
+      val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
+      assertEquals(3.0f, value)
+    }
+  }
+
   @Disabled
   @Test
   fun supportsDefiningUnions() {
