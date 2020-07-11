@@ -20,8 +20,17 @@ fun mathTernarySignature(type: TypePair) = CompleteSignature(
     output = type
 )
 
+fun mathVariadicSignature(type: TypePair) = CompleteSignature(
+    isVariadic = true,
+    parameters = listOf(
+        CompleteParameter("values", type)
+    ),
+    output = type
+)
+
 typealias UnaryMathOperation<T> = (a: T) -> T
 typealias TernaryMathOperation<T> = (a: T, b: T) -> T
+typealias VariadicMathOperation<T> = (a: List<T>) -> T
 
 fun <T> unaryImplementation(action: UnaryMathOperation<T>): (Map<Key, Any>) -> T =
     { values ->
@@ -36,22 +45,27 @@ fun <T> ternaryImplementation(action: TernaryMathOperation<T>): (Map<Key, Any>) 
       action(a, b)
     }
 
+fun <T> variadicImplementation(action: VariadicMathOperation<T>): (Map<Key, Any>) -> T =
+    { values ->
+      val a = values["values"] as List<T>
+      action(a)
+    }
+
 fun <T : Any> operations(
-    addition: TernaryMathOperation<T>,
     subtraction: TernaryMathOperation<T>,
-    multiplication: TernaryMathOperation<T>,
     division: TernaryMathOperation<T>,
     modulus: TernaryMathOperation<T>,
+    addition: VariadicMathOperation<T>,
+    multiplication: VariadicMathOperation<T>,
     negate: UnaryMathOperation<T>,
     typePair: TypePair
 ): List<CompleteFunction> {
   val unarySignature = mathUnarySignature(typePair)
   val ternarySignature = mathTernarySignature(typePair)
+  val variadicSignature = mathVariadicSignature(typePair)
 
   return listOf(
-      "+" to addition,
       "-" to subtraction,
-      "*" to multiplication,
       "/" to division,
       "%" to modulus
   )
@@ -62,6 +76,17 @@ fun <T : Any> operations(
             implementation = ternaryImplementation(implementation)
         )
       } +
+      listOf(
+          "+" to addition,
+          "*" to multiplication
+      )
+          .map { (name, implementation) ->
+            CompleteFunction(
+                path = PathKey(mathPath, name),
+                signature = variadicSignature,
+                implementation = variadicImplementation(implementation)
+            )
+          } +
       CompleteFunction(
           path = PathKey(mathPath, "-"),
           signature = unarySignature,
@@ -74,28 +99,28 @@ fun mathOperators() =
     listOf<CompleteFunction>() +
 
         operations<Int>(
-            { a, b -> a + b },
             { a, b -> a - b },
-            { a, b -> a * b },
             { a, b -> a / b },
             { a, b -> a % b },
+            { a -> a.sum() },
+            { a -> a.reduce { b, c -> b * c } },
             { -it },
             intType) +
 
         operations<Float>(
-            { a, b -> a + b },
             { a, b -> a - b },
-            { a, b -> a * b },
             { a, b -> a / b },
             { a, b -> a % b },
+            { a -> a.sum() },
+            { a -> a.reduce { b, c -> b * c } },
             { -it },
             floatType) +
 
         operations<Double>(
-            { a, b -> a + b },
             { a, b -> a - b },
-            { a, b -> a * b },
             { a, b -> a / b },
             { a, b -> a % b },
+            { a -> a.sum() },
+            { a -> a.reduce { b, c -> b * c } },
             { -it },
             doubleType)

@@ -61,6 +61,13 @@ fun extractTypings(signatures: Collection<List<Signature>>): Typings {
 }
 
 fun reduceSignature(signature: Signature, argumentNames: Set<String>): Signature =
-    signature.copy(
-        parameters = signature.parameters.filter { !argumentNames.contains(it.name) }
-    )
+    if (signature.isVariadic)
+      Signature(
+          parameters = listOf(),
+          output = signature.output,
+          isVariadic = false
+      )
+    else
+      signature.copy(
+          parameters = signature.parameters.filter { !argumentNames.contains(it.name) }
+      )

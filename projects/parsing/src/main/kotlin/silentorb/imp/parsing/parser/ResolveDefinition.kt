@@ -32,7 +32,8 @@ fun prepareDefinitionFunction(
 ): Dungeon {
   val signature = Signature(
       parameters = parameters,
-      output = outputType
+      output = outputType,
+      isVariadic = false
   )
   val definitionType = signature.hashCode()
   val typings = graph.typings.copy(

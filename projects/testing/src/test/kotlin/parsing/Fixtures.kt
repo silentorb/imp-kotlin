@@ -69,6 +69,15 @@ val simpleContext = listOf(
                 output = intType
             )
         ),
+        PathKey(testPath, "add") to listOf(
+            CompleteSignature(
+                isVariadic = true,
+                parameters = listOf(
+                    CompleteParameter("value", intType)
+                ),
+                output = intType
+            )
+        ),
         vector2iType.key to listOf(
             CompleteSignature(
                 parameters = listOf(

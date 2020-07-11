@@ -73,6 +73,22 @@ class ExecutionTest {
     }
   }
 
+  @Test
+  fun supportsAppliedVariadicFunctions() {
+    val code = """
+      import imp.standard.math.*
+      
+      let output = + 1 2 3
+    """.trimIndent()
+    handleRoot(errored, parseToDungeon(simpleContext(), code)) { result ->
+      val graph = result.graph
+      val library = standardLibrary()
+      val value = executeToSingleValue(listOf(library.namespace), library.implementation, graph)
+      assertEquals(6, value)
+    }
+  }
+
+
   @Disabled
   @Test
   fun supportsDefiningUnions() {
@@ -109,18 +125,4 @@ class ExecutionTest {
     }
   }
 
-  @Disabled
-  @Test
-  fun supportsVarArgs() {
-    val code = """
-      import imp.standard.*
-      
-      let output = listOf(4, 5, 7)
-    """.trimIndent()
-    val library = standardLibrary()
-    handleRoot(errored, parseToDungeon(listOf(library.namespace), code)) { result ->
-      val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
-      assertEquals(1.2f, value)
-    }
-  }
 }

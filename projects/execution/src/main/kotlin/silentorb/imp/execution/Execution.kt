@@ -62,10 +62,18 @@ fun generateNodeFunction(context: Context,
     val implementationNode = resolveReference(context, reference) ?: reference
     val implementationKey = FunctionKey(implementationNode, implementationType)
     val function = functions[implementationKey]
+    val argumentKeys = getArgumentConnections(context, node)
     if (function != null) {
-      val argumentKeys = getArgumentConnections(context, node)
-      return { values: NodeImplementationArguments ->
-        function(argumentKeys.entries.associate { it.key.parameter to values[it.value]!! })
+      if (signature.isVariadic) {
+        return { values: NodeImplementationArguments ->
+          val list = argumentKeys.entries.map { values[it.value]!! }
+          function(mapOf("values" to list))
+        }
+      }
+      else {
+        return { values: NodeImplementationArguments ->
+          function(argumentKeys.entries.associate { it.key.parameter to values[it.value]!! })
+        }
       }
     } else if (signature.parameters.none()) {
       return { values: NodeImplementationArguments ->

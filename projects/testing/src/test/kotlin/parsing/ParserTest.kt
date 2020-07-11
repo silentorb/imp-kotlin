@@ -621,4 +621,16 @@ let output = simpleFunction a (simpleFunction 3 3)
     """.trimIndent()
     assertUnknownFunctionError(parseToDungeon(simpleContext, code))
   }
+
+  @Test
+  fun supportsAppliedVariadicFunctions() {
+    val code = """
+      import silentorb.imp.test.*
+      let output = add 1 2 3
+    """.trimIndent()
+    handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
+      val graph = result.graph
+      assertEquals(6, graph.nodes.size)
+    }
+  }
 }

@@ -59,7 +59,8 @@ fun convertCompleteSignature(completeSignature: CompleteSignature): Signature =
               parameter.type.hash
           )
         },
-        output = completeSignature.output.hash
+        output = completeSignature.output.hash,
+        isVariadic = completeSignature.isVariadic
     )
 
 fun joinPaths(vararg tokens: String): String =

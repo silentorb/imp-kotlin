@@ -32,10 +32,11 @@ data class HashSignature(
 
 data class Signature(
     val parameters: List<Parameter> = listOf(),
-    val output: TypeHash
+    val output: TypeHash,
+    val isVariadic: Boolean
 ) {
   override fun hashCode(): Int {
-    return if (parameters.none())
+    return if (parameters.none() && !isVariadic)
       output
     else
       HashSignature(parameters, output).hashCode()
@@ -125,8 +126,13 @@ data class CompleteParameter(
 
 data class CompleteSignature(
     val parameters: List<CompleteParameter> = listOf(),
-    val output: TypePair
-)
+    val output: TypePair,
+    val isVariadic: Boolean = false
+) {
+  init {
+    assert(!isVariadic || parameters.size == 1)
+  }
+}
 
 const val unknownSymbol = "unknown"
 val unknownType = newTypePair(PathKey("", unknownSymbol))
