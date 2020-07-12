@@ -23,13 +23,6 @@ tailrec fun getNodeDependencyConnections(context: Context, nodes: Set<PathKey>, 
 fun arrangeGraphSequence(context: Context, connections: Connections): List<PathKey> {
   val nodes = connections.values
       .plus(connections.keys.map { it.destination })
-      .filter {
-        val type = getReturnType(context, it)
-        if (type != null)
-          getTypeSignatures(context)(type).all { it.parameters.none() }
-        else
-          false
-      }
       .toSet()
 
   val dependencies = connections
@@ -45,43 +38,52 @@ fun arrangeGraphSequence(context: Context, connections: Connections): List<PathK
 }
 
 fun generateNodeFunction(context: Context,
-                         functions: FunctionImplementationMap,
                          node: PathKey
 ): NodeImplementation {
-  val reference = resolveReference(context, node) ?: node
-  val implementationType = getReturnType(context, reference) ?: getReturnType(context, node)
-  val signature = if (implementationType != null) getTypeSignature(context, implementationType) else null
-  val value = getValue(context, node)
-  if (value != null) {
-    return { _: NodeImplementationArguments ->
-      value
-    }
-  } else if (implementationType == null && reference != node) {
-    return generateNodeFunction(context, functions, reference)
-  } else if (implementationType != null && signature != null) {
-    val implementationNode = resolveReference(context, reference) ?: reference
-    val implementationKey = FunctionKey(implementationNode, implementationType)
-    val function = functions[implementationKey]
-    val argumentKeys = getArgumentConnections(context, node)
-    if (function != null) {
+  val nodeType = getReturnType(context, node)
+      ?: throw Error("Missing nodeType for ${formatPathKey(node)}")
+
+  if (getTypeUnion(context, nodeType) != null)
+    return { }
+
+  val value = getValue(context, node.copy(type = nodeType)) ?: getValue(context, node)
+
+  if (value == null) {
+    val inputs = getInputConnections(context, node).entries
+    val target = inputs.firstOrNull { it.key.parameter == defaultParameter }
+        ?: throw Error("Missing application node type for ${formatPathKey(node)}")
+
+    val targetNode = target.value
+    if (inputs.size > 1) {
+      val targetType = getReturnType(context, targetNode)
+          ?: throw Error("Missing nodeType for ${formatPathKey(node)}")
+
+      val signature = getTypeSignature(context, targetType)
+          ?: throw Error("Missing signature for ${formatPathKey(node)}")
+
+      val function = getValue(context, targetNode) as FunctionImplementation
+      val argumentInputs = inputs.minus(target)
       if (signature.isVariadic) {
         return { values: NodeImplementationArguments ->
-          val list = argumentKeys.entries.map { values[it.value]!! }
+          val list = argumentInputs.map { values[it.value]!! }
           function(mapOf("values" to list))
         }
-      }
-      else {
+      } else if (signature.parameters.none()) {
+        return { function(mapOf()) }
+      } else {
         return { values: NodeImplementationArguments ->
-          function(argumentKeys.entries.associate { it.key.parameter to values[it.value]!! })
+          function(argumentInputs.associate { it.key.parameter to values[it.value]!! })
         }
       }
-    } else if (signature.parameters.none()) {
+    } else {
       return { values: NodeImplementationArguments ->
-        values[reference]!!
+        values[targetNode]!!
       }
+//      throw Error("Not yet supported")
     }
+  } else {
+    return { value }
   }
-  throw Error("Insufficient data to execute node $node")
 }
 
 fun executeStep(): (OutputValues, ExecutionStep) -> OutputValues = { values, step ->
@@ -104,7 +106,7 @@ fun prepareExecutionSteps(
   return steps.map { node ->
     ExecutionStep(
         node = node,
-        execute = generateNodeFunction(context, functions, node)
+        execute = generateNodeFunction(context, node)
     )
   }
 }
@@ -114,7 +116,7 @@ fun execute(
     functions: FunctionImplementationMap,
     nodes: Set<PathKey>
 ): OutputValues {
-  val steps = prepareExecutionSteps(context, functions, nodes)
+  val steps = prepareExecutionSteps(listOf(mergeNamespaces(context)), functions, nodes)
   return executeSteps(steps, mapOf())
 }
 

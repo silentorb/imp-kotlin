@@ -88,6 +88,18 @@ fun resolveExpression(
       .associate { it }
 
   val nodeTypes = initialTypes + reducedTypes
+  val referenceValues = referenceConnections
+      .filter { it.key.parameter == defaultParameter }
+      .mapNotNull { (destination, source) ->
+        val nodeType = nodeTypes[destination.destination]!!
+        val referenceValue = getValue(largerContext, source.copy(type = nodeType)) ?: getValue(largerContext, source)
+        if (referenceValue != null)
+          destination.destination to referenceValue
+        else
+          null
+      }
+      .associate { it }
+
   val nonNullaryFunctions = parents.filter { it.value.any() }
   val typeResolutionErrors = validateFunctionTypes(
       referencePairs.keys,
@@ -97,13 +109,16 @@ fun resolveExpression(
   val errors = signatureErrors + typeResolutionErrors
 
   assert(referenceConnections.size == referencePairs.size || errors.any())
-
+  assert(
+      nodeTypes.values
+          .all { type -> getTypeSignature(largerContext, type) ?: typings.signatures[type] != null }
+  )
   val dungeon = emptyDungeon.copy(
       namespace = newNamespace().copy(
           connections = connections + referenceConnections,
           nodeTypes = nodeTypes,
           typings = typings,
-          values = values
+          values = values + referenceValues
       ),
       nodeMap = nodeMap
   )

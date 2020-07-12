@@ -18,7 +18,7 @@ fun newLibrary(functions: List<CompleteFunction>, typeNames: Map<TypeHash, PathK
       .flatMap { (path, function) ->
         function.map {
           val signature = convertCompleteSignature(it.signature)
-          Pair(FunctionKey(path, signature.hashCode()), it.implementation)
+          Pair(path.copy(type = signature.hashCode()), it.implementation)
         }
       }
       .associate { it }
@@ -26,6 +26,7 @@ fun newLibrary(functions: List<CompleteFunction>, typeNames: Map<TypeHash, PathK
   val namespace = namespaceFromCompleteOverloads(signatures)
   return Library(
       namespace = namespace.copy(
+          values = namespace.values + implementation,
           nodeTypes = namespace.nodeTypes + typeNames.entries.associate { it.value to it.key },
           typings = namespace.typings + newTypings().copy(
               typeAliases = typeAliases
@@ -37,7 +38,7 @@ fun newLibrary(functions: List<CompleteFunction>, typeNames: Map<TypeHash, PathK
                   .associate { Pair(it.path, it.numericConstraint!!) }
           )
       ),
-      implementation = implementation
+      implementation = mapOf()
   )
 }
 
