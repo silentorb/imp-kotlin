@@ -2,7 +2,7 @@ package silentorb.imp.execution
 
 import silentorb.imp.core.*
 
-fun getImplementationFunctions(context: Context, implementationGraphs: Map<FunctionKey, Graph>, functions: () -> FunctionImplementationMap): FunctionImplementationMap {
+fun getImplementationFunctions(context: Context, implementationGraphs: Map<FunctionKey, Namespace>, functions: () -> FunctionImplementationMap): FunctionImplementationMap {
   return implementationGraphs.mapValues { (key, functionGraph) ->
     val signature = getTypeSignature(context, key.type)!!
     val parameters = signature.parameters

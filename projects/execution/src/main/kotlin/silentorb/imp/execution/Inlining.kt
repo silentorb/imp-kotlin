@@ -1,15 +1,15 @@
 package silentorb.imp.execution
 
 import silentorb.imp.core.Context
-import silentorb.imp.core.Graph
+import silentorb.imp.core.Namespace
 import silentorb.imp.core.PathKey
 import silentorb.imp.core.resolveReferenceValue
 
-fun inlineValues(context: Context, graph: Graph, parameters: List<String>): Map<PathKey, Any> {
-  val inputs = graph.connections
+fun inlineValues(context: Context, namespace: Namespace, parameters: List<String>): Map<PathKey, Any> {
+  val inputs = namespace.connections
       .values
-      .minus(graph.values.keys)
-      .minus(graph.connections.keys.map { it.destination })
+      .minus(namespace.values.keys)
+      .minus(namespace.connections.keys.map { it.destination })
       .filter { !parameters.contains(it.name) }
       .distinct()
 

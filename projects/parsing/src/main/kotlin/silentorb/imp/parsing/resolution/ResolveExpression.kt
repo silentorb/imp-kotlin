@@ -99,9 +99,9 @@ fun resolveExpression(
   assert(referenceConnections.size == referencePairs.size || errors.any())
 
   val dungeon = emptyDungeon.copy(
-      graph = newNamespace().copy(
+      namespace = newNamespace().copy(
           connections = connections + referenceConnections,
-          returnTypes = nodeTypes,
+          nodeTypes = nodeTypes,
           typings = typings,
           values = values
       ),

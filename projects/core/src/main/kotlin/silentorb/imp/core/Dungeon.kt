@@ -5,14 +5,14 @@ typealias NodeMap = Map<PathKey, FileRange>
 typealias ConstrainedLiteralMap = Map<PathKey, TypeHash>
 
 data class Dungeon(
-    val graph: Graph,
+    val namespace: Namespace,
     val nodeMap: NodeMap,
-    val implementationGraphs: Map<FunctionKey, Graph>
+    val implementationGraphs: Map<FunctionKey, Namespace>
 )
 
 val emptyDungeon =
     Dungeon(
-        graph = newNamespace(),
+        namespace = newNamespace(),
         nodeMap = mapOf(),
         implementationGraphs = mapOf()
     )

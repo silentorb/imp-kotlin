@@ -2,27 +2,22 @@ package silentorb.imp.core
 
 data class Namespace(
     val connections: Connections,
-    val returnTypes: Map<PathKey, TypeHash>,
+    val nodeTypes: Map<PathKey, TypeHash>,
     val values: Map<PathKey, Any>,
     val typings: Typings
 ) {
   val nodes: Set<PathKey>
     get() =
-//      connections
-//          .flatMap { listOf(it.value, it.key.destination) }
-          returnTypes.keys
-//          .filter { !typings.signatures.containsKey(returnTypes[it]) }
+          nodeTypes.keys
 
   operator fun plus(other: Namespace): Namespace =
       mergeNamespaces(this, other)
 }
 
-typealias Graph = Namespace
-
 fun newNamespace(): Namespace =
     Namespace(
         connections = mapOf(),
-        returnTypes = mapOf(),
+        nodeTypes = mapOf(),
         values = mapOf(),
         typings = newTypings()
     )
@@ -30,7 +25,7 @@ fun newNamespace(): Namespace =
 fun mergeNamespaces(first: Namespace, second: Namespace): Namespace =
     Namespace(
         connections = first.connections + second.connections,
-        returnTypes = first.returnTypes + second.returnTypes,
+        nodeTypes = first.nodeTypes + second.nodeTypes,
         values = first.values + second.values,
         typings = mergeTypings(first.typings, second.typings)
     )
@@ -109,24 +104,24 @@ fun <V> resolveContextField(context: Context, getter: (Namespace) -> V?): V? =
 
 fun getReturnTypesByPath(context: Context, path: String): Map<PathKey, TypeHash> =
     resolveContextFieldMap(context) { namespace ->
-      namespace.returnTypes.filter { it.key.path == path }
+      namespace.nodeTypes.filter { it.key.path == path }
     }
 
 fun getReturnTypesByName(context: Context, name: String): Map<PathKey, TypeHash> =
     resolveContextFieldMap(context) { namespace ->
-      namespace.returnTypes.filter { it.key.name == name }
+      namespace.nodeTypes.filter { it.key.name == name }
     }
 
 fun getReturnType(context: Context, key: PathKey): TypeHash? =
     resolveContextField(context) { namespace ->
-      namespace.returnTypes[key]
+      namespace.nodeTypes[key]
     }
 
 tailrec fun resolveReference(context: Context, name: String, index: Int): PathKey? =
     if (index < 0)
       null
     else {
-      val nodes = context[index].returnTypes.keys.filter { it.name == name }
+      val nodes = context[index].nodeTypes.keys.filter { it.name == name }
           .plus(context[index].connections.keys.filter { it.destination.name == name }.map { it.destination })
           .distinct()
 
@@ -169,7 +164,7 @@ fun getValue(context: Context, key: PathKey): Any? =
 
 fun getSymbolTypes(context: Context, name: String): Map<PathKey, TypeHash> =
     resolveContextFieldMap(context) { namespace ->
-      namespace.returnTypes.filterKeys { it.name == name }
+      namespace.nodeTypes.filterKeys { it.name == name }
     }
 
 fun getSymbolType(context: Context, name: String): TypeHash? =
@@ -177,7 +172,7 @@ fun getSymbolType(context: Context, name: String): TypeHash? =
 
 fun getPathKeyTypes(context: Context, key: PathKey): List<TypeHash> {
   return resolveContextFieldGreedy(context) { namespace ->
-    listOfNotNull(namespace.returnTypes[key])
+    listOfNotNull(namespace.nodeTypes[key])
   }
 }
 
@@ -198,7 +193,7 @@ fun resolveNumericTypeConstraint(key: TypeHash) =
 
 fun namespaceFromOverloads(functions: OverloadsMap): Namespace {
   return newNamespace().copy(
-      returnTypes = functions.mapValues { signaturesToTypeHash(it.value) },
+      nodeTypes = functions.mapValues { signaturesToTypeHash(it.value) },
       typings = extractTypings(functions.values)
   )
 }
@@ -214,7 +209,7 @@ fun namespaceFromCompleteOverloads(signatures: Map<PathKey, List<CompleteSignatu
       }
   return namespace
       .copy(
-          returnTypes = namespace.returnTypes,
+          nodeTypes = namespace.nodeTypes,
           typings = namespace.typings.copy(
               typeNames = namespace.typings.typeNames + extractedTypings
           )

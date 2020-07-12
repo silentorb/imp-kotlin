@@ -121,13 +121,13 @@ fun execute(
 fun executeToSingleValue(
     context: Context,
     functions: FunctionImplementationMap,
-    graph: Graph
+    namespace: Namespace
 ): Any? {
-  val output = getGraphOutputNode(graph)
+  val output = getGraphOutputNode(namespace)
   return if (output == null)
     null
   else {
-    val values = execute(context + graph, functions, setOf(output))
+    val values = execute(context + namespace, functions, setOf(output))
     values[output]
   }
 }
@@ -150,16 +150,16 @@ fun executeToSingleValue(unit: ExecutionUnit): Any? {
   return values[unit.output]!!
 }
 
-fun mergeImplementationFunctions(context: Context, implementationGraphs: Map<FunctionKey, Graph>, functions: FunctionImplementationMap): FunctionImplementationMap {
+fun mergeImplementationFunctions(context: Context, implementationGraphs: Map<FunctionKey, Namespace>, functions: FunctionImplementationMap): FunctionImplementationMap {
   var newFunctions: FunctionImplementationMap = mapOf()
   newFunctions = functions + getImplementationFunctions(context, implementationGraphs) { newFunctions }
   return newFunctions
 }
 
 fun executeToSingleValue(context: Context, functions: FunctionImplementationMap, dungeon: Dungeon): Any? {
-  val combinedContext = context + dungeon.graph
+  val combinedContext = context + dungeon.namespace
   val newFunctions = mergeImplementationFunctions(combinedContext, dungeon.implementationGraphs, functions)
-  return executeToSingleValue(context, functions + newFunctions, dungeon.graph)
+  return executeToSingleValue(context, functions + newFunctions, dungeon.namespace)
 }
 
 fun executeToSingleValue(context: Context, functions: FunctionImplementationMap, root: PathKey): Any? {

@@ -29,7 +29,7 @@ fun newDefinitionContext(
 
   return parentContext.plus(
       newNamespace().copy(
-          returnTypes = returnTypes
+          nodeTypes = returnTypes
       )
   )
 }
@@ -46,7 +46,7 @@ fun newImportedContext(
   )
   val sameNamespaceBundle = ImportBundle(
       returnTypes = sourceContext
-          .map { namespace -> namespace.returnTypes.filterKeys { it.path == namespacePath } }
+          .map { namespace -> namespace.nodeTypes.filterKeys { it.path == namespacePath } }
           .reduce { a, b -> a + b }
   )
   return Response(
@@ -79,9 +79,9 @@ tailrec fun resolveSubDefinitions(
 
       val dungeon = response.value
       resolveSubDefinitions(
-          baseContext + dungeon.graph,
+          baseContext + dungeon.namespace,
           definitions.drop(1),
-          contextAccumulator + dungeon.graph,
+          contextAccumulator + dungeon.namespace,
           accumulator + response.copy(errors = response.errors)
       )
     }
@@ -110,11 +110,11 @@ tailrec fun resolveDefinitionsRecursive(
       val response = parseDefinitionSecondPass(context + namespaceContext, contextAccumulator, next)
 
       val dungeon = response.value
-      val output = getGraphOutputNode(dungeon.graph)
+      val output = getGraphOutputNode(dungeon.namespace)
       val externalGraph = if (output != null)
         newNamespace().copy(
-            returnTypes = dungeon.graph.returnTypes.filterKeys { it == output },
-            values = dungeon.graph.values.filterKeys { it == output }
+            nodeTypes = dungeon.namespace.nodeTypes.filterKeys { it == output },
+            values = dungeon.namespace.values.filterKeys { it == output }
         )
       else
         newNamespace() // Reaching this line is an error but the error should be flagged in other places
@@ -125,7 +125,7 @@ tailrec fun resolveDefinitionsRecursive(
           definitions.drop(1),
           fileContexts + (file to (context)),
           namespaceContexts + (next.key.path to namespaceContext + externalGraph),
-          contextAccumulator + dungeon.graph,
+          contextAccumulator + dungeon.namespace,
           accumulator + response.copy(errors = response.errors + importErrors)
       )
     }
@@ -188,28 +188,28 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
       )
 
       val initialDungeon = emptyDungeon.copy(
-          graph = initialGraph,
+          namespace = initialGraph,
           nodeMap = nodeMap
       )
 
       val mergedDungeon = expressionDungeons.fold(initialDungeon) { a, expressionDungeon ->
         mergeDungeons(a, expressionDungeon)
       }
-      val propagations = propagateLiteralTypeAliases(context, mergedDungeon.graph)
+      val propagations = propagateLiteralTypeAliases(context, mergedDungeon.namespace)
       val dungeon = mergedDungeon.copy(
-          graph = mergedDungeon.graph.copy(
-              returnTypes = mergedDungeon.graph.returnTypes + propagations
+          namespace = mergedDungeon.namespace.copy(
+              nodeTypes = mergedDungeon.namespace.nodeTypes + propagations
           )
       )
-      val constraintErrors = validateTypeConstraints(dungeon.graph.values, context, propagations, dungeon.nodeMap)
-      val typeNames = gatherTypeNames(context, dungeon.graph.returnTypes)
+      val constraintErrors = validateTypeConstraints(dungeon.namespace.values, context, propagations, dungeon.nodeMap)
+      val typeNames = gatherTypeNames(context, dungeon.namespace.nodeTypes)
 
       Response(
           dungeon
               .copy(
-                  graph = dungeon.graph.copy(
-                      typings = dungeon.graph.typings.copy(
-                          typeNames = dungeon.graph.typings.typeNames + typeNames
+                  namespace = dungeon.namespace.copy(
+                      typings = dungeon.namespace.typings.copy(
+                          typeNames = dungeon.namespace.typings.typeNames + typeNames
                       )
                   )
               ),

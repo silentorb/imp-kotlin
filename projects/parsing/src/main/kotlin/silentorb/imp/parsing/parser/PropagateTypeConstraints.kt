@@ -4,13 +4,13 @@ import silentorb.imp.core.*
 
 // Constraint propagation only travels upward, with later uses applying restrictions to earlier definitions
 
-fun propagateLiteralTypeAliases(context: Context, graph: Graph): Map<PathKey, TypeHash> {
-  val propagations = graph.values.keys
+fun propagateLiteralTypeAliases(context: Context, namespace: Namespace): Map<PathKey, TypeHash> {
+  val propagations = namespace.values.keys
       .mapNotNull { id ->
-        val connections = graph.connections.filter { it.value == id }
+        val connections = namespace.connections.filter { it.value == id }
         val types = connections
             .mapNotNull { connection ->
-              val functionType = graph.returnTypes[connection.key.destination]
+              val functionType = namespace.nodeTypes[connection.key.destination]
               if (functionType != null)
                 getTypeSignature(context, functionType)?.parameters?.firstOrNull { it.name == connection.key.parameter }?.type
               else

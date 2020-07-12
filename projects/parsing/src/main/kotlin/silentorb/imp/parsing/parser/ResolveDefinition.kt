@@ -13,7 +13,7 @@ fun newParameterNamespace(context: Context, pathKey: PathKey, parameters: List<P
   }
   return newNamespace()
       .copy(
-          returnTypes = nodeTypes,
+          nodeTypes = nodeTypes,
           typings = newTypings()
               .copy(
                   typeNames = nodeTypes.values
@@ -23,7 +23,7 @@ fun newParameterNamespace(context: Context, pathKey: PathKey, parameters: List<P
 }
 
 fun prepareDefinitionFunction(
-    graph: Graph,
+    namespace: Namespace,
     parameters: List<Parameter>,
     output: PathKey,
     outputType: TypeHash,
@@ -36,20 +36,20 @@ fun prepareDefinitionFunction(
       isVariadic = false
   )
   val definitionType = signature.hashCode()
-  val typings = graph.typings.copy(
-      signatures = graph.typings.signatures + (signature.hashCode() to signature)
+  val typings = namespace.typings.copy(
+      signatures = namespace.typings.signatures + (signature.hashCode() to signature)
   )
-  val implementation = graph.copy(
-      connections = graph.connections + (Input(
+  val implementation = namespace.copy(
+      connections = namespace.connections + (Input(
           destination = key,
           parameter = defaultParameter
       ) to output),
-      returnTypes = graph.returnTypes + (key to outputType),
+      nodeTypes = namespace.nodeTypes + (key to outputType),
       typings = typings
   )
   return dungeon.copy(
-      graph = newNamespace().copy(
-          returnTypes = mapOf(key to definitionType),
+      namespace = newNamespace().copy(
+          nodeTypes = mapOf(key to definitionType),
           typings = typings
       ),
       implementationGraphs = mapOf(
@@ -82,13 +82,13 @@ fun parseDefinitionSecondPass(namespaceContext: Context, largerContext: Context,
   else
     resolveExpression(localContext, largerContext, definition.intermediate!!)
 
-  val output = getGraphOutputNode(dungeon.graph)
+  val output = getGraphOutputNode(dungeon.namespace)
 
   val nextDungeon = if (output != null) {
-    val outputType = dungeon.graph.returnTypes[output]!!
+    val outputType = dungeon.namespace.nodeTypes[output]!!
     if (parameters.any()) {
       prepareDefinitionFunction(
-          graph = parameterNamespace!! + dungeon.graph,
+          namespace = parameterNamespace!! + dungeon.namespace,
           parameters = parameters,
           output = output,
           outputType = outputType,
@@ -96,14 +96,14 @@ fun parseDefinitionSecondPass(namespaceContext: Context, largerContext: Context,
           dungeon = dungeon
       )
     } else {
-      val graph = dungeon.graph
+      val graph = dungeon.namespace
       dungeon.copy(
-          graph = graph.copy(
+          namespace = graph.copy(
               connections = graph.connections + (Input(
                   destination = definition.key,
                   parameter = defaultParameter
               ) to output),
-              returnTypes = graph.returnTypes + (definition.key to outputType)
+              nodeTypes = graph.nodeTypes + (definition.key to outputType)
           )
       )
     }

@@ -1,7 +1,7 @@
 package silentorb.imp.core
 
-fun getGraphOutputNodes(graph: Graph): List<PathKey> =
-    graph.nodes.filter { node -> graph.connections.none { it.value == node } }
+fun getGraphOutputNodes(namespace: Namespace): List<PathKey> =
+    namespace.nodes.filter { node -> namespace.connections.none { it.value == node } }
 
 fun getGraphOutputNode(options: List<PathKey>): PathKey? =
     if (options.size < 2)
@@ -11,13 +11,13 @@ fun getGraphOutputNode(options: List<PathKey>): PathKey? =
       mainNode ?: options.last()
     }
 
-fun getGraphOutputNode(graph: Graph): PathKey? {
-  val nodes = getGraphOutputNodes(graph)
+fun getGraphOutputNode(namespace: Namespace): PathKey? {
+  val nodes = getGraphOutputNodes(namespace)
   return getGraphOutputNode(nodes)
 }
 
 fun getGraphOutputNode(dungeon: Dungeon, filePath: String): PathKey? {
-  val outputs = getGraphOutputNodes(dungeon.graph)
+  val outputs = getGraphOutputNodes(dungeon.namespace)
   val fileOutputs = outputs
       .filter { node -> dungeon.nodeMap[node]?.file == filePath }
 

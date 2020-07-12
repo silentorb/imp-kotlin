@@ -103,7 +103,7 @@ tailrec fun loadModules(getCode: GetCode, root: URI, infos: Map<ModuleId, Module
       val (name, info) = infos.entries.first()
       val response = loadModule(getCode, name, context, info)
       val (module, _) = response
-      val newContext = context + module.dungeons.map { it.value.graph }
+      val newContext = context + module.dungeons.map { it.value.namespace }
       loadModules(getCode, root, infos - name, newContext, accumulator + (name to response))
     }
 
@@ -165,7 +165,7 @@ fun loadContainingWorkspace(getCode: GetCode, library: Library, root: Path): Res
 
 fun getModulesContext(modules: Map<ModuleId, Module>): Context {
   val dungeons = modules.map { it.value.dungeons }.reduce { a, b -> a + b }
-  return dungeons.values.map { it.graph }
+  return dungeons.values.map { it.namespace }
 }
 
 fun getModulesExecutionArtifacts(implementation: FunctionImplementationMap, baseContext: Context, modules: Map<ModuleId, Module>): Pair<Context, FunctionImplementationMap> {

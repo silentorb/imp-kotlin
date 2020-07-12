@@ -18,7 +18,7 @@ class ExecutionTest {
       let output = + 10 6
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext(), code)) { result ->
-      val graph = result.graph
+      val graph = result.namespace
       val library = standardLibrary()
       val value = executeToSingleValue(listOf(library.namespace), library.implementation, graph)
       assertEquals(16, value)
@@ -81,7 +81,7 @@ class ExecutionTest {
       let output = + 1 2 3
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext(), code)) { result ->
-      val graph = result.graph
+      val graph = result.namespace
       val library = standardLibrary()
       val value = executeToSingleValue(listOf(library.namespace), library.implementation, graph)
       assertEquals(6, value)

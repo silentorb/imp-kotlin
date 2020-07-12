@@ -2,8 +2,8 @@ package silentorb.imp.execution
 
 import silentorb.imp.core.*
 
-fun prepareArguments(graph: Graph, outputValues: OutputValues, destination: PathKey): Arguments {
-  return graph.connections
+fun prepareArguments(namespace: Namespace, outputValues: OutputValues, destination: PathKey): Arguments {
+  return namespace.connections
       .filter { it.key.destination == destination && it.key.parameter != defaultParameter }
       .entries
       .associate {
