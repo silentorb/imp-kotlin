@@ -10,7 +10,7 @@ fun propagateLiteralTypeAliases(context: Context, graph: Graph): Map<PathKey, Ty
         val connections = graph.connections.filter { it.value == id }
         val types = connections
             .mapNotNull { connection ->
-              val functionType = graph.implementationTypes[connection.key.destination]
+              val functionType = graph.returnTypes[connection.key.destination]
               if (functionType != null)
                 getTypeSignature(context, functionType)?.parameters?.firstOrNull { it.name == connection.key.parameter }?.type
               else

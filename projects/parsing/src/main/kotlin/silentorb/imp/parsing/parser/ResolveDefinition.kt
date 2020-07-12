@@ -60,7 +60,7 @@ fun prepareDefinitionFunction(
 
 fun parseDefinitionSecondPass(namespaceContext: Context, largerContext: Context, definition: DefinitionFirstPass): Response<Dungeon> {
   val parameters = definition.tokenized.parameters.map { parameter ->
-    val type = getImplementationType(namespaceContext, parameter.type.value as String)
+    val type = getReturnTypesByName(namespaceContext, parameter.type.value as String).values.firstOrNull()
         ?: unknownType.hash
     Parameter(parameter.name.value as String, type)
   }

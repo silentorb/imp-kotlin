@@ -2,7 +2,6 @@ package silentorb.imp.core
 
 data class Namespace(
     val connections: Connections,
-    val implementationTypes: Map<PathKey, TypeHash>,
     val returnTypes: Map<PathKey, TypeHash>,
     val values: Map<PathKey, Any>,
     val typings: Typings
@@ -11,10 +10,8 @@ data class Namespace(
     get() =
 //      connections
 //          .flatMap { listOf(it.value, it.key.destination) }
-      implementationTypes.keys
-          .plus(returnTypes.keys)
+          returnTypes.keys
 //          .filter { !typings.signatures.containsKey(returnTypes[it]) }
-          .toSet()
 
   operator fun plus(other: Namespace): Namespace =
       mergeNamespaces(this, other)
@@ -25,7 +22,6 @@ typealias Graph = Namespace
 fun newNamespace(): Namespace =
     Namespace(
         connections = mapOf(),
-        implementationTypes = mapOf(),
         returnTypes = mapOf(),
         values = mapOf(),
         typings = newTypings()
@@ -34,10 +30,9 @@ fun newNamespace(): Namespace =
 fun mergeNamespaces(first: Namespace, second: Namespace): Namespace =
     Namespace(
         connections = first.connections + second.connections,
-        implementationTypes = first.implementationTypes + second.implementationTypes,
         returnTypes = first.returnTypes + second.returnTypes,
-        typings = mergeTypings(first.typings, second.typings),
-        values = first.values + second.values
+        values = first.values + second.values,
+        typings = mergeTypings(first.typings, second.typings)
     )
 
 fun mergeNamespaces(namespaces: Collection<Namespace>): Namespace =
@@ -112,19 +107,19 @@ fun <V> resolveContextFieldGreedySet(context: Context, getter: (Namespace) -> Se
 fun <V> resolveContextField(context: Context, getter: (Namespace) -> V?): V? =
     resolveContextField(context, context.size - 1, getter)
 
-fun getReturnTypes(context: Context, path: String): Map<PathKey, TypeHash> =
+fun getReturnTypesByPath(context: Context, path: String): Map<PathKey, TypeHash> =
     resolveContextFieldMap(context) { namespace ->
       namespace.returnTypes.filter { it.key.path == path }
+    }
+
+fun getReturnTypesByName(context: Context, name: String): Map<PathKey, TypeHash> =
+    resolveContextFieldMap(context) { namespace ->
+      namespace.returnTypes.filter { it.key.name == name }
     }
 
 fun getReturnType(context: Context, key: PathKey): TypeHash? =
     resolveContextField(context) { namespace ->
       namespace.returnTypes[key]
-    }
-
-fun getImplementationTypes(context: Context, path: String): Map<PathKey, TypeHash> =
-    resolveContextFieldMap(context) { namespace ->
-      namespace.implementationTypes.filter { it.key.path == path }
     }
 
 tailrec fun resolveReference(context: Context, name: String, index: Int): PathKey? =
@@ -180,22 +175,9 @@ fun getSymbolTypes(context: Context, name: String): Map<PathKey, TypeHash> =
 fun getSymbolType(context: Context, name: String): TypeHash? =
     typesToTypeHash(getSymbolTypes(context, name).values)
 
-fun getImplementationType(context: Context, name: String): TypeHash? =
-    typesToTypeHash(
-        resolveContextFieldGreedy(context) { namespace ->
-          namespace.implementationTypes.filterKeys { it.name == name }.values.toList()
-        }
-    )
-
 fun getPathKeyTypes(context: Context, key: PathKey): List<TypeHash> {
   return resolveContextFieldGreedy(context) { namespace ->
     listOfNotNull(namespace.returnTypes[key])
-  }
-}
-
-fun getPathKeyImplementationTypes(context: Context, key: PathKey): List<TypeHash> {
-  return resolveContextFieldGreedy(context) { namespace ->
-    listOfNotNull(namespace.implementationTypes[key])
   }
 }
 
@@ -230,11 +212,9 @@ fun namespaceFromCompleteOverloads(signatures: Map<PathKey, List<CompleteSignatu
             .associate { Pair(it.type.hash, it.type.key) }
             .plus(signature.output.hash to signature.output.key)
       }
-  val types = namespace.implementationTypes + extractedTypings.entries.associate { Pair(it.value, it.key) }
   return namespace
       .copy(
-          implementationTypes = types,
-//          returnTypes = types,
+          returnTypes = namespace.returnTypes,
           typings = namespace.typings.copy(
               typeNames = namespace.typings.typeNames + extractedTypings
           )

@@ -101,7 +101,6 @@ fun resolveExpression(
   val dungeon = emptyDungeon.copy(
       graph = newNamespace().copy(
           connections = connections + referenceConnections,
-          implementationTypes = implementationTypes,
           returnTypes = nodeTypes,
           typings = typings,
           values = values

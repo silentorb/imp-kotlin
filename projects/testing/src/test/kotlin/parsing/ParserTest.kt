@@ -1,5 +1,6 @@
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import silentorb.imp.core.Input
 import silentorb.imp.core.PathKey
@@ -506,6 +507,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     }
   }
 
+  @Disabled
   @Test
   fun preventsValuesAboveNumericConstraint() {
     val code = """
@@ -515,6 +517,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     expectError(TextId.outsideTypeRange, parseToDungeon(simpleContext, code))
   }
 
+  @Disabled
   @Test
   fun preventsValuesBelowNumericConstraint() {
     val code = """

@@ -50,6 +50,7 @@ data class Signature(
 
     if (parameters != other.parameters) return false
     if (output != other.output) return false
+    if (isVariadic != other.isVariadic) return false
 
     return true
   }

@@ -26,6 +26,7 @@ fun newLibrary(functions: List<CompleteFunction>, typeNames: Map<TypeHash, PathK
   val namespace = namespaceFromCompleteOverloads(signatures)
   return Library(
       namespace = namespace.copy(
+          returnTypes = namespace.returnTypes + typeNames.entries.associate { it.value to it.key },
           typings = namespace.typings + newTypings().copy(
               typeAliases = typeAliases
                   .filter { it.alias != null }

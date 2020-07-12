@@ -6,13 +6,11 @@ import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.syntax.BurgType
 
 data class ImportBundle(
-    val implementationTypes: Map<PathKey, TypeHash>,
     val returnTypes: Map<PathKey, TypeHash>
 )
 
 fun emptyImportBundle() =
     ImportBundle(
-        implementationTypes = mapOf(),
         returnTypes = mapOf()
     )
 
@@ -27,14 +25,12 @@ fun parseImport(context: Context): (TokenizedImport) -> Response<ImportBundle> =
     val hasWildcard = tokenizedImport.path.last().type == BurgType.importPathWildcard
 
     if (hasWildcard) {
-      val returnTypes = getReturnTypes(context, toPathString(path))
-      val implementationTypes = getImplementationTypes(context, toPathString(path))
+      val returnTypes = getReturnTypesByPath(context, toPathString(path))
 
-      if (returnTypes.none() && implementationTypes.none()) {
+      if (returnTypes.none()) {
         Response(emptyImportBundle(), listOf(ImpError(TextId.importNotFound, burgsToFileRange(tokenizedImport.path))))
       } else {
         val bundle = ImportBundle(
-            implementationTypes = implementationTypes,
             returnTypes = returnTypes
         )
         Response(bundle, listOf())
@@ -42,13 +38,11 @@ fun parseImport(context: Context): (TokenizedImport) -> Response<ImportBundle> =
     } else {
       val pathKey = toPathKey(path)
       val returnType = getPathKeyTypes(context, pathKey).firstOrNull()
-      val implementationType = getPathKeyImplementationTypes(context, pathKey).firstOrNull()
-      if (returnType == null && implementationType == null)
+      if (returnType == null)
         Response(emptyImportBundle(), listOf(ImpError(TextId.importNotFound, fileRange = burgsToFileRange(tokenizedImport.path))))
       else {
         val bundle = ImportBundle(
-            implementationTypes = if (implementationType != null) mapOf(pathKey to implementationType) else mapOf(),
-            returnTypes = if (returnType != null) mapOf(pathKey to returnType) else mapOf()
+            returnTypes = mapOf(pathKey to returnType)
         )
         Response(bundle, listOf())
       }

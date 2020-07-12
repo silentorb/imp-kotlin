@@ -22,18 +22,14 @@ fun gatherTypeNames(context: Context, nodeTypes: Map<PathKey, TypeHash>): Map<Ty
 fun newDefinitionContext(
     bundles: List<ImportBundle>,
     parentContext: Context): Context {
-  val (returnTypes, implementationTypes) = if (bundles.any())
-    Pair(
-        bundles.map { it.returnTypes }.reduce { a, b -> a + b },
-        bundles.map { it.implementationTypes }.reduce { a, b -> a + b }
-    )
+  val returnTypes = if (bundles.any())
+    bundles.map { it.returnTypes }.reduce { a, b -> a + b }
   else
-    Pair(mapOf(), mapOf())
+    mapOf()
 
   return parentContext.plus(
       newNamespace().copy(
-          returnTypes = returnTypes,
-          implementationTypes = implementationTypes
+          returnTypes = returnTypes
       )
   )
 }
@@ -49,9 +45,6 @@ fun newImportedContext(
           .map(parseImport(sourceContext))
   )
   val sameNamespaceBundle = ImportBundle(
-      implementationTypes = sourceContext
-          .map { namespace -> namespace.implementationTypes.filterKeys { it.path == namespacePath } }
-          .reduce { a, b -> a + b },
       returnTypes = sourceContext
           .map { namespace -> namespace.returnTypes.filterKeys { it.path == namespacePath } }
           .reduce { a, b -> a + b }

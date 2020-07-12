@@ -88,7 +88,6 @@ class ExecutionTest {
     }
   }
 
-
   @Disabled
   @Test
   fun supportsDefiningUnions() {
