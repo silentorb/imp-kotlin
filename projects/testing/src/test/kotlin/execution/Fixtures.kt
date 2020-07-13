@@ -29,3 +29,6 @@ fun customLibrary() = newLibrary(
         )
     )
 )
+
+fun customTestContext() = listOf(defaultImpNamespace(), customLibrary().namespace)
+fun standardTestContext() = listOf(defaultImpNamespace(), standardLibrary().namespace)

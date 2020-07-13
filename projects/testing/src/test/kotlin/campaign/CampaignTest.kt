@@ -31,8 +31,8 @@ class CampaignTest {
         .filter { it.path == "assets" }
 
     assertEquals(2, outputs.size)
-    val mouseValue = executeToSingleValue(context, functions, PathKey("assets", "mouse"))
-    val ravenValue = executeToSingleValue(context, functions, PathKey("assets", "raven"))
+    val mouseValue = executeToSingleValue(context, PathKey("assets", "mouse"))
+    val ravenValue = executeToSingleValue(context, PathKey("assets", "raven"))
     assertEquals(11, mouseValue)
     assertEquals(21, ravenValue)
   }

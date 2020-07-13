@@ -15,7 +15,7 @@ fun getImplementationFunctions(context: Context, implementationGraphs: Map<Funct
       val newContext = newNamespace().copy(
           values = values
       )
-      executeToSingleValue(context + newContext, functions(), functionGraph)!!
+      executeToSingleValue(context + newContext, functionGraph)!!
     }
   }
 }

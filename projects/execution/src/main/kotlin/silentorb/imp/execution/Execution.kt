@@ -99,7 +99,6 @@ fun executeSteps(steps: List<ExecutionStep>, values: OutputValues): OutputValues
 
 fun prepareExecutionSteps(
     context: Context,
-    functions: FunctionImplementationMap,
     resultNodes: Set<PathKey>): List<ExecutionStep> {
   val connections = getNodeDependencyConnections(context, resultNodes, mapOf())
   val steps = arrangeGraphSequence(context, connections)
@@ -113,35 +112,32 @@ fun prepareExecutionSteps(
 
 fun execute(
     context: Context,
-    functions: FunctionImplementationMap,
     nodes: Set<PathKey>
 ): OutputValues {
-  val steps = prepareExecutionSteps(listOf(mergeNamespaces(context)), functions, nodes)
+  val steps = prepareExecutionSteps(listOf(mergeNamespaces(context)), nodes)
   return executeSteps(steps, mapOf())
 }
 
 fun executeToSingleValue(
     context: Context,
-    functions: FunctionImplementationMap,
     namespace: Namespace
 ): Any? {
   val output = getGraphOutputNode(namespace)
   return if (output == null)
     null
   else {
-    val values = execute(context + namespace, functions, setOf(output))
+    val values = execute(context + namespace, setOf(output))
     values[output]
   }
 }
 
 fun prepareExecutionUnit(
     context: Context,
-    functions: FunctionImplementationMap,
     output: PathKey
 ): ExecutionUnit {
 
   return ExecutionUnit(
-      steps = prepareExecutionSteps(context, functions, setOf(output)),
+      steps = prepareExecutionSteps(context, setOf(output)),
       values = mapOf(),
       output = output
   )
@@ -152,19 +148,17 @@ fun executeToSingleValue(unit: ExecutionUnit): Any? {
   return values[unit.output]!!
 }
 
-fun mergeImplementationFunctions(context: Context, implementationGraphs: Map<FunctionKey, Namespace>, functions: FunctionImplementationMap): FunctionImplementationMap {
+fun mergeImplementationFunctions(context: Context, implementationGraphs: Map<FunctionKey, Namespace>): FunctionImplementationMap {
   var newFunctions: FunctionImplementationMap = mapOf()
-  newFunctions = functions + getImplementationFunctions(context, implementationGraphs) { newFunctions }
+  newFunctions = getImplementationFunctions(context, implementationGraphs) { newFunctions }
   return newFunctions
 }
 
-fun executeToSingleValue(context: Context, functions: FunctionImplementationMap, dungeon: Dungeon): Any? {
-  val combinedContext = context + dungeon.namespace
-  val newFunctions = mergeImplementationFunctions(combinedContext, dungeon.implementationGraphs, functions)
-  return executeToSingleValue(context, functions + newFunctions, dungeon.namespace)
+fun executeToSingleValue(context: Context, dungeon: Dungeon): Any? {
+  return executeToSingleValue(context, dungeon.namespace)
 }
 
-fun executeToSingleValue(context: Context, functions: FunctionImplementationMap, root: PathKey): Any? {
-  val values = execute(context, functions, setOf(root))
+fun executeToSingleValue(context: Context, root: PathKey): Any? {
+  val values = execute(context, setOf(root))
   return values[root]
 }

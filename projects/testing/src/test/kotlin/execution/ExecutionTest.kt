@@ -17,10 +17,10 @@ class ExecutionTest {
       
       let output = + 10 6
     """.trimIndent()
-    handleRoot(errored, parseToDungeon(simpleContext(), code)) { result ->
+    val context = simpleContext()
+    handleRoot(errored, parseToDungeon(context, code)) { result ->
       val graph = result.namespace
-      val library = standardLibrary()
-      val value = executeToSingleValue(listOf(library.namespace), library.implementation, graph)
+      val value = executeToSingleValue(standardTestContext(), graph)
       assertEquals(16, value)
     }
   }
@@ -32,9 +32,9 @@ class ExecutionTest {
       
       let main = newMonkey 1 -- The banana count logic is arbitrary
     """.trimIndent()
-    val library = customLibrary()
-    handleRoot(errored, parseToDungeon(listOf(library.namespace), code)) { dungeon ->
-      val value = executeToSingleValue(listOf(library.namespace), library.implementation, dungeon)
+    val context = customTestContext()
+    handleRoot(errored, parseToDungeon(context, code)) { dungeon ->
+      val value = executeToSingleValue(context, dungeon)
       assertEquals(2, value)
     }
   }
@@ -48,9 +48,9 @@ class ExecutionTest {
       let add a:Int b:Int = + a b
       let output = add 1 2
     """.trimIndent()
-    val library = standardLibrary()
-    handleRoot(errored, parseToDungeon(listOf(library.namespace), code)) { result ->
-      val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
+    val context = standardTestContext()
+    handleRoot(errored, parseToDungeon(context, code)) { result ->
+      val value = executeToSingleValue(context, result)
       assertEquals(3, value)
     }
   }
@@ -66,9 +66,9 @@ class ExecutionTest {
         let main = add 1.0
       }
     """.trimIndent()
-    val library = standardLibrary()
-    handleRoot(errored, parseToDungeon(listOf(library.namespace), code)) { result ->
-      val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
+    val context = standardTestContext()
+    handleRoot(errored, parseToDungeon(context, code)) { result ->
+      val value = executeToSingleValue(context, result)
       assertEquals(3.0f, value)
     }
   }
@@ -80,10 +80,10 @@ class ExecutionTest {
       
       let output = + 1 2 3
     """.trimIndent()
+    val context = standardTestContext()
     handleRoot(errored, parseToDungeon(simpleContext(), code)) { result ->
       val graph = result.namespace
-      val library = standardLibrary()
-      val value = executeToSingleValue(listOf(library.namespace), library.implementation, graph)
+      val value = executeToSingleValue(context, graph)
       assertEquals(6, value)
     }
   }
@@ -98,9 +98,9 @@ class ExecutionTest {
       let foo a: Number = a
       let output = foo 1.2
     """.trimIndent()
-    val library = standardLibrary()
-    handleRoot(errored, parseToDungeon(listOf(library.namespace), code)) { result ->
-      val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
+    val context = standardTestContext()
+    handleRoot(errored, parseToDungeon(context, code)) { result ->
+      val value = executeToSingleValue(context, result)
       assertEquals(1.2f, value)
     }
   }
@@ -117,9 +117,9 @@ class ExecutionTest {
 
       let output = Foo 3 1.2
     """.trimIndent()
-    val library = standardLibrary()
-    handleRoot(errored, parseToDungeon(listOf(library.namespace), code)) { result ->
-      val value = executeToSingleValue(listOf(library.namespace), library.implementation, result)
+    val context = standardTestContext()
+    handleRoot(errored, parseToDungeon(context, code)) { result ->
+      val value = executeToSingleValue(context, result)
       assertEquals(1.2f, value)
     }
   }

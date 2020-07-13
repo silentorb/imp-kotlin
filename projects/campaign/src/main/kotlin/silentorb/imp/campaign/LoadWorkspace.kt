@@ -179,6 +179,6 @@ fun getModulesExecutionArtifacts(implementation: FunctionImplementationMap, base
       }
       .reduce { a, b -> a + b }
 
-  val functions = mergeImplementationFunctions(context, functionGraphs, implementation)
+  val functions = mergeImplementationFunctions(context, functionGraphs)
   return Pair(context, functions)
 }
