@@ -37,9 +37,7 @@ fun arrangeGraphSequence(context: Context, connections: Connections): List<PathK
   return arrangeDependencies(nodes, dependencies).first
 }
 
-fun generateNodeFunction(context: Context,
-                         node: PathKey
-): NodeImplementation {
+fun generateNodeFunction(context: Context, node: PathKey): NodeImplementation {
   val nodeType = getReturnType(context, node)
       ?: throw Error("Missing nodeType for ${formatPathKey(node)}")
 
@@ -61,7 +59,12 @@ fun generateNodeFunction(context: Context,
       val signature = getTypeSignature(context, targetType)
           ?: throw Error("Missing signature for ${formatPathKey(node)}")
 
-      val function = getValue(context, targetNode) as FunctionImplementation
+      val functionValue = getValue(context, targetNode)
+      val function = if (functionValue is FunctionSource)
+        compileNodeFunction(context, signature, functionValue.key, functionValue.graph)
+      else
+        functionValue as FunctionImplementation
+
       val argumentInputs = inputs.minus(target)
       if (signature.isVariadic) {
         return { values: NodeImplementationArguments ->
@@ -148,9 +151,9 @@ fun executeToSingleValue(unit: ExecutionUnit): Any? {
   return values[unit.output]!!
 }
 
-fun mergeImplementationFunctions(context: Context, implementationGraphs: Map<FunctionKey, Namespace>): FunctionImplementationMap {
+fun mergeImplementationFunctions(context: Context, implementationGraphs: Map<PathKey, Namespace>): FunctionImplementationMap {
   var newFunctions: FunctionImplementationMap = mapOf()
-  newFunctions = getImplementationFunctions(context, implementationGraphs) { newFunctions }
+  newFunctions = getImplementationFunctions(context, implementationGraphs)
   return newFunctions
 }
 

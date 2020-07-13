@@ -43,8 +43,7 @@ fun <T> until(list: List<T>, filter: (T) -> Boolean): List<T> =
 fun mergeDungeons(parent: Dungeon, child: Dungeon): Dungeon {
   return Dungeon(
       namespace = parent.namespace + child.namespace,
-      nodeMap = parent.nodeMap + child.nodeMap,
-      implementationGraphs = parent.implementationGraphs + child.implementationGraphs
+      nodeMap = parent.nodeMap + child.nodeMap
   )
 }
 

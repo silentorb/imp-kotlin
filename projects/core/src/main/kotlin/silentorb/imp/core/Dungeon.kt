@@ -6,13 +6,11 @@ typealias ConstrainedLiteralMap = Map<PathKey, TypeHash>
 
 data class Dungeon(
     val namespace: Namespace,
-    val nodeMap: NodeMap,
-    val implementationGraphs: Map<FunctionKey, Namespace>
+    val nodeMap: NodeMap
 )
 
 val emptyDungeon =
     Dungeon(
         namespace = newNamespace(),
-        nodeMap = mapOf(),
-        implementationGraphs = mapOf()
+        nodeMap = mapOf()
     )

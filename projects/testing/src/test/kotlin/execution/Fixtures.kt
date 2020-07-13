@@ -6,7 +6,7 @@ import silentorb.imp.execution.newLibrary
 import silentorb.imp.library.standard.standardLibrary
 
 fun simpleContext() = listOf(
-    standardLibrary().namespace
+    standardLibrary()
 )
 
 const val customPath = "imp.test.custom"
@@ -30,5 +30,5 @@ fun customLibrary() = newLibrary(
     )
 )
 
-fun customTestContext() = listOf(defaultImpNamespace(), customLibrary().namespace)
-fun standardTestContext() = listOf(defaultImpNamespace(), standardLibrary().namespace)
+fun customTestContext() = listOf(defaultImpNamespace(), customLibrary())
+fun standardTestContext() = listOf(defaultImpNamespace(), standardLibrary())

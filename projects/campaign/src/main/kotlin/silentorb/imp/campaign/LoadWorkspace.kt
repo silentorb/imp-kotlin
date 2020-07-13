@@ -1,7 +1,6 @@
 package silentorb.imp.campaign
 
 import silentorb.imp.core.*
-import silentorb.imp.execution.Library
 import silentorb.imp.execution.mergeImplementationFunctions
 import silentorb.imp.parsing.general.GetCode
 import silentorb.imp.core.Response
@@ -107,7 +106,7 @@ tailrec fun loadModules(getCode: GetCode, root: URI, infos: Map<ModuleId, Module
       loadModules(getCode, root, infos - name, newContext, accumulator + (name to response))
     }
 
-fun loadWorkspace(getCode: GetCode, library: Library, root: Path): Response<Workspace> {
+fun loadWorkspace(getCode: GetCode, context: Context, root: Path): Response<Workspace> {
   val workspaceFilePath = root.resolve(workspaceFileName)
   val workspaceConfig = loadYamlFile<WorkspaceConfig>(workspaceFilePath)
   return if (workspaceConfig == null)
@@ -133,9 +132,8 @@ fun loadWorkspace(getCode: GetCode, library: Library, root: Path): Response<Work
         .toSet()
 
     val (arrangedModules, dependencyErrors) = arrangeDependencies(infos.keys, dependencies)
-    val initialContext = listOf(library.namespace)
     val arrangedMap = arrangedModules.associateWith { infos[it]!! }
-    val loadingResponse = loadModules(getCode, root.toUri(), arrangedMap, initialContext, mapOf())
+    val loadingResponse = loadModules(getCode, root.toUri(), arrangedMap, context, mapOf())
     val modules = loadingResponse
         .mapValues { it.value.value }
 
@@ -150,14 +148,14 @@ fun loadWorkspace(getCode: GetCode, library: Library, root: Path): Response<Work
   }
 }
 
-fun loadContainingWorkspace(getCode: GetCode, library: Library, root: Path): Response<Workspace>? {
+fun loadContainingWorkspace(getCode: GetCode, context: Context, root: Path): Response<Workspace>? {
   val moduleDirectory = findContainingModule(root)
   return if (moduleDirectory == null)
     null
   else {
     val workspaceDirectory = findContainingWorkspaceDirectory(moduleDirectory)
     if (workspaceDirectory != null)
-      loadWorkspace(getCode, library, workspaceDirectory)
+      loadWorkspace(getCode, context, workspaceDirectory)
     else
       null
   }
@@ -168,17 +166,5 @@ fun getModulesContext(modules: Map<ModuleId, Module>): Context {
   return dungeons.values.map { it.namespace }
 }
 
-fun getModulesExecutionArtifacts(implementation: FunctionImplementationMap, baseContext: Context, modules: Map<ModuleId, Module>): Pair<Context, FunctionImplementationMap> {
-  val context = listOf(mergeNamespaces(baseContext + getModulesContext(modules)))
-  val functionGraphs = modules.values
-      .map { module ->
-        module.dungeons.map {
-          it.value.implementationGraphs
-        }
-            .reduce { a, b -> a + b }
-      }
-      .reduce { a, b -> a + b }
-
-  val functions = mergeImplementationFunctions(context, functionGraphs)
-  return Pair(context, functions)
-}
+fun getModulesExecutionArtifacts(baseContext: Context, modules: Map<ModuleId, Module>): Context =
+  listOf(mergeNamespaces(baseContext + getModulesContext(modules)))

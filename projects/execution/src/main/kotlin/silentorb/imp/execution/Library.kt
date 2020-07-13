@@ -2,12 +2,7 @@ package silentorb.imp.execution
 
 import silentorb.imp.core.*
 
-data class Library(
-    val namespace: Namespace,
-    val implementation: FunctionImplementationMap
-)
-
-fun newLibrary(functions: List<CompleteFunction>, typeNames: Map<TypeHash, PathKey> = mapOf(), typeAliases: List<TypeAlias> = listOf()): Library {
+fun newLibrary(functions: List<CompleteFunction>, typeNames: Map<TypeHash, PathKey> = mapOf(), typeAliases: List<TypeAlias> = listOf()): Namespace {
   val grouped = functions
       .groupBy { it.path }
 
@@ -24,29 +19,20 @@ fun newLibrary(functions: List<CompleteFunction>, typeNames: Map<TypeHash, PathK
       .associate { it }
 
   val namespace = namespaceFromCompleteOverloads(signatures)
-  return Library(
-      namespace = namespace.copy(
-          values = namespace.values + implementation,
-          nodeTypes = namespace.nodeTypes + typeNames.entries.associate { it.value to it.key },
-          typings = namespace.typings + newTypings().copy(
-              typeAliases = typeAliases
-                  .filter { it.alias != null }
-                  .associate { Pair(it.path, it.alias!!) },
-              typeNames = typeNames + namespace.typings.typeNames,
-              numericTypeConstraints = typeAliases
-                  .filter { it.numericConstraint != null }
-                  .associate { Pair(it.path, it.numericConstraint!!) }
-          )
-      ),
-      implementation = mapOf()
+  return namespace.copy(
+      values = namespace.values + implementation,
+      nodeTypes = namespace.nodeTypes + typeNames.entries.associate { it.value to it.key },
+      typings = namespace.typings + newTypings().copy(
+          typeAliases = typeAliases
+              .filter { it.alias != null }
+              .associate { Pair(it.path, it.alias!!) },
+          typeNames = typeNames + namespace.typings.typeNames,
+          numericTypeConstraints = typeAliases
+              .filter { it.numericConstraint != null }
+              .associate { Pair(it.path, it.numericConstraint!!) }
+      )
   )
 }
-
-fun combineLibraries(vararg libraries: Library): Library =
-    Library(
-        namespace = mergeNamespaces(libraries.map { it.namespace }),
-        implementation = libraries.map { it.implementation }.reduce { a, b -> a.plus(b) }
-    )
 
 fun typePairstoTypeNames(typePairs: List<TypePair>) =
     typePairs.associate { Pair(it.hash, it.key) }

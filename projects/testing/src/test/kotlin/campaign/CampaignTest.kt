@@ -7,6 +7,7 @@ import silentorb.imp.campaign.codeFromFile
 import silentorb.imp.campaign.getModulesExecutionArtifacts
 import silentorb.imp.campaign.loadWorkspace
 import silentorb.imp.core.PathKey
+import silentorb.imp.core.defaultImpNamespace
 import silentorb.imp.core.getGraphOutputNodes
 import silentorb.imp.core.mergeNamespaces
 import silentorb.imp.execution.executeToSingleValue
@@ -17,16 +18,16 @@ import java.nio.file.Paths
 class CampaignTest {
   @Test
   fun canLoadAndExecuteWorkspaces() {
-    val library = standardLibrary()
+    val initialContext = listOf(defaultImpNamespace(), standardLibrary())
     val workspaceUrl = Thread.currentThread().contextClassLoader.getResource("project1/workspace.yaml")!!
-    val (workspace, errors) = loadWorkspace(codeFromFile, library, Paths.get(workspaceUrl.toURI()).parent)
+    val (workspace, errors) = loadWorkspace(codeFromFile, initialContext, Paths.get(workspaceUrl.toURI()).parent)
     assertTrue(errors.none()) { errors.first().message.toString() }
     errored(errors)
     val modules = workspace.modules
     assertEquals(2, modules.size)
     assertEquals(1, modules["assets"]!!.dungeons.size)
     assertEquals(1, modules["lib"]!!.dungeons.size)
-    val (context, functions) = getModulesExecutionArtifacts(library.implementation, listOf(library.namespace), modules)
+    val context= getModulesExecutionArtifacts(initialContext, modules)
     val outputs = getGraphOutputNodes(mergeNamespaces(context))
         .filter { it.path == "assets" }
 

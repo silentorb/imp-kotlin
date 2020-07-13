@@ -50,10 +50,8 @@ fun prepareDefinitionFunction(
   return dungeon.copy(
       namespace = newNamespace().copy(
           nodeTypes = mapOf(key to definitionType),
-          typings = typings
-      ),
-      implementationGraphs = mapOf(
-          FunctionKey(key, definitionType) to implementation
+          typings = typings,
+          values =  dungeon.namespace.values + (key.copy(type = definitionType) to FunctionSource(key, implementation))
       )
   )
 }

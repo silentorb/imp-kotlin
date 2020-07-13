@@ -109,9 +109,10 @@ fun resolveExpression(
   val errors = signatureErrors + typeResolutionErrors
 
   assert(referenceConnections.size == referencePairs.size || errors.any())
-  val temp = nodeTypes.values
-      .filter { type -> getTypeSignature(largerContext, type) ?: typings.signatures[type] != null }
-  assert(temp.size == nodeTypes.size || errors.any())
+//  val temp = nodeTypes.values
+//      .filter { type -> getTypeSignature(largerContext, type) ?: typings.signatures[type] != null }
+//  assert(temp.size == nodeTypes.size || errors.any())
+
   val dungeon = emptyDungeon.copy(
       namespace = newNamespace().copy(
           connections = connections + referenceConnections,
