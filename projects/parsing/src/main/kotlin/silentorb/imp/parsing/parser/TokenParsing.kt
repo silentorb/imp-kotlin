@@ -6,6 +6,7 @@ import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.lexer.stripWhitespace
 import silentorb.imp.parsing.lexer.tokenize
+import silentorb.imp.parsing.resolution.parseDungeon
 import silentorb.imp.parsing.syntax.toTokenGraph
 import silentorb.imp.parsing.syntax.withoutComments
 import java.nio.file.Paths

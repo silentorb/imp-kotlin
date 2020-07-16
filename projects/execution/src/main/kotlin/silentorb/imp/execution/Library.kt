@@ -34,5 +34,5 @@ fun newLibrary(functions: List<CompleteFunction>, typeNames: Map<TypeHash, PathK
   )
 }
 
-fun typePairstoTypeNames(typePairs: List<TypePair>) =
+fun typePairsToTypeNames(typePairs: List<TypePair>) =
     typePairs.associate { Pair(it.hash, it.key) }

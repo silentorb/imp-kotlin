@@ -1,10 +1,10 @@
-package silentorb.imp.parsing.parser
+package silentorb.imp.parsing.resolution
 
 import silentorb.imp.core.*
 import silentorb.imp.core.Response
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.newParsingError
-import silentorb.imp.parsing.resolution.resolveExpression
+import silentorb.imp.parsing.parser.DefinitionFirstPass
 
 fun newParameterNamespace(context: Context, pathKey: PathKey, parameters: List<Parameter>): Namespace {
   val pathString = pathKeyToString(pathKey)

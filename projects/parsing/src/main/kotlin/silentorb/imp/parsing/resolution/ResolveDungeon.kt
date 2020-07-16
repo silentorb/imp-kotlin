@@ -1,8 +1,9 @@
-package silentorb.imp.parsing.parser
+package silentorb.imp.parsing.resolution
 
 import silentorb.imp.core.*
 import silentorb.imp.core.Response
 import silentorb.imp.parsing.general.*
+import silentorb.imp.parsing.parser.*
 import silentorb.imp.parsing.structureOld.parseDefinitionFirstPass
 import java.nio.file.Path
 

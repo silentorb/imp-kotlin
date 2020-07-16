@@ -97,5 +97,5 @@ val simpleContext = listOf(
                     measurementType.hash to NumericTypeConstraint(-10.0, 10.5)
                 )
             )
-    )
+    ) + nameSpaceFromTypes(listOf(vector2iType))
 )
