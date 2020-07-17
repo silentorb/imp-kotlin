@@ -10,6 +10,7 @@ fun narrowTypeByArguments(
     argumentTypes: Map<PathKey, TypeHash>,
     pathKey: PathKey,
     children: List<PathKey>,
+    referenceOptions: Map<PathKey, Map<PathKey, TypeHash>>,
     namedArguments: Map<PathKey, Burg>
 ): List<SignatureMatch> {
   return if (children.any { !argumentTypes.containsKey(it) })
@@ -23,16 +24,24 @@ fun narrowTypeByArguments(
               node = childNode
           )
         }
-    val types = getSymbolTypes(context, pathKey.name)
-    val functionOverloads = types.mapNotNull { getTypeSignature(largerContext, it.value) }
+    val types = referenceOptions[pathKey]!!
+    val functionOverloads = types.mapNotNull {
+      val signature = getTypeSignature(largerContext, it.value)
+      if (signature ==null)
+        null
+      else
+        Pair(it.key, signature)
+    }
+        .associate { it }
     val signatureMatches = overloadMatches(context, arguments, functionOverloads)
     if (signatureMatches.any()) {
       signatureMatches.filter { it.complete } // TODO: Temporary until currying is supported. Then just prioritize complete.
     } else {
       if (getDebugBoolean("IMP_PARSER_DEBUG_SIGNATURE_MISMATCHES")) {
+        val typeNames = types.values.map { getTypeNameOrNull(context, it) }
         val argumentTypeNames = arguments.map { getTypeNameOrNull(context, it.type) }
         val overloadTypeNames = functionOverloads.map { overload ->
-          overload.parameters.map {
+          overload.value.parameters.map {
             getTypeNameOrNull(context, it.type)
           }
         }
@@ -54,24 +63,26 @@ data class SignatureOptionsAndTypes(
 fun resolveFunctionSignatures(
     namespaceContext: Context,
     largerContext: Context,
+    parents: Map<PathKey, List<PathKey>>,
     stages: List<PathKey>,
-    applications: Map<PathKey, FunctionApplication>,
+    referenceOptions: Map<PathKey, Map<PathKey, TypeHash>>,
     initialTypes: Map<PathKey, TypeHash>,
     namedArguments: Map<PathKey, Burg>
 ): SignatureOptionsAndTypes {
   return stages
-      .filter { node -> !initialTypes.containsKey(node) && applications.none { node == it.value.target } }
+      .filter { node -> !initialTypes.containsKey(node) }
       .fold(SignatureOptionsAndTypes()) { accumulator, node ->
         val argumentTypes = initialTypes.plus(accumulator.types)
         val newContext = largerContext + newNamespace().copy(typings = accumulator.typings)
-        val application = applications[node]
-        if (application != null) {
-          if (application.arguments.none() && !initialTypes.containsKey(application.target)) {
-            val type = argumentTypes[application.target] ?: getPathKeyTypes(namespaceContext, application.target).firstOrNull()
+        val arguments = parents[node]
+        if (arguments != null) {
+          if (arguments.none() && initialTypes.containsKey(node)) {
+            val type = argumentTypes[node] ?: getPathKeyTypes(namespaceContext, node).firstOrNull()
             if (type != null) {
               accumulator.copy(
                   signatureOptions = accumulator.signatureOptions + (node to listOf(
                       SignatureMatch(
+                          key = null,
                           signature = Signature(parameters = listOf(), output = type, isVariadic = false),
                           alignment = mapOf(),
                           complete = true
@@ -86,16 +97,17 @@ fun resolveFunctionSignatures(
                 namespaceContext,
                 newContext,
                 argumentTypes,
-                application.target,
-                application.arguments,
+                node,
+                arguments,
+                referenceOptions,
                 namedArguments
             )
             val reducedNestedSignatures = signatureOptions.map { reduceSignature(it.signature, it.alignment.keys) }
 
             val newTypes = if (signatureOptions.size == 1)
               mapOf(
-                  application.target to signatureOptions.first().signature.hashCode(),
-                  node to signatureOptions.first().signature.output
+                  node to signatureOptions.first().signature.hashCode()
+//                  node to signatureOptions.first().signature.output
               )
             else
               mapOf()

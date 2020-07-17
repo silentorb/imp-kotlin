@@ -150,7 +150,7 @@ fun resolveDefinitions(importMap: Map<Path, List<TokenizedImport>>, tokenDefinit
             .mapNotNull { it.intermediate }
             .plus(listOfNotNull(definition.intermediate))
             .flatMap { intermediate ->
-              intermediate.references.keys
+              intermediate.references.values
                   .mapNotNull { referenceName ->
                     val provider = definitionMap.keys.firstOrNull() { it.name == referenceName }
                     if (provider != null)

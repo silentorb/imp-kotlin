@@ -11,7 +11,6 @@ fun resolveExpression(
     intermediate: IntermediateExpression
 ): Response<Dungeon> {
   val (
-      applications,
       literalTypes,
       namedArguments,
       nodeMap,
@@ -21,37 +20,18 @@ fun resolveExpression(
       values
   ) = intermediate
 
-//  val referencePairs = references
-//      .flatMap { (typeName, referenceNodes) ->
-//        val types = getSymbolTypes(context, typeName)
-//            .entries
-//            .associate { it.value to it.key }
-//        val type = typesToTypeHash(types.keys) ?: unknownType.hash
-//        referenceNodes.map { Pair(it, Pair(type, types)) }
-//      }
-//      .associate { it }
-
-//  val referenceTypes = referencePairs
-//      .mapValues { it.value.first }
-
-//  val unionTypes = referencePairs
-//      .filter { it.value.second.size > 1 }.entries
-//      .associate { (_, value) ->
-//        value.first to value.second.keys
-//      }
-
-//  val appendedContext = if (unionTypes.any())
-//    largerContext + newNamespace().copy(typings = newTypings().copy(unions = unionTypes))
-//  else
-//    largerContext
+  val referenceOptions = references.mapValues { (_, target) ->
+    getSymbolTypes(context, target)
+  }
 
   val initialTypes = literalTypes
   val (signatureOptions, reducedTypes, typings) =
       resolveFunctionSignatures(
           context,
           largerContext,
+          parents,
           stages,
-          applications,
+          referenceOptions,
           initialTypes,
           namedArguments
       )
@@ -59,31 +39,17 @@ fun resolveExpression(
       .filter { it.value.size == 1 }
       .mapValues { it.value.first() }
   val connections = arrangeConnections(parents, signatures)
-      .plus(
-          applications.map { (key, application) ->
-            Input(
-                destination = key,
-                parameter = defaultParameter
-            ) to application.target
-          }
-      )
 
-//  val referenceConnections = referencePairs.entries
-//      .mapNotNull { (key, reference) ->
-//        val target = if (reference.second.size < 2)
-//          reference.second.values.firstOrNull()
-//        else {
-//          val options = reference.second
-//          val application = applications.entries.firstOrNull { it.value.target == key }
-//          val signature = signatures[application?.key]?.signature
-//          options[signature.hashCode()]
-//        }
-//        if (target != null)
-//          Input(key, defaultParameter) to target
-//        else
-//          null
-//      }
-//      .associate { it }
+  val referenceConnections = references
+      .mapNotNull { (key, _) ->
+        val options = signatureOptions[key] ?: listOf()
+        if (options.none()) {
+          null
+        } else {
+          Input(key, defaultParameter) to options.first().key!!
+        }
+      }
+      .associate { it }
 
   val nodeTypes = initialTypes + reducedTypes
   val referenceValues = connections
@@ -98,24 +64,21 @@ fun resolveExpression(
       }
       .associate { it }
 
-  val nonNullaryFunctions = parents.filter { it.value.any() }
-  val typeResolutionErrors = validateFunctionTypes(
-      setOf(),
-      mapOf(),
-      nodeMap)
-  val signatureErrors = validateSignatures(largerContext, nodeTypes, nonNullaryFunctions, signatureOptions, nodeMap)// +
+  val possibleSignatureProblems = parents.filter { referenceOptions[it.key]?.any() ?: false }
+  val typeResolutionErrors = validateFunctionTypes(referenceOptions, nodeMap)
+  val signatureErrors = validateSignatures(largerContext, nodeTypes, possibleSignatureProblems, signatureOptions, nodeMap)
   val errors = signatureErrors + typeResolutionErrors
 
 //  if (referenceConnections.size == referencePairs.size || errors.any()) {
 //    val k = 0
 //  }
-//  val temp = nodeTypes.values
-//      .filter { type -> getTypeSignature(largerContext, type) ?: typings.signatures[type] != null }
-//  assert(temp.size == nodeTypes.size || errors.any())
+  val temp = nodeTypes.values
+      .filter { type -> getTypeSignature(largerContext, type) ?: typings.signatures[type] != null }
+  assert(temp.size == nodeTypes.size || errors.any())
 
   val dungeon = emptyDungeon.copy(
       namespace = newNamespace().copy(
-          connections = connections,
+          connections = connections + referenceConnections,
           nodeTypes = nodeTypes,
           typings = typings,
           values = values + referenceValues

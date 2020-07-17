@@ -16,12 +16,11 @@ data class FunctionApplication(
 )
 
 data class IntermediateExpression(
-    val applications: Map<PathKey, FunctionApplication>,
     val literalTypes: Map<PathKey, TypeHash>,
     val namedArguments: Map<PathKey, Burg>,
     val nodeMap: NodeMap,
     val parents: Map<PathKey, List<PathKey>>,
-    val references: Map<String, Set<PathKey>>,
+    val references: Map<PathKey, String>,
     val stages: List<PathKey>,
     val values: Map<PathKey, Any>
 )

@@ -12,7 +12,7 @@ fun typeCanBeCastTo(context: Context, source: TypeHash, target: TypeHash): Boole
   return getRootType(context, source) == getRootType(context, target)
 }
 
-fun matchVariadicFunction(context: Context, arguments: List<Argument>, signature: Signature): SignatureMatch? {
+fun matchVariadicFunction(context: Context, arguments: List<Argument>, functionKey: PathKey, signature: Signature): SignatureMatch? {
   val parameterType = signature.parameters.first().type
   return if (arguments.all { argument -> typeCanBeCastTo(context, argument.type, parameterType) }) {
     val alignment = arguments
@@ -20,6 +20,7 @@ fun matchVariadicFunction(context: Context, arguments: List<Argument>, signature
         .associate { it }
 
     SignatureMatch(
+        key = functionKey,
         signature = signature,
         alignment = alignment,
         complete = true
@@ -28,12 +29,12 @@ fun matchVariadicFunction(context: Context, arguments: List<Argument>, signature
     null
 }
 
-fun overloadMatches(context: Context, arguments: List<Argument>, overloads: List<Signature>): List<SignatureMatch> {
+fun overloadMatches(context: Context, arguments: List<Argument>, overloads: Map<PathKey, Signature>): List<SignatureMatch> {
   val argumentsByType = arguments.groupBy { it.type }
   val matches = overloads
-      .mapNotNull { signature ->
+      .mapNotNull { (functionKey, signature) ->
         if (signature.isVariadic) {
-          matchVariadicFunction(context, arguments, signature)
+          matchVariadicFunction(context, arguments, functionKey, signature)
         } else {
           val namedArguments = arguments
               .filter { argument -> argument.name != null }
@@ -59,6 +60,7 @@ fun overloadMatches(context: Context, arguments: List<Argument>, overloads: List
             null
           else
             SignatureMatch(
+                key = functionKey,
                 signature = signature,
                 alignment = alignment.associate { it },
                 complete = signature.parameters.size == arguments.size

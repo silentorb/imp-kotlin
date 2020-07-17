@@ -7,7 +7,6 @@ import silentorb.imp.parsing.general.newParsingError
 import silentorb.imp.parsing.resolution.IntermediateExpression
 import silentorb.imp.parsing.resolution.resolveLiteralTypes
 import silentorb.imp.parsing.parser.getExpandedChildren
-import silentorb.imp.parsing.resolution.FunctionApplication
 import silentorb.imp.parsing.syntax.*
 
 fun getNamedArguments(realm: Realm): Map<BurgId, Burg> =
@@ -32,11 +31,13 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): Response<IntermediateE
   val path = pathKeyToString(root)
   val namedArguments = getNamedArguments(realm)
   val burgs = realm.burgs
-  val applicationsKeys = burgs
+  val applicationMap = burgs
       .filter { it.value.type == BurgType.application }
       .keys
       .mapIndexed { index, id -> Pair(id, PathKey(path, "%application${index}")) }
       .associate { it }
+
+  val applicationPathKeys = applicationMap.values.toSet()
 
   val literalTokenKeys = literalTokenNodes(path, burgs.values)
   val nodeReferences = burgs.values.filter { it.type == BurgType.reference }
@@ -49,18 +50,27 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): Response<IntermediateE
       }
       .associate { it }
       .plus(literalTokenKeys)
-      .plus(applicationsKeys)
+      .plus(applicationMap)
 
-  val applications = burgs
+  val applicationTargets = burgs
       .filter { it.value.type == BurgType.application }
       .mapValues { (_, application) ->
         val children = application.children
             .map { burgs[it]!! }
 
-        val appliedFunction = children
+        children
             .first { it.type == BurgType.appliedFunction }
             .children
             .first()
+      }
+
+  val parents = burgs
+      .filter { it.value.type == BurgType.application }
+      .map { (burgId, application) ->
+        val children = application.children
+            .map { burgs[it]!! }
+
+        val appliedFunction = applicationTargets[burgId]!!
 
         val arguments = children
             .filter { it.type == BurgType.argument }
@@ -73,39 +83,35 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): Response<IntermediateE
               val argumentValue = burgs[argumentValueId]
               assert(argumentValue!!.children.any())
               val item = argumentValue.children.first()
-              item
+              applicationTargets[item] ?: item
             }
 
-        FunctionApplication(
-            target = burgNodes[appliedFunction]!!,
-            arguments = arguments.map { burgNodes[it]!! }
-        )
+        burgNodes[appliedFunction]!! to arguments.map { burgNodes[it]!! }
       }
-      .mapKeys { applicationsKeys[it.key]!! }
+      .associate { it }
 
-  val parents = applications
-      .mapValues { it.value.arguments }
-
-  val nodeMap = burgNodes.entries
+  val nodeMap = burgNodes
+      .minus(applicationPathKeys)
+      .entries
       .associate { (id, pathKey) ->
         Pair(pathKey, realm.burgs[id]!!.fileRange)
       }
 
   val literalTypes = resolveLiteralTypes(realm.burgs, literalTokenKeys)
 
-  val (stages, dependencyErrors) = arrangeRealm(realm)
+  val (stages, dependencyErrors) = parentsToStages(parents)
 
   return Response(
       IntermediateExpression(
-          applications = applications,
           literalTypes = literalTypes,
+          namedArguments = namedArguments.mapKeys { (burg, _) -> burgNodes[burg]!! },
           nodeMap = nodeMap,
           parents = parents,
           references = nodeReferences
               .groupBy { it.value as String }
-              .mapValues { it.value.map { burgNodes[it.hashCode()]!! }.toSet() },
-          namedArguments = namedArguments.mapKeys { (burg, _) -> burgNodes[burg]!! },
-          stages = stages.mapNotNull { burgNodes[it] }.reversed(),
+              .flatMap { reference -> reference.value.map { burgNodes[it.hashCode()]!! to reference.key } }
+              .associate { it },
+          stages = stages.reversed(),
           values = literalTokenKeys.entries
               .associate { (burgId, key) ->
                 (key to realm.burgs[burgId]!!.value!!)

@@ -3,7 +3,7 @@ package silentorb.imp.parsing.parser
 import silentorb.imp.core.*
 import silentorb.imp.parsing.syntax.*
 
-val emptyContext: Context = listOf(newNamespace())
+val emptyContext: Context = listOf(defaultImpNamespace())
 
 fun <T> filterIndices(list: List<T>, filter: (T) -> Boolean): List<Int> {
   val iterator = list.iterator()

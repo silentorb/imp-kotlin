@@ -5,17 +5,22 @@ import silentorb.imp.parsing.general.*
 import silentorb.imp.parsing.lexer.Rune
 import java.nio.file.Path
 
-fun validateFunctionTypes(nodes: Set<PathKey>, types: Map<PathKey, TypeHash>, nodeMap: NodeMap): ImpErrors {
-  return nodes
-      .filter { !types.containsKey(it) || types[it]!! == unknownType.hash }
-      .map { node ->
+fun validateFunctionTypes(referenceOptions: Map<PathKey, Map<PathKey, TypeHash>>, nodeMap: NodeMap): ImpErrors {
+  return referenceOptions
+      .filter { it.value.none() }
+      .map { (node, _) ->
         val fileRange = nodeMap[node]!!
         newParsingError(TextId.unknownFunction, fileRange)
       }
 }
 
-fun validateSignatures(context: Context, types: Map<PathKey, TypeHash>, parents: Map<PathKey, List<PathKey>>, signatureOptions: Map<PathKey, List<SignatureMatch>>,
-                       nodeMap: NodeMap): ImpErrors {
+fun validateSignatures(
+    context: Context,
+    types: Map<PathKey, TypeHash>,
+    parents: Map<PathKey, List<PathKey>>,
+    signatureOptions: Map<PathKey, List<SignatureMatch>>,
+    nodeMap: NodeMap
+): ImpErrors {
   return parents
       .mapNotNull { (pathKey, arguments) ->
         val options = signatureOptions[pathKey]
