@@ -7,7 +7,7 @@ import silentorb.imp.parsing.parser.*
 import silentorb.imp.parsing.structureOld.parseDefinitionFirstPass
 import java.nio.file.Path
 
-fun gatherTypeNames(context: Context, nodeTypes: Map<PathKey, TypeHash>): Map<TypeHash, PathKey> =
+fun gatherTypeNames(context: Context, nodeTypes: Map<PathKey, TypeHash>): Map<TypeHash, String> =
     nodeTypes
         .values
         .distinct()

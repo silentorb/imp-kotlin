@@ -38,11 +38,11 @@ fun narrowTypeByArguments(
       signatureMatches.filter { it.complete } // TODO: Temporary until currying is supported. Then just prioritize complete.
     } else {
       if (getDebugBoolean("IMP_PARSER_DEBUG_SIGNATURE_MISMATCHES")) {
-        val typeNames = types.values.map { getTypeNameOrNull(context, it) }
-        val argumentTypeNames = arguments.map { getTypeNameOrNull(context, it.type) }
+        val typeNames = types.values.map { getTypeNameOrNull(largerContext, it) }
+        val argumentTypeNames = arguments.map { getTypeNameOrNull(largerContext, it.type) }
         val overloadTypeNames = functionOverloads.map { overload ->
           overload.value.parameters.map {
-            getTypeNameOrNull(context, it.type)
+            getTypeNameOrNull(largerContext, it.type)
           }
         }
         val k = 0

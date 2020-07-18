@@ -159,10 +159,10 @@ fun namespaceFromCompleteOverloads(signatures: Map<PathKey, List<CompleteSignatu
   val namespace = namespaceFromOverloads(signatures.mapValues { it.value.map(::convertCompleteSignature) })
   val extractedTypings = signatures.values
       .flatten()
-      .fold(mapOf<TypeHash, PathKey>()) { a, signature ->
+      .fold(mapOf<TypeHash, String>()) { a, signature ->
         a + signature.parameters
-            .associate { Pair(it.type.hash, it.type.key) }
-            .plus(signature.output.hash to signature.output.key)
+            .associate { Pair(it.type.hash, it.type.key.name) }
+            .plus(signature.output.hash to signature.output.key.name)
       }
   return namespace
       .copy(
@@ -173,9 +173,9 @@ fun namespaceFromCompleteOverloads(signatures: Map<PathKey, List<CompleteSignatu
       )
 }
 
-fun getTypeNameOrNull(context: Context, type: TypeHash, step: Int = 0): PathKey? {
+fun getTypeNameOrNull(context: Context, type: TypeHash, step: Int = 0): String? {
   return if (step > 50) {
-    PathKey("", "infinite-recursion")
+    "infinite-recursion"
   } else {
     val directName = resolveContextField(context) { namespace ->
       namespace.typings.typeNames[type]
@@ -185,21 +185,17 @@ fun getTypeNameOrNull(context: Context, type: TypeHash, step: Int = 0): PathKey?
     else {
       val signature = getTypeSignature(context, type)
       if (signature != null) {
-        PathKey("",
-            signature.parameters.map { parameter ->
-              "${parameter.name}: ${getTypeNameOrUnknown(context, parameter.type, step + 1).name}"
-            }
-                .plus(listOf(getTypeNameOrUnknown(context, signature.output, step + 1).name))
-                .joinToString(" -> ")
-        )
+        signature.parameters.map { parameter ->
+          "${parameter.name}: ${getTypeNameOrUnknown(context, parameter.type, step + 1)}"
+        }
+            .plus(listOf(getTypeNameOrUnknown(context, signature.output, step + 1)))
+            .joinToString(" -> ")
       } else {
         val union = getTypeUnion(context, type)
         if (union != null) {
-          PathKey("",
-              union
-                  .map { option -> getTypeNameOrUnknown(context, option, step + 1).name }
-                  .joinToString(" -> ")
-          )
+          union
+              .map { option -> getTypeNameOrUnknown(context, option, step + 1) }
+              .joinToString(" -> ")
         } else
           null
       }
@@ -207,8 +203,8 @@ fun getTypeNameOrNull(context: Context, type: TypeHash, step: Int = 0): PathKey?
   }
 }
 
-fun getTypeNameOrUnknown(context: Context, type: TypeHash, step: Int = 0): PathKey =
-    getTypeNameOrNull(context, type, step) ?: unknownType.key
+fun getTypeNameOrUnknown(context: Context, type: TypeHash, step: Int = 0): String =
+    getTypeNameOrNull(context, type, step) ?: unknownType.key.name
 
 fun getInputConnections(context: Context, key: PathKey): Connections {
   return resolveContextFieldMap(context) { namespace ->

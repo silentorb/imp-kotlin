@@ -30,7 +30,7 @@ fun validateSignatures(
           val argumentTypeNames = arguments.map { argumentKey ->
             val argumentType = types[argumentKey]
             if (argumentType != null)
-              getTypeNameOrUnknown(context, argumentType).name
+              getTypeNameOrUnknown(context, argumentType)
             else
               unknownSymbol
           }

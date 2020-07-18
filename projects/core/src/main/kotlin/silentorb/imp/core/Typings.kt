@@ -5,7 +5,7 @@ data class Typings(
     val signatures: Map<TypeHash, Signature>,
     val structures: Map<TypeHash, Structure>,
     val typeAliases: Map<TypeHash, TypeHash>,
-    val typeNames: Map<TypeHash, PathKey>,
+    val typeNames: Map<TypeHash, String>,
     val unions: Map<TypeHash, Union>
 ) {
   operator fun plus(other: Typings): Typings =

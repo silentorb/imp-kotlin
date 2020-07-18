@@ -6,6 +6,7 @@ val vector2iType = newTypePair(PathKey(testPath, "Vector2i"))
 val measurementType = newTypePair(PathKey(testPath, "Measurement"))
 
 val simpleContext = listOf(
+    defaultImpNamespace(),
     namespaceFromCompleteOverloads(mapOf(
         PathKey(testPath, "eight") to listOf(
             CompleteSignature(

@@ -15,7 +15,7 @@ fun nameSpaceFromTypes(types: List<TypePair>): Namespace {
       nodeTypes = types.associate { it.key.copy(type = it.hash) to it.hash },
       typings = newTypings().copy(
           signatures = signatures,
-          typeNames = types.associate { it.hash to it.key }
+          typeNames = types.associate { it.hash to it.key.name }
       )
   )
 }

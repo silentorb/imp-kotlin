@@ -26,7 +26,7 @@ fun newLibrary(functions: List<CompleteFunction>, typeNames: Map<TypeHash, PathK
           typeAliases = typeAliases
               .filter { it.alias != null }
               .associate { Pair(it.path, it.alias!!) },
-          typeNames = typeNames + namespace.typings.typeNames,
+          typeNames = typeNames.mapValues { it.value.name } + namespace.typings.typeNames,
           numericTypeConstraints = typeAliases
               .filter { it.numericConstraint != null }
               .associate { Pair(it.path, it.numericConstraint!!) }
