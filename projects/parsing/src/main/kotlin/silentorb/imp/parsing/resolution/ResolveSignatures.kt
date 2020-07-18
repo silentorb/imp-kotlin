@@ -24,30 +24,34 @@ fun narrowTypeByArguments(
               node = childNode
           )
         }
-    val types = referenceOptions[pathKey]!!
-    val functionOverloads = types.mapNotNull {
-      val signature = getTypeSignature(largerContext, it.value)
-      if (signature ==null)
-        null
-      else
-        Pair(it.key, signature)
-    }
-        .associate { it }
-    val signatureMatches = overloadMatches(context, arguments, functionOverloads)
-    if (signatureMatches.any()) {
-      signatureMatches.filter { it.complete } // TODO: Temporary until currying is supported. Then just prioritize complete.
-    } else {
-      if (getDebugBoolean("IMP_PARSER_DEBUG_SIGNATURE_MISMATCHES")) {
-        val typeNames = types.values.map { getTypeNameOrNull(largerContext, it) }
-        val argumentTypeNames = arguments.map { getTypeNameOrNull(largerContext, it.type) }
-        val overloadTypeNames = functionOverloads.map { overload ->
-          overload.value.parameters.map {
-            getTypeNameOrNull(largerContext, it.type)
-          }
-        }
-        val k = 0
-      }
+    val types = referenceOptions[pathKey]
+    if (types == null)
       listOf()
+    else {
+      val functionOverloads = types.mapNotNull {
+        val signature = getTypeSignature(largerContext, it.value)
+        if (signature == null)
+          null
+        else
+          Pair(it.key, signature)
+      }
+          .associate { it }
+      val signatureMatches = overloadMatches(context, arguments, functionOverloads)
+      if (signatureMatches.any()) {
+        signatureMatches.filter { it.complete } // TODO: Temporary until currying is supported. Then just prioritize complete.
+      } else {
+        if (getDebugBoolean("IMP_PARSER_DEBUG_SIGNATURE_MISMATCHES")) {
+          val typeNames = types.values.map { getTypeNameOrNull(largerContext, it) }
+          val argumentTypeNames = arguments.map { getTypeNameOrNull(largerContext, it.type) }
+          val overloadTypeNames = functionOverloads.map { overload ->
+            overload.value.parameters.map {
+              getTypeNameOrNull(largerContext, it.type)
+            }
+          }
+          val k = 0
+        }
+        listOf()
+      }
     }
   }
 }
@@ -63,72 +67,51 @@ data class SignatureOptionsAndTypes(
 fun resolveFunctionSignatures(
     namespaceContext: Context,
     largerContext: Context,
-    parents: Map<PathKey, List<PathKey>>,
     stages: List<PathKey>,
     referenceOptions: Map<PathKey, Map<PathKey, TypeHash>>,
+    applications: Map<PathKey, FunctionApplication>,
     initialTypes: Map<PathKey, TypeHash>,
     namedArguments: Map<PathKey, Burg>
 ): SignatureOptionsAndTypes {
   return stages
-      .filter { node -> !initialTypes.containsKey(node) }
+      .filter { node -> referenceOptions.containsKey(node) }
       .fold(SignatureOptionsAndTypes()) { accumulator, node ->
         val argumentTypes = initialTypes.plus(accumulator.types)
         val newContext = largerContext + newNamespace().copy(typings = accumulator.typings)
-        val arguments = parents[node]
-        if (arguments != null) {
-          if (arguments.none() && initialTypes.containsKey(node)) {
-            val type = argumentTypes[node] ?: getPathKeyTypes(namespaceContext, node).firstOrNull()
-            if (type != null) {
-              accumulator.copy(
-                  signatureOptions = accumulator.signatureOptions + (node to listOf(
-                      SignatureMatch(
-                          key = null,
-                          signature = Signature(parameters = listOf(), output = type, isVariadic = false),
-                          alignment = mapOf(),
-                          complete = true
-                      )
-                  )),
-                  types = accumulator.types + (node to type)
-              )
-            } else
-              accumulator
-          } else {
-            val signatureOptions = narrowTypeByArguments(
-                namespaceContext,
-                newContext,
-                argumentTypes,
-                node,
-                arguments,
-                referenceOptions,
-                namedArguments
-            )
-            val reducedNestedSignatures = signatureOptions.map { reduceSignature(it.signature, it.alignment.keys) }
+        val application = applications.entries.firstOrNull { it.value.target == node }
+        val arguments = if (application != null)
+          application.value.arguments
+        else
+          listOf()
+        val signatureOptions = narrowTypeByArguments(
+            namespaceContext,
+            newContext,
+            argumentTypes,
+            node,
+            arguments,
+            referenceOptions,
+            namedArguments
+        )
+        val reducedNestedSignatures = signatureOptions.map { reduceSignature(it.signature, it.alignment.keys) }
 
-            val newTypes = if (signatureOptions.size == 1)
-              mapOf(
-                  node to signatureOptions.first().signature.hashCode()
-//                  node to signatureOptions.first().signature.output
-              )
-            else
-              mapOf()
+        val newTypes = if (signatureOptions.size == 1)
+          mapOf(
+              node to signatureOptions.first().signature.hashCode()
+          ).plus(
+              if (application != null)
+                mapOf(application.key to signatureOptions.first().signature.output)
+              else
+                mapOf()
+          )
+        else
+          mapOf()
 
-            val newTypings = extractTypings(reducedNestedSignatures)
-            accumulator.copy(
-                signatureOptions = accumulator.signatureOptions + (node to signatureOptions),
-                types = accumulator.types + newTypes,
-                typings = accumulator.typings + newTypings
-            )
-          }
-        } else { // Nullary reference
-          val types = getSymbolTypes(namespaceContext, node.name)
-          val type = types.values.firstOrNull()
-          if (type == null)
-            accumulator
-          else {
-            accumulator.copy(
-                types = accumulator.types + (node to type)
-            )
-          }
-        }
+        val newTypings = extractTypings(reducedNestedSignatures)
+        accumulator.copy(
+            signatureOptions = accumulator.signatureOptions + (node to signatureOptions),
+            types = accumulator.types + newTypes,
+            typings = accumulator.typings + newTypings
+        )
+//          }
       }
 }

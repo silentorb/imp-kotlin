@@ -11,6 +11,7 @@ fun resolveExpression(
     intermediate: IntermediateExpression
 ): Response<Dungeon> {
   val (
+      applications,
       literalTypes,
       namedArguments,
       nodeMap,
@@ -29,19 +30,27 @@ fun resolveExpression(
       resolveFunctionSignatures(
           context,
           largerContext,
-          parents,
           stages,
           referenceOptions,
+          applications,
           initialTypes,
           namedArguments
       )
   val signatures = signatureOptions
       .filter { it.value.size == 1 }
       .mapValues { it.value.first() }
-  val connections = arrangeConnections(parents, signatures)
+  val connections = arrangeConnections(parents, applications, signatures)
+      .plus(
+          applications.map { (key, application) ->
+            Input(
+                destination = key,
+                parameter = defaultParameter
+            ) to application.target
+          }
+      )
 
-  val referenceConnections = references
-      .mapNotNull { (key, _) ->
+  val referenceConnections = referenceOptions.keys
+      .mapNotNull { key ->
         val options = signatureOptions[key] ?: listOf()
         if (options.none()) {
           null

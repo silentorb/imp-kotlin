@@ -58,19 +58,6 @@ class ParserTest {
   }
 
   @Test
-  fun canParseParenthesis() {
-    val code = "let output = (10)"
-
-    handleRoot(errored, parseToDungeon(emptyContext, code)) { result ->
-      val graph = result.namespace
-      assertEquals(2, graph.nodes.size)
-      assertEquals(1, graph.values.size)
-      assertEquals(1, graph.connections.size)
-      assertEquals(10, graph.values.values.first())
-    }
-  }
-
-  @Test
   fun canParseTwoDefinitions() {
     val code = """
       let intermediate = 10
@@ -222,7 +209,7 @@ let intermediate = 10
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(4, graph.nodes.size)
+      assertEquals(5, graph.nodes.size)
     }
   }
 
@@ -235,7 +222,7 @@ let intermediate = 10
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(4, graph.nodes.size)
+      assertEquals(5, graph.nodes.size)
     }
   }
 
@@ -258,8 +245,8 @@ let intermediate = 10
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(4, graph.nodes.size)
-      assertEquals(3, graph.connections.size)
+      assertEquals(5, graph.nodes.size)
+      assertEquals(5, graph.connections.size)
       val node2 = PathKey("output", "%application0")
       val node3 = PathKey("output", "#literal1")
       val node4 = PathKey("output", "#literal2")
@@ -277,7 +264,7 @@ let intermediate = 10
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(8, graph.nodes.size)
+      assertEquals(7, graph.nodes.size)
     }
   }
 
@@ -305,8 +292,38 @@ let intermediate = 10
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(8, graph.nodes.size)
-      assertEquals(8, graph.connections.size)
+      assertEquals(6, graph.nodes.size)
+      assertEquals(5, graph.connections.size)
+    }
+  }
+
+  @Test
+  fun canParseParenthesis() {
+    val code = "let output = (10)"
+
+    handleRoot(errored, parseToDungeon(emptyContext, code)) { result ->
+      val graph = result.namespace
+      assertEquals(2, graph.nodes.size)
+      assertEquals(1, graph.values.size)
+      assertEquals(1, graph.connections.size)
+      assertEquals(10, graph.values.values.first())
+    }
+  }
+
+  @Test
+  fun canParseParenthesisFunctionTargets() {
+    val code = """
+      import silentorb.imp.test.*
+      
+      let output = (simpleFunction) 1 1
+    """.trimIndent()
+
+    handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
+      val graph = result.namespace
+      assertEquals(2, graph.nodes.size)
+      assertEquals(1, graph.values.size)
+      assertEquals(1, graph.connections.size)
+      assertEquals(10, graph.values.values.first())
     }
   }
 
@@ -353,8 +370,8 @@ let output = value
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(4, graph.nodes.size)
-      assertEquals(3, graph.connections.size)
+      assertEquals(5, graph.nodes.size)
+      assertEquals(5, graph.connections.size)
       assertEquals(1, graph.values[graph.connections.entries.first { it.key.parameter == "second" }.value])
       assertEquals(2.1f, graph.values[graph.connections.entries.first { it.key.parameter == "first" }.value])
     }
@@ -372,7 +389,7 @@ let output = simpleFunction2
 
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(4, graph.connections.size)
+      assertEquals(5, graph.connections.size)
       assertEquals(1, graph.values[graph.connections.entries.first { it.key.parameter == "second" }.value])
       assertEquals(2.1f, graph.values[graph.connections.entries.first { it.key.parameter == "first" }.value])
     }
@@ -415,7 +432,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(4, graph.nodes.size)
+      assertEquals(5, graph.nodes.size)
     }
   }
 
@@ -427,7 +444,19 @@ let output = simpleFunction a (simpleFunction 3 3)
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(11, graph.nodes.size)
+      assertEquals(10, graph.nodes.size)
+    }
+  }
+
+  @Test
+  fun supportsLiteralPiping() {
+    val code = """
+      import silentorb.imp.test.*
+      let output = 1 . simpleFunction 1
+    """.trimIndent()
+    handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
+      val graph = result.namespace
+      assertEquals(4, graph.nodes.size)
     }
   }
 
@@ -546,7 +575,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(4, graph.nodes.size)
+      assertEquals(5, graph.nodes.size)
     }
   }
 

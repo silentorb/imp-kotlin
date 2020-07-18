@@ -16,6 +16,7 @@ data class FunctionApplication(
 )
 
 data class IntermediateExpression(
+    val applications: Map<PathKey, FunctionApplication>,
     val literalTypes: Map<PathKey, TypeHash>,
     val namedArguments: Map<PathKey, Burg>,
     val nodeMap: NodeMap,

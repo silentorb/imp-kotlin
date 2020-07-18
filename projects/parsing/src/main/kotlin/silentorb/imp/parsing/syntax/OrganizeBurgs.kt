@@ -1,6 +1,10 @@
 package silentorb.imp.parsing.syntax
 
-import silentorb.imp.core.*
+import silentorb.imp.core.Dependency
+import silentorb.imp.core.DependencyError
+import silentorb.imp.core.TokenFile
+import silentorb.imp.core.arrangeDependencies
+import silentorb.imp.core.Response
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.general.newParsingError
@@ -18,18 +22,6 @@ fun arrangeRealm(realm: Realm): Pair<List<BurgId>, List<DependencyError>> {
       .toSet()
 
   return arrangeDependencies(realm.burgs.keys, dependencies)
-}
-
-fun parentsToStages(parents: Map<PathKey, List<PathKey>>): Pair<List<PathKey>, List<DependencyError>> {
-  val dependencies = parents.mapValues { it.value }
-      .flatMap { (parent, children) ->
-        children.map { child ->
-          Dependency(child, parent)
-        }
-      }
-      .toSet()
-
-  return arrangeDependencies(parents.keys, dependencies)
 }
 
 fun withoutComments(tokens: Tokens): Tokens =
@@ -53,7 +45,9 @@ fun definitionToTokenGraph(realm: Realm, file: TokenFile): (Burg) -> TokenizedDe
             null
         }
 
-    val expressionBurg = definitionChildren.firstOrNull { it.type == BurgType.application }
+    val expressionBurg = definitionChildren.firstOrNull{
+      it.type != BurgType.definitionName && it.type != BurgType.parameter
+    }
 
     if (expressionBurg != null) {
       val suburbs = subRealm(realm.roads, expressionBurg.hashCode())
