@@ -6,6 +6,7 @@ import silentorb.imp.execution.newLibrary
 import silentorb.imp.library.standard.standardLibrary
 
 fun simpleContext() = listOf(
+    defaultImpNamespace(),
     standardLibrary()
 )
 

@@ -38,7 +38,7 @@ fun reduceTypings(list: List<Typings>): Typings =
     else
       list.reduce(::mergeTypings)
 
-fun extractTypings(signatures: List<Signature>): Typings {
+fun extractGroupedTypings(signatures: List<Signature>): Typings {
   val signatureMap = signatures
       .associateBy { it.hashCode() }
 
@@ -56,7 +56,7 @@ fun extractTypings(signatures: List<Signature>): Typings {
 
 fun extractTypings(signatures: Collection<List<Signature>>): Typings {
   return signatures
-      .map(::extractTypings)
+      .map(::extractGroupedTypings)
       .reduce(::mergeTypings)
 }
 

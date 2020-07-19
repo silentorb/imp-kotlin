@@ -44,34 +44,33 @@ fun definitionToTokenGraph(realm: Realm, file: TokenFile): (Burg) -> TokenizedDe
           else
             null
         }
-
-    val expressionBurg = definitionChildren.firstOrNull{
-      it.type != BurgType.definitionName && it.type != BurgType.parameter
-    }
-
-    if (expressionBurg != null) {
-      val suburbs = subRealm(realm.roads, expressionBurg.hashCode())
-      val expression = realm.copy(
-          root = expressionBurg.hashCode(),
-          burgs = realm.burgs.filterKeys { suburbs.contains(it) }
-      )
+    val blockBurg = definitionChildren.firstOrNull { it.type == BurgType.block }
+    if (blockBurg != null) {
+      val definitions = getExpandedChildren(realm, blockBurg.hashCode())
+          .mapNotNull(definitionToTokenGraph(realm, file))
+      assert(definitions.any())
       TokenizedDefinition(
           file = Paths.get(file),
           symbol = name,
           parameters = parameters,
-          expression = expression
+          definitions = definitions
       )
     } else {
-      val blockBurg = definitionChildren.firstOrNull { it.type == BurgType.block }
-      if (blockBurg != null) {
-        val definitions = getExpandedChildren(realm, blockBurg.hashCode())
-            .mapNotNull(definitionToTokenGraph(realm, file))
-        assert(definitions.any())
+      val expressionBurg = definitionChildren.firstOrNull {
+        it.type != BurgType.definitionName && it.type != BurgType.parameter
+      }
+
+      if (expressionBurg != null) {
+        val suburbs = subRealm(realm.roads, expressionBurg.hashCode())
+        val expression = realm.copy(
+            root = expressionBurg.hashCode(),
+            burgs = realm.burgs.filterKeys { suburbs.contains(it) }
+        )
         TokenizedDefinition(
             file = Paths.get(file),
             symbol = name,
             parameters = parameters,
-            definitions = definitions
+            expression = expression
         )
       } else
         null

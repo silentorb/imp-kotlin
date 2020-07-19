@@ -8,7 +8,6 @@ val startImport = pushMarker(BurgType.importClause) + goto(ParsingMode.importFir
 val startGroup = pushContextMode(ContextMode.group)
 val closeGroup = foldToInclusive(BurgType.application) + pop + popContextMode
 
-//val startGroupNamedArgumentValue = goto(ParsingMode.groupNamedArgumentValue)
 val startArgument = foldTo(BurgType.application) + pushMarker(BurgType.argument) + pushMarker(BurgType.argumentValue)
 val startGroupArgumentValue = startArgument + startGroup + goto(ParsingMode.expressionStart)
 val startBlock = pushContextMode(ContextMode.block) + pushMarker(BurgType.block) + goto(ParsingMode.block)

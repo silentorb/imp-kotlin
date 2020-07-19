@@ -8,9 +8,8 @@ fun narrowTypeByArguments(
     context: Context,
     largerContext: Context,
     argumentTypes: Map<PathKey, TypeHash>,
-    pathKey: PathKey,
     children: List<PathKey>,
-    referenceOptions: Map<PathKey, Map<PathKey, TypeHash>>,
+    types: Map<PathKey, TypeHash>,
     namedArguments: Map<PathKey, Burg>
 ): List<SignatureMatch> {
   return if (children.any { !argumentTypes.containsKey(it) })
@@ -24,34 +23,30 @@ fun narrowTypeByArguments(
               node = childNode
           )
         }
-    val types = referenceOptions[pathKey]
-    if (types == null)
-      listOf()
-    else {
-      val functionOverloads = types.mapNotNull {
-        val signature = getTypeSignature(largerContext, it.value)
-        if (signature == null)
-          null
-        else
-          Pair(it.key, signature)
-      }
-          .associate { it }
-      val signatureMatches = overloadMatches(context, arguments, functionOverloads)
-      if (signatureMatches.any()) {
-        signatureMatches.filter { it.complete } // TODO: Temporary until currying is supported. Then just prioritize complete.
-      } else {
-        if (getDebugBoolean("IMP_PARSER_DEBUG_SIGNATURE_MISMATCHES")) {
-          val typeNames = types.values.map { getTypeNameOrNull(largerContext, it) }
-          val argumentTypeNames = arguments.map { getTypeNameOrNull(largerContext, it.type) }
-          val overloadTypeNames = functionOverloads.map { overload ->
-            overload.value.parameters.map {
-              getTypeNameOrNull(largerContext, it.type)
-            }
+
+    val functionOverloads = types.mapNotNull {
+      val signature = getTypeSignature(largerContext, it.value)
+      if (signature == null)
+        null
+      else
+        Pair(it.key, signature)
+    }
+        .associate { it }
+    val signatureMatches = overloadMatches(largerContext, arguments, functionOverloads)
+    if (signatureMatches.any()) {
+      signatureMatches.filter { it.complete } // TODO: Temporary until currying is supported. Then just prioritize complete.
+    } else {
+      if (getDebugBoolean("IMP_PARSER_DEBUG_SIGNATURE_MISMATCHES")) {
+        val typeNames = types.values.map { getTypeNameOrNull(largerContext, it) }
+        val argumentTypeNames = arguments.map { getTypeNameOrNull(largerContext, it.type) }
+        val overloadTypeNames = functionOverloads.map { overload ->
+          overload.value.parameters.map {
+            getTypeNameOrNull(largerContext, it.type)
           }
-          val k = 0
         }
-        listOf()
+        val k = 0
       }
+      listOf()
     }
   }
 }
@@ -83,15 +78,20 @@ fun resolveFunctionSignatures(
           application.value.arguments
         else
           listOf()
-        val signatureOptions = narrowTypeByArguments(
-            namespaceContext,
-            newContext,
-            argumentTypes,
-            node,
-            arguments,
-            referenceOptions,
-            namedArguments
-        )
+
+        val types = referenceOptions[node]
+        val signatureOptions = if (types != null && types.any())
+          narrowTypeByArguments(
+              namespaceContext,
+              newContext,
+              argumentTypes,
+              arguments,
+              types,
+              namedArguments
+          )
+        else
+          listOf()
+
         val reducedNestedSignatures = signatureOptions.map { reduceSignature(it.signature, it.alignment.keys) }
 
         val newTypes = if (signatureOptions.size == 1)
@@ -106,12 +106,11 @@ fun resolveFunctionSignatures(
         else
           mapOf()
 
-        val newTypings = extractTypings(reducedNestedSignatures)
+        val newTypings = extractGroupedTypings(reducedNestedSignatures)
         accumulator.copy(
             signatureOptions = accumulator.signatureOptions + (node to signatureOptions),
             types = accumulator.types + newTypes,
             typings = accumulator.typings + newTypings
         )
-//          }
       }
 }

@@ -148,13 +148,6 @@ fun getTypeSignatures(context: Context): (TypeHash) -> List<Signature> = { type 
 fun resolveNumericTypeConstraint(key: TypeHash) =
     resolveContextField { namespace -> namespace.typings.numericTypeConstraints[key] }
 
-fun namespaceFromOverloads(functions: OverloadsMap): Namespace {
-  return newNamespace().copy(
-      nodeTypes = functions.mapValues { signaturesToTypeHash(it.value) }.mapKeys { it.key.copy(type = it.value) },
-      typings = extractTypings(functions.values)
-  )
-}
-
 fun namespaceFromCompleteOverloads(signatures: Map<PathKey, List<CompleteSignature>>): Namespace {
   val namespace = namespaceFromOverloads(signatures.mapValues { it.value.map(::convertCompleteSignature) })
   val extractedTypings = signatures.values

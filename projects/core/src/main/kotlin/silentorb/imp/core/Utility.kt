@@ -76,3 +76,22 @@ fun pathKeyFromString(value: String): PathKey {
   val tokens = value.split(".")
   return PathKey(tokens.dropLast(1).joinToString("."), tokens.lastOrNull() ?: "")
 }
+
+fun namespaceFromOverloads(functions: OverloadsMap): Namespace {
+  val signatureMap = functions.flatMap { (key, value) ->
+    value.map { signature ->
+      key.copy(type = signature.hashCode()) to signature
+    }
+  }.associate { it }
+
+  return newNamespace().copy(
+      nodeTypes = signatureMap.mapValues { it.key.type!! },
+      typings = newTypings().copy(
+          signatures = signatureMap.mapKeys { it.key.type!! }
+      )
+  )
+//  return newNamespace().copy(
+//      nodeTypes = functions.mapValues { signaturesToTypeHash(it.value) }.mapKeys { it.key.copy(type = it.value) },
+//      typings = extractTypings(functions.values)
+//  )
+}

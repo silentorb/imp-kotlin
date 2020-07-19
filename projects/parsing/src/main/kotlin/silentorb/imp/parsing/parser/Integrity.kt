@@ -2,7 +2,7 @@ package silentorb.imp.parsing.parser
 
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
-import silentorb.imp.parsing.lexer.Rune
+import silentorb.imp.parsing.resolution.FunctionApplication
 import java.nio.file.Path
 
 fun validateFunctionTypes(referenceOptions: Map<PathKey, Map<PathKey, TypeHash>>, nodeMap: NodeMap): ImpErrors {
@@ -14,31 +14,53 @@ fun validateFunctionTypes(referenceOptions: Map<PathKey, Map<PathKey, TypeHash>>
       }
 }
 
+fun getArgumentTypeNames(
+    context: Context,
+    applications: Map<PathKey, FunctionApplication>,
+    types: Map<PathKey, TypeHash>,
+    parents: Map<PathKey, List<PathKey>>,
+    node: PathKey
+): List<String> {
+  val application = applications.entries.firstOrNull { it.value.target == node }?.key
+  val arguments = parents[application]
+  return if (arguments == null)
+    listOf()
+  else {
+    arguments.map { argumentKey ->
+      val argumentType = types[argumentKey]
+      if (argumentType != null)
+        getTypeNameOrUnknown(context, argumentType)
+      else
+        unknownSymbol
+    }
+  }
+}
+
 fun validateSignatures(
     context: Context,
     types: Map<PathKey, TypeHash>,
+    referenceOptions: Set<PathKey>,
     parents: Map<PathKey, List<PathKey>>,
     signatureOptions: Map<PathKey, List<SignatureMatch>>,
+    applications: Map<PathKey, FunctionApplication>,
     nodeMap: NodeMap
 ): ImpErrors {
-  return parents
-      .mapNotNull { (pathKey, arguments) ->
-        val options = signatureOptions[pathKey]
-        if (options == null || options.size == 1)
+  return referenceOptions
+      .mapNotNull { node ->
+        val options = signatureOptions[node] ?: listOf()
+        if (options.size == 1)
           null
         else if (options.none()) {
-          val argumentTypeNames = arguments.map { argumentKey ->
-            val argumentType = types[argumentKey]
-            if (argumentType != null)
-              getTypeNameOrUnknown(context, argumentType)
-            else
-              unknownSymbol
-          }
+          val argumentTypeNames = getArgumentTypeNames(context, applications, types, parents, node)
 
-          val argumentClause = argumentTypeNames.joinToString(", ")
-          ImpError(TextId.noMatchingSignature, fileRange = nodeMap[pathKey]!!, arguments = listOf(argumentClause))
+          val argumentClause = if (argumentTypeNames.any())
+            argumentTypeNames.joinToString(", ")
+          else
+            "Unit"
+
+          ImpError(TextId.noMatchingSignature, fileRange = nodeMap[node]!!, arguments = listOf(argumentClause))
         } else
-          ImpError(TextId.ambiguousOverload, fileRange = nodeMap[pathKey]!!)
+          ImpError(TextId.ambiguousOverload, fileRange = nodeMap[node]!!)
       }
 }
 

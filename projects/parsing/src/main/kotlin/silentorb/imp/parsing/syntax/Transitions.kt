@@ -49,7 +49,7 @@ fun popChildren(state: ParsingState): ParsingState {
     state // An error occurred.  Should be flagged by other code.
   else {
     val newTop = shortStack.last()
-    val parent = adoptChildren(newTop.last(), children)
+    val parent = adoptChildren(state.accumulator, newTop.last(), children)
     if (parent.type == BurgType.argument) {
       val k = 0
     }

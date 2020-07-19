@@ -19,16 +19,24 @@ fun newRootBurg(file: TokenFile): Burg =
 fun <T> stackAppend(stack: Stack<T>, item: T): Stack<T> =
     stack.dropLast(1).plusElement(stack.last() + item)
 
-fun adoptChildren(parent: Burg, children: List<Burg>) =
+fun adoptChildren(burgs: Set<Burg>, parent: Burg, children: List<Burg>) =
     if (children.none())
       parent
     else {
+      val reduced = children
+          .map { child ->
+            if (child.type == BurgType.application && child.children.size == 1)
+              burgs.first {it.hashCode() == child.children.first()}.children.first()
+            else
+              child.hashCode()
+          }
+
       parent.copy(
           range = parent.range.copy(
               start = children.map { it.range.start }.plus(parent.range.start).minBy { it.index }!!,
               end = children.map { it.range.end }.plus(parent.range.end).maxBy { it.index }!!
           ),
-          children = parent.children + children.map { it.hashCode() }
+          children = parent.children + reduced
       )
     }
 

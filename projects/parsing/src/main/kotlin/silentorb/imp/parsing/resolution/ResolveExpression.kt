@@ -61,7 +61,7 @@ fun resolveExpression(
       .associate { it }
 
   val nodeTypes = initialTypes + reducedTypes
-  val referenceValues = connections
+  val referenceValues = referenceConnections
       .filter { it.key.parameter == defaultParameter }
       .mapNotNull { (destination, source) ->
         val nodeType = nodeTypes[destination.destination]
@@ -73,9 +73,8 @@ fun resolveExpression(
       }
       .associate { it }
 
-  val possibleSignatureProblems = parents.filter { referenceOptions[it.key]?.any() ?: false }
   val typeResolutionErrors = validateFunctionTypes(referenceOptions, nodeMap)
-  val signatureErrors = validateSignatures(largerContext, nodeTypes, possibleSignatureProblems, signatureOptions, nodeMap)
+  val signatureErrors = validateSignatures(largerContext, nodeTypes, referenceOptions.filter { it.value.any() }.keys, parents, signatureOptions, applications, nodeMap)
   val errors = signatureErrors + typeResolutionErrors
 
 //  if (referenceConnections.size == referencePairs.size || errors.any()) {

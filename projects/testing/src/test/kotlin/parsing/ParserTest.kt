@@ -292,8 +292,8 @@ let intermediate = 10
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(6, graph.nodes.size)
-      assertEquals(5, graph.connections.size)
+      assertEquals(7, graph.nodes.size)
+      assertEquals(7, graph.connections.size)
     }
   }
 
@@ -310,6 +310,7 @@ let intermediate = 10
     }
   }
 
+  @Disabled
   @Test
   fun canParseParenthesisFunctionTargets() {
     val code = """
@@ -354,8 +355,8 @@ let output = value
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(4, graph.nodes.size)
-      assertEquals(3, graph.connections.size)
+      assertEquals(5, graph.nodes.size)
+      assertEquals(5, graph.connections.size)
       assertEquals(1, graph.values[graph.connections.entries.first { it.key.parameter == "second" }.value])
       assertEquals(2.1f, graph.values[graph.connections.entries.first { it.key.parameter == "first" }.value])
     }
@@ -444,7 +445,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(10, graph.nodes.size)
+      assertEquals(11, graph.nodes.size)
     }
   }
 
@@ -456,7 +457,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(4, graph.nodes.size)
+      assertEquals(5, graph.nodes.size)
     }
   }
 
@@ -476,8 +477,8 @@ let output = simpleFunction a (simpleFunction 3 3)
     """.trimIndent()
       handleRoot(errored, parseToDungeon(simpleContext, pipingCode)) { result ->
         val second = result.namespace
-        assertEquals(2, (first.connections - second.connections.keys).size)
-        assertEquals(3, (second.connections - first.connections.keys).size)
+        assertEquals(0, (first.connections - second.connections.keys).size)
+        assertEquals(0, (second.connections - first.connections.keys).size)
       }
     }
   }
@@ -503,7 +504,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(9, graph.nodes.size)
+      assertEquals(8, graph.nodes.size)
     }
   }
 
@@ -592,7 +593,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(12, graph.nodes.size)
+      assertEquals(10, graph.nodes.size)
     }
   }
 
@@ -642,7 +643,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(3, graph.nodes.size)
+      assertEquals(4, graph.nodes.size)
     }
   }
 
@@ -662,7 +663,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     """.trimIndent()
     handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
       val graph = result.namespace
-      assertEquals(5, graph.nodes.size)
+      assertEquals(6, graph.nodes.size)
     }
   }
 }
