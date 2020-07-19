@@ -17,10 +17,10 @@ class ExecutionTest {
       
       let output = + 10 6
     """.trimIndent()
-    val context = simpleContext()
+    val context = standardTestContext()
     handleRoot(errored, parseToDungeon(context, code)) { result ->
       val graph = result.namespace
-      val value = executeToSingleValue(standardTestContext(), graph)
+      val value = executeToSingleValue(context, graph)
       assertEquals(16, value)
     }
   }
@@ -36,6 +36,21 @@ class ExecutionTest {
     handleRoot(errored, parseToDungeon(context, code)) { dungeon ->
       val value = executeToSingleValue(context, dungeon)
       assertEquals(2, value)
+    }
+  }
+
+  @Test
+  fun canExecuteNullaryFunctions() {
+    val code = """
+      import imp.test.custom.*
+      
+      let main = newMonkey newBananaCount
+    """.trimIndent()
+    val context = customTestContext()
+    handleRoot(errored, parseToDungeon(context, code)) { result ->
+      val graph = result.namespace
+      val value = executeToSingleValue(context, graph)
+      assertEquals(3, value)
     }
   }
 

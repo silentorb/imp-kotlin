@@ -27,6 +27,15 @@ fun customLibrary() = newLibrary(
             implementation = { arguments ->
               arguments["bananaCount"]!! as Int + 1 // The banana count logic is arbitrary
             }
+        ),
+        CompleteFunction(
+            path = PathKey(customPath, "newBananaCount"),
+            signature = CompleteSignature(
+                output = intType
+            ),
+            implementation = { _ ->
+              2
+            }
         )
     )
 )

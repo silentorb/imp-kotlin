@@ -37,6 +37,9 @@ fun arrangeGraphSequence(context: Context, connections: Connections): List<PathK
   return arrangeDependencies(nodes, dependencies).first
 }
 
+fun isFunction(value: Any): Boolean =
+    value.javaClass.superclass.name == "kotlin.jvm.internal.Lambda"
+
 fun generateNodeFunction(context: Context, node: PathKey): NodeImplementation {
   val nodeType = getReturnType(context, node)
       ?: throw Error("Missing nodeType for ${formatPathKey(node)}")
@@ -45,47 +48,56 @@ fun generateNodeFunction(context: Context, node: PathKey): NodeImplementation {
     return { }
 
   val value = getValue(context, node.copy(type = nodeType)) ?: getValue(context, node)
-
   if (value == null) {
     val inputs = getInputConnections(context, node).entries
     val target = inputs.firstOrNull { it.key.parameter == defaultParameter }
         ?: throw Error("Missing application node type for ${formatPathKey(node)}")
 
     val targetNode = target.value
-    if (inputs.size > 1) {
+    val functionValue = getValue(context, targetNode)
+    if (functionValue != null) {
       val targetType = getReturnType(context, targetNode)
           ?: throw Error("Missing nodeType for ${formatPathKey(node)}")
 
       val signature = getTypeSignature(context, targetType)
           ?: throw Error("Missing signature for ${formatPathKey(node)}")
 
-      val functionValue = getValue(context, targetNode)
       val function = if (functionValue is FunctionSource)
         compileNodeFunction(context, signature, functionValue.key, functionValue.graph)
-      else
+      else if (isFunction(functionValue))
         functionValue as FunctionImplementation
+      else
+        null
 
-      val argumentInputs = inputs.minus(target)
-      if (signature.isVariadic) {
-        return { values: NodeImplementationArguments ->
-          val list = argumentInputs.map { values[it.value]!! }
-          function(mapOf("values" to list))
-        }
-      } else if (signature.parameters.none()) {
-        return { function(mapOf()) }
+      if (function == null) {
+        return { functionValue }
       } else {
-        return { values: NodeImplementationArguments ->
-          function(argumentInputs.associate { it.key.parameter to values[it.value]!! })
+        val argumentInputs = inputs.minus(target)
+        if (signature.isVariadic) {
+          return { values: NodeImplementationArguments ->
+            val list = argumentInputs.map { values[it.value]!! }
+            function(mapOf("values" to list))
+          }
+        } else if (signature.parameters.none()) {
+          return { function(mapOf()) }
+        } else {
+          return { values: NodeImplementationArguments ->
+            function(argumentInputs.associate { it.key.parameter to values[it.value]!! })
+          }
         }
       }
     } else {
       return { values: NodeImplementationArguments ->
         values[targetNode]!!
       }
-//      throw Error("Not yet supported")
     }
   } else {
-    return { value }
+    val signature = getTypeSignature(context, nodeType)
+    val resolved = if (signature?.parameters?.none() == true && isFunction(value))
+      (value as FunctionImplementation)(mapOf())
+    else
+      value
+    return { resolved }
   }
 }
 
