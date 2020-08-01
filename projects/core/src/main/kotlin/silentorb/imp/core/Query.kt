@@ -66,7 +66,7 @@ fun getReturnTypesByName(context: Context, name: String): Map<PathKey, TypeHash>
       namespace.nodeTypes.filter { it.key.name == name }
     }
 
-fun getReturnType(context: Context, key: PathKey): TypeHash? =
+fun getNodeType(context: Context, key: PathKey): TypeHash? =
     resolveContextField(context) { namespace ->
       namespace.nodeTypes.entries.firstOrNull { it.key.path == key.path && it.key.name == key.name }?.value
     }

@@ -95,3 +95,6 @@ fun namespaceFromOverloads(functions: OverloadsMap): Namespace {
 //      typings = extractTypings(functions.values)
 //  )
 }
+
+fun isFunction(value: Any): Boolean =
+    value.javaClass.superclass.name == "kotlin.jvm.internal.Lambda"

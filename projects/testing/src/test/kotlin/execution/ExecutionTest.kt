@@ -39,6 +39,23 @@ class ExecutionTest {
     }
   }
 
+  // This test isn't testing much because the bug it was originally built for
+  // ended up involving function values, which would need a more complicated test
+  @Test
+  fun supportsTypeAliases() {
+    val code = """
+      import imp.test.custom.*
+      
+      let main = modMeasure 1.0
+    """.trimIndent()
+    val context = customTestContext()
+    handleRoot(errored, parseToDungeon(context, code)) { dungeon ->
+      val value = executeToSingleValue(context, dungeon)
+      assertEquals(3, value)
+    }
+  }
+
+
   @Test
   fun canExecuteNullaryFunctions() {
     val code = """

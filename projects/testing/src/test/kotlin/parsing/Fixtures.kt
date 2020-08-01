@@ -5,6 +5,19 @@ const val testPath2 = "silentorb.imp.cat"
 val vector2iType = newTypePair(PathKey(testPath, "Vector2i"))
 val measurementType = newTypePair(PathKey(testPath, "Measurement"))
 
+fun measurementNamespace(): Namespace =
+    newNamespace().copy(
+        typings = newTypings()
+            .copy(
+                typeAliases = mapOf(
+                    measurementType.hash to floatType.hash
+                ),
+                numericTypeConstraints = mapOf(
+                    measurementType.hash to NumericTypeConstraint(-10.0, 10.5)
+                )
+            )
+    )
+
 val simpleContext = listOf(
     defaultImpNamespace(),
     namespaceFromCompleteOverloads(mapOf(
@@ -88,15 +101,5 @@ val simpleContext = listOf(
                 output = vector2iType
             )
         )
-    )) + newNamespace().copy(
-        typings = newTypings()
-            .copy(
-                typeAliases = mapOf(
-                    measurementType.hash to floatType.hash
-                ),
-                numericTypeConstraints = mapOf(
-                    measurementType.hash to NumericTypeConstraint(-10.0, 10.5)
-                )
-            )
-    ) + nameSpaceFromTypes(listOf(vector2iType))
+    )) + measurementNamespace() + nameSpaceFromTypes(listOf(vector2iType))
 )

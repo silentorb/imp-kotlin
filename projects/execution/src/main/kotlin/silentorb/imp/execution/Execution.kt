@@ -37,11 +37,8 @@ fun arrangeGraphSequence(context: Context, connections: Connections): List<PathK
   return arrangeDependencies(nodes, dependencies).first
 }
 
-fun isFunction(value: Any): Boolean =
-    value.javaClass.superclass.name == "kotlin.jvm.internal.Lambda"
-
 fun generateNodeFunction(context: Context, node: PathKey): NodeImplementation {
-  val nodeType = getReturnType(context, node)
+  val nodeType = getNodeType(context, node)
       ?: throw Error("Missing nodeType for ${formatPathKey(node)}")
 
   if (getTypeUnion(context, nodeType) != null)
@@ -56,7 +53,7 @@ fun generateNodeFunction(context: Context, node: PathKey): NodeImplementation {
     val targetNode = target.value
     val functionValue = getValue(context, targetNode)
     if (functionValue != null) {
-      val targetType = getReturnType(context, targetNode)
+      val targetType = getNodeType(context, targetNode)
           ?: throw Error("Missing nodeType for ${formatPathKey(node)}")
 
       val signature = getTypeSignature(context, targetType)

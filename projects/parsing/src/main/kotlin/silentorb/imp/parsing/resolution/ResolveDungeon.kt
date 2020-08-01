@@ -196,7 +196,8 @@ fun finalizeDungeons(context: Context, nodeRanges: Map<PathKey, TokenizedDefinit
       val mergedDungeon = expressionDungeons.fold(initialDungeon) { a, expressionDungeon ->
         mergeDungeons(a, expressionDungeon)
       }
-      val propagations = propagateLiteralTypeAliases(context, mergedDungeon.namespace)
+      val flattenedContext = listOf(mergeNamespaces(context))
+      val propagations = propagateLiteralTypeAliases(flattenedContext, mergedDungeon.namespace)
       val dungeon = mergedDungeon.copy(
           namespace = mergedDungeon.namespace.copy(
               nodeTypes = mergedDungeon.namespace.nodeTypes + propagations

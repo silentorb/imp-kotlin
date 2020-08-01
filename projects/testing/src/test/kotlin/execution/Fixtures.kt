@@ -1,5 +1,7 @@
 package execution
 
+import measurementNamespace
+import measurementType
 import silentorb.imp.core.*
 import silentorb.imp.execution.CompleteFunction
 import silentorb.imp.execution.newLibrary
@@ -36,9 +38,21 @@ fun customLibrary() = newLibrary(
             implementation = { _ ->
               2
             }
+        ),
+        CompleteFunction(
+            path = PathKey(customPath, "modMeasure"),
+            signature = CompleteSignature(
+                parameters = listOf(
+                    CompleteParameter("m", measurementType)
+                ),
+                output = intType
+            ),
+            implementation = { arguments ->
+              (arguments["m"]!! as Float).toInt() + 2
+            }
         )
     )
 )
 
-fun customTestContext() = listOf(defaultImpNamespace(), customLibrary())
+fun customTestContext() = listOf(defaultImpNamespace(), customLibrary() + measurementNamespace())
 fun standardTestContext() = listOf(defaultImpNamespace(), standardLibrary())
