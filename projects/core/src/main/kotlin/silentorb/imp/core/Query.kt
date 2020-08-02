@@ -211,10 +211,34 @@ fun getArgumentConnections(context: Context, key: PathKey): Connections {
   }
 }
 
-fun getParameterConnections(context: Context, key: PathKey): Connections {
+fun getParameterConnections2(context: Context, key: PathKey): Connections {
   return resolveContextFieldMap(context) { namespace ->
     namespace.connections.filter { it.value == key }
   }
+}
+
+tailrec fun resolveConnectionParameters(
+    context: Context,
+    accumulator: List<Map.Entry<Input, PathKey>> = listOf()
+): Connections {
+  val (remaining, resolved) = accumulator
+      .partition { connection ->
+        connection.key.parameter == defaultParameter
+      }
+
+  return if (remaining.none())
+    accumulator.associate { it.key to it.value }
+  else {
+    val next = remaining.flatMap {
+      getParameterConnections2(context, it.key.destination).entries
+    }
+    resolveConnectionParameters(context, next + resolved)
+  }
+}
+
+fun getParameterConnections(context: Context, key: PathKey): Connections {
+  val initial = getParameterConnections2(context, key)
+  return resolveConnectionParameters(context, initial.entries.toList())
 }
 
 fun getConnection(context: Context, input: Input): PathKey? {
