@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import silentorb.imp.campaign.codeFromFile
 import silentorb.imp.campaign.getModulesExecutionArtifacts
+import silentorb.imp.campaign.loadModules
 import silentorb.imp.campaign.loadWorkspace
 import silentorb.imp.core.PathKey
 import silentorb.imp.core.defaultImpNamespace
@@ -20,10 +21,11 @@ class CampaignTest {
   fun canLoadAndExecuteWorkspaces() {
     val initialContext = listOf(defaultImpNamespace(), standardLibrary())
     val workspaceUrl = Thread.currentThread().contextClassLoader.getResource("project1/workspace.yaml")!!
-    val (workspace, errors) = loadWorkspace(codeFromFile, initialContext, Paths.get(workspaceUrl.toURI()).parent)
+    val (workspace, errors) = loadWorkspace(Paths.get(workspaceUrl.toURI()).parent)
     assertTrue(errors.none()) { errors.first().message.toString() }
     errored(errors)
-    val modules = workspace.modules
+    val modulesResponse = loadModules(workspace, initialContext, codeFromFile)
+    val modules = modulesResponse.value
     assertEquals(2, modules.size)
     assertEquals(1, modules["assets"]!!.dungeons.size)
     assertEquals(1, modules["lib"]!!.dungeons.size)

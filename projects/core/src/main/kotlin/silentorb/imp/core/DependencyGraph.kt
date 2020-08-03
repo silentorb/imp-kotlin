@@ -29,3 +29,20 @@ tailrec fun <T> arrangeDependencies(modules: Set<T>, dependencies: Set<Dependenc
 
 fun <T> arrangeDependencies(modules: Set<T>, dependencies: Set<Dependency<T>>): Pair<List<T>, List<DependencyError>> =
     arrangeDependencies(modules, dependencies, listOf())
+
+tailrec fun <T> getCascadingDependencies(
+    dependencies: Set<Dependency<T>>,
+    dependents: Set<T>,
+    accumulator: Set<T> = setOf()
+): Set<T> =
+    if (dependents.none())
+      accumulator
+    else {
+      val nextDependents = dependencies
+          .filter { dependency -> dependents.contains(dependency.dependent) }
+          .map { dependency -> dependency.provider }
+          .toSet()
+          .minus(accumulator)
+
+      getCascadingDependencies(dependencies, nextDependents, accumulator + nextDependents)
+    }

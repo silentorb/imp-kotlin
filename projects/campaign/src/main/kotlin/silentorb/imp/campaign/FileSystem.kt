@@ -50,7 +50,7 @@ tailrec fun findContainingDirectory(indicatorFile: Path, path: Path): Path? =
 fun findContainingWorkspaceDirectory(path: Path): Path? =
     findContainingDirectory(workspaceFilePath, path)
 
-fun findContainingModule(path: Path): Path? =
+fun getContainingModule(path: Path): Path? =
     findContainingDirectory(moduleFilePath, path)
 
 fun pathToString(path: Path): String =

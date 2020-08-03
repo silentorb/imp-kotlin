@@ -13,9 +13,9 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 const val workspaceFileName = "workspace.yaml"
-val workspaceFilePath = Paths.get(workspaceFileName)
+val workspaceFilePath: Path = Paths.get(workspaceFileName)
 const val moduleFileName = "module.yaml"
-val moduleFilePath = Paths.get(moduleFileName)
+val moduleFilePath: Path = Paths.get(moduleFileName)
 
 fun namespaceFromPath(root: Path, path: Path): String =
     root.relativize(path)
@@ -105,7 +105,23 @@ tailrec fun loadModules(getCode: GetCode, root: URI, infos: Map<ModuleId, Module
       loadModules(getCode, root, infos - name, newContext, accumulator + (name to response))
     }
 
-fun loadWorkspace(getCode: GetCode, context: Context, root: Path): Response<Workspace> {
+fun loadModules(
+    workspace: Workspace,
+    context: Context,
+    getCode: GetCode): Response<ModuleMap> {
+  val (arrangedModules, dependencyErrors) = arrangeDependencies(workspace.modules.keys, workspace.dependencies)
+  val arrangedMap = arrangedModules.associateWith { workspace.modules[it]!! }
+  val loadingResponse = loadModules(getCode, workspace.path.toUri(), arrangedMap, context, mapOf())
+  val modules = loadingResponse
+      .mapValues { it.value.value }
+
+  return Response(
+      value = modules,
+      errors = dependencyErrors.map { ImpError(it) } + loadingResponse.flatMap { it.value.errors }
+  )
+}
+
+fun loadWorkspace(root: Path): Response<Workspace> {
   val workspaceFilePath = root.resolve(workspaceFileName)
   val workspaceConfig = loadYamlFile<WorkspaceConfig>(workspaceFilePath)
   return if (workspaceConfig == null)
@@ -130,34 +146,31 @@ fun loadWorkspace(getCode: GetCode, context: Context, root: Path): Response<Work
         }
         .toSet()
 
-    val (arrangedModules, dependencyErrors) = arrangeDependencies(infos.keys, dependencies)
-    val arrangedMap = arrangedModules.associateWith { infos[it]!! }
-    val loadingResponse = loadModules(getCode, root.toUri(), arrangedMap, context, mapOf())
-    val modules = loadingResponse
-        .mapValues { it.value.value }
-
     return Response(
         value = Workspace(
             path = root,
-            modules = modules,
+            modules = infos,
             dependencies = dependencies
         ),
-        errors = dependencyErrors.map { ImpError(it) } + loadingResponse.flatMap { it.value.errors }
+        errors = listOf()
     )
   }
 }
 
-fun loadContainingWorkspace(getCode: GetCode, context: Context, root: Path): Response<Workspace>? {
-  val moduleDirectory = findContainingModule(root)
+fun getContainingWorkspaceDirectory(root: Path): Path? {
+  val moduleDirectory = getContainingModule(root)
   return if (moduleDirectory == null)
     null
-  else {
-    val workspaceDirectory = findContainingWorkspaceDirectory(moduleDirectory)
-    if (workspaceDirectory != null)
-      loadWorkspace(getCode, context, workspaceDirectory)
-    else
-      null
-  }
+  else
+    findContainingWorkspaceDirectory(moduleDirectory)
+}
+
+fun loadContainingWorkspace(getCode: GetCode, context: Context, root: Path): Response<Workspace>? {
+  val workspaceDirectory = getContainingWorkspaceDirectory(root)
+  return if (workspaceDirectory != null)
+    loadWorkspace(workspaceDirectory)
+  else
+    null
 }
 
 fun getModulesContext(modules: Map<ModuleId, Module>): Context {
@@ -166,4 +179,4 @@ fun getModulesContext(modules: Map<ModuleId, Module>): Context {
 }
 
 fun getModulesExecutionArtifacts(baseContext: Context, modules: Map<ModuleId, Module>): Context =
-  listOf(mergeNamespaces(baseContext + getModulesContext(modules)))
+    listOf(mergeNamespaces(baseContext + getModulesContext(modules)))

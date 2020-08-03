@@ -16,9 +16,11 @@ data class Module(
 
 typealias ModuleDependency = Dependency<ModuleId>
 
+typealias ModuleMap = Map<ModuleId, Module>
+
 data class Workspace(
     val path: Path,
-    val modules: Map<ModuleId, Module>,
+    val modules: Map<ModuleId, ModuleInfo>,
     val dependencies: Set<ModuleDependency>
 )
 
