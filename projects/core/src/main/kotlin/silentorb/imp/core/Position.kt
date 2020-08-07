@@ -32,7 +32,13 @@ typealias TokenFile = String
 data class FileRange(
     val file: TokenFile,
     val range: Range
-)
+) {
+  init {
+    if (file != range.start.file) {
+      val k = 0
+    }
+  }
+}
 
 fun emptyFileRange(): FileRange =
     FileRange("", Range(newPosition(), newPosition()))

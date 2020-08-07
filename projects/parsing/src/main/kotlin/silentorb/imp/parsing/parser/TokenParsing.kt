@@ -9,12 +9,12 @@ import silentorb.imp.parsing.lexer.tokenize
 import silentorb.imp.parsing.resolution.parseDungeon
 import silentorb.imp.parsing.syntax.toTokenGraph
 import silentorb.imp.parsing.syntax.withoutComments
+import java.nio.file.Path
 import java.nio.file.Paths
 
-fun parseTokensToDungeon(context: Context, tokens: Tokens): Response<Dungeon> {
-  val filePath = Paths.get("")
-  val (tokenGraph, tokenGraphErrors) = toTokenGraph(filePath.toString(), tokens)
-  val importMap = mapOf(filePath to tokenGraph.imports)
+fun parseTokensToDungeon(filePath: TokenFile, context: Context, tokens: Tokens): Response<Dungeon> {
+  val (tokenGraph, tokenGraphErrors) = toTokenGraph(filePath, tokens)
+  val importMap = mapOf(Paths.get(filePath) to tokenGraph.imports)
   val definitions = tokenGraph.definitions
       .associateBy { definition ->
         PathKey("", definition.symbol.value as String)
@@ -26,12 +26,12 @@ fun parseTokensToDungeon(context: Context, tokens: Tokens): Response<Dungeon> {
   )
 }
 
-fun parseTokensToDungeon(context: Context): (Tokens) -> Response<Dungeon> = { tokens ->
+fun parseTokensToDungeon(filePath: TokenFile, context: Context): (Tokens) -> Response<Dungeon> = { tokens ->
   assert(context.any())
   if (tokens.none())
     Response(emptyDungeon, listOf())
   else
-    parseTokensToDungeon(context, withoutComments(tokens))
+    parseTokensToDungeon(filePath, context, withoutComments(tokens))
 }
 
 fun tokenizeAndSanitize(uri: TokenFile, code: CodeBuffer): Response<Tokens> {
@@ -47,7 +47,7 @@ fun tokenizeAndSanitize(uri: TokenFile, code: CodeBuffer): Response<Tokens> {
 
 fun parseToDungeon(uri: TokenFile, context: Context, code: CodeBuffer): Response<Dungeon> {
   val (tokens, lexingErrors) = tokenizeAndSanitize(uri, code)
-  val (dungeon, parsingErrors) = parseTokensToDungeon(context)(tokens)
+  val (dungeon, parsingErrors) = parseTokensToDungeon(uri, context)(tokens)
   return Response(
       dungeon,
       lexingErrors.plus(parsingErrors)

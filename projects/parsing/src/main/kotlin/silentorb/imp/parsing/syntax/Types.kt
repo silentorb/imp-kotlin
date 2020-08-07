@@ -13,6 +13,11 @@ data class Burg(
     val value: Any?
 ) {
   val fileRange: FileRange get() = FileRange(file, range)
+  init {
+    if (file != range.start.file) {
+      val k = 0
+    }
+  }
 }
 
 typealias BurgId = Int
