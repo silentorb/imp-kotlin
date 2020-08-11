@@ -33,8 +33,8 @@ fun <T> arrangeDependencies(modules: Set<T>, dependencies: Set<Dependency<T>>): 
 tailrec fun <T> getCascadingDependencies(
     dependencies: Set<Dependency<T>>,
     dependents: Set<T>,
-    accumulator: Set<T> = setOf()
-): Set<T> =
+    accumulator: List<T> = listOf()
+): List<T> =
     if (dependents.none())
       accumulator
     else {
@@ -44,5 +44,7 @@ tailrec fun <T> getCascadingDependencies(
           .toSet()
           .minus(accumulator)
 
-      getCascadingDependencies(dependencies, nextDependents, accumulator + nextDependents)
+      val nextAccumulator = nextDependents.toList() + accumulator
+
+      getCascadingDependencies(dependencies, nextDependents, nextAccumulator)
     }

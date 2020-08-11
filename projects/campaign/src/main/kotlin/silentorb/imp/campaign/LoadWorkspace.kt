@@ -68,12 +68,14 @@ fun loadModuleInfo(path: Path): ModuleInfo {
   )
 }
 
-fun loadModule(getCode: GetCode, name: String, context: Context, info: ModuleInfo): Response<Module> {
+typealias GetModule = (Context, ModuleId, ModuleInfo) -> Response<Module>
+
+fun loadModule(getCode: GetCode): GetModule = { context, name, info ->
   val path = info.path
   val config = info.config
   val sourceFiles = info.sourceFiles
   val (dungeons, errors) = loadSourceFiles(getCode, name, path, context, config, sourceFiles)
-  return Response(
+  Response(
       Module(
           path = path,
           dungeons = dungeons
@@ -94,30 +96,32 @@ fun loadModuleInfos(root: URI, globPattern: String): Map<ModuleId, ModuleInfo> {
       }
 }
 
-tailrec fun loadModules(getCode: GetCode, root: URI, infos: Map<ModuleId, ModuleInfo>, context: Context, accumulator: Map<ModuleId, Response<Module>>): Map<ModuleId, Response<Module>> =
-    if (infos.none())
-      accumulator
-    else {
-      val (name, info) = infos.entries.first()
-      val response = loadModule(getCode, name, context, info)
+tailrec fun loadModules(getModule: GetModule, root: URI, infos: List<Pair<ModuleId, ModuleInfo>>, context: Context, accumulator: Map<ModuleId, Response<Module>> = mapOf()): Response<Map<ModuleId, Module>> =
+    if (infos.none()) {
+      val modules = accumulator
+          .mapValues { it.value.value }
+      Response(
+          value = modules,
+          errors = accumulator.flatMap { it.value.errors }
+      )
+    } else {
+      val (name, info) = infos.first()
+      val response = getModule(context, name, info)
       val (module, _) = response
       val newContext = context + module.dungeons.map { it.value.namespace }
-      loadModules(getCode, root, infos - name, newContext, accumulator + (name to response))
+      loadModules(getModule, root, infos.drop(1), newContext, accumulator + (name to response))
     }
 
-fun loadModules(
+fun loadAllModules(
     workspace: Workspace,
     context: Context,
     getCode: GetCode): Response<ModuleMap> {
   val (arrangedModules, dependencyErrors) = arrangeDependencies(workspace.modules.keys, workspace.dependencies)
-  val arrangedMap = arrangedModules.associateWith { workspace.modules[it]!! }
-  val loadingResponse = loadModules(getCode, workspace.path.toUri(), arrangedMap, context, mapOf())
-  val modules = loadingResponse
-      .mapValues { it.value.value }
+  val arrangedMap = arrangedModules.map { it to workspace.modules[it]!! }
+  val loadingResponse = loadModules(loadModule(getCode), workspace.path.toUri(), arrangedMap, context)
 
-  return Response(
-      value = modules,
-      errors = dependencyErrors.map { ImpError(it) } + loadingResponse.flatMap { it.value.errors }
+  return loadingResponse.copy(
+      errors = dependencyErrors.map { ImpError(it) } + loadingResponse.errors
   )
 }
 

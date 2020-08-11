@@ -43,4 +43,3 @@ fun toPathString(list: List<String>) =
 
 fun toPathKey(list: List<String>) =
     PathKey(toPathString(list.dropLast(1)), list.takeLast(1).first())
-
