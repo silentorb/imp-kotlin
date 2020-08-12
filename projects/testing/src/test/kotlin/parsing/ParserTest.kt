@@ -379,6 +379,22 @@ let output = value
   }
 
   @Test
+  fun supportsComplexNamedArgumentsExpressions() {
+    val code = """
+      import silentorb.imp.test.*
+      
+      let output = simpleFunction2 second = (simpleFunction 1 2) first = 2.1
+    """.trimIndent()
+    handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
+      val graph = result.namespace
+      assertEquals(5, graph.nodes.size)
+      assertEquals(5, graph.connections.size)
+      assertEquals(1, graph.values[graph.connections.entries.first { it.key.parameter == "second" }.value])
+      assertEquals(2.1f, graph.values[graph.connections.entries.first { it.key.parameter == "first" }.value])
+    }
+  }
+
+  @Test
   fun supportsMultiLineExpressions() {
     val code = """
 import silentorb.imp.test.*
