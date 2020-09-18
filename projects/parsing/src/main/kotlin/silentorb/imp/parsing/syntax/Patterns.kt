@@ -27,6 +27,9 @@ fun isFloat(token: Token) =
 fun isInteger(token: Token) =
     token.rune == Rune.literalInteger
 
+fun isString(token: Token) =
+    token.rune == Rune.literalString
+
 fun isImport(token: Token) =
     token.rune == Rune.identifier && token.value == "import"
 

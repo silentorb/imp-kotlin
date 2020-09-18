@@ -15,6 +15,7 @@ enum class BurgType {
   importPathWildcard,
   literalFloat,
   literalInteger,
+  literalString,
   parameter,
   parameterName,
   parameterType,

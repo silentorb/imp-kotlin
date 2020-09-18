@@ -46,6 +46,11 @@ fun incrementBundle(character: Char, bundle: Bundle): Bundle =
         buffer = appendToLexicalBuffer(bundle.buffer, character)
     )
 
+fun skipCharacter(character: Char, bundle: Bundle): Bundle =
+    bundle.copy(
+        end = nextPosition(character, bundle.end)
+    )
+
 data class TokenStep(
     val position: Position,
     val token: Token? = null

@@ -21,4 +21,4 @@ fun nameSpaceFromTypes(types: List<TypePair>): Namespace {
 }
 
 fun defaultImpNamespace(): Namespace =
-    nameSpaceFromTypes(newMathTypes())
+    nameSpaceFromTypes(newMathTypes() + newCoreTypes())

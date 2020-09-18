@@ -17,6 +17,7 @@ fun getLiteralBurgType(type: BurgType): TypeHash? =
     when (type) {
       BurgType.literalInteger -> intType.hash
       BurgType.literalFloat -> floatType.hash
+      BurgType.literalString -> stringType.hash
       else -> null
     }
 

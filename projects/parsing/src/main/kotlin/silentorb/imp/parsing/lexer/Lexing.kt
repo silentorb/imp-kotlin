@@ -2,7 +2,6 @@ package silentorb.imp.parsing.lexer
 
 import silentorb.imp.core.*
 import silentorb.imp.parsing.general.*
-import java.net.URI
 
 fun nextCharacter(code: CodeBuffer, index: CodeInt): Char? {
   val size = getCodeBufferSize(code)
@@ -37,6 +36,7 @@ fun branchTokenStart(character: Char): BundleToToken? =
       integerStart(character) -> ::consumeInteger
       operatorStart(character) -> ::consumeOperator
       commentStartOrHyphen(character) -> ::consumeCommentOrHyphenOrNegativeNumber
+      isQuoteCharacter(character) -> ::consumeLiteralStringStart
       else -> null
     }
 

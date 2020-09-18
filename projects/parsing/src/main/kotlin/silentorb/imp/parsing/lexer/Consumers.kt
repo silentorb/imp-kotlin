@@ -1,7 +1,5 @@
 package silentorb.imp.parsing.lexer
 
-import silentorb.imp.parsing.general.*
-
 tailrec fun consumeBadIdentifier(bundle: Bundle): TokenStep {
   val character = nextCharacter(bundle)
   return if (isValidCharacterAfterIdentifierOrLiteral(character))
@@ -19,8 +17,7 @@ tailrec fun consumeSingleLineWhitespace(bundle: Bundle): TokenStep? {
       tokenFromBundle(Rune.whitespace)(bundle)
     else
       null
-  }
-  else
+  } else
     consumeSingleLineWhitespace(incrementBundle(character, bundle))
 }
 
@@ -65,7 +62,7 @@ fun consumeCommentOrHyphenOrNegativeNumber(bundle: Bundle): TokenStep {
     consumeComment(incrementBundle(character, bundle))
   else if (character != null && integerStart(character))
     consumeInteger(bundle)
-    else
+  else
     consumeOperator(bundle)
 }
 
@@ -100,3 +97,17 @@ fun consumeLiteralZero(bundle: Bundle): TokenStep {
   else
     consumeBadIdentifier(bundle)
 }
+
+tailrec fun consumeLiteralString(bundle: Bundle): TokenStep {
+  val character = nextCharacter(bundle)
+  return if (character == quoteCharacter)
+    tokenFromBundle(Rune.literalString)(skipCharacter(character, bundle))
+  else if (character == null || newLineCharacters.contains(character))
+    consumeBadIdentifier(bundle)
+  else
+    consumeLiteralString(incrementBundle(character, bundle))
+}
+
+// Clear the buffer to keep the quotation mark out of the captured string value
+fun consumeLiteralStringStart(bundle: Bundle): TokenStep =
+    consumeLiteralString(bundle.copy(buffer = ""))

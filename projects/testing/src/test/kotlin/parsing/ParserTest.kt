@@ -2,10 +2,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import silentorb.imp.core.Input
-import silentorb.imp.core.PathKey
-import silentorb.imp.core.defaultParameter
-import silentorb.imp.core.joinPaths
+import silentorb.imp.core.*
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.parser.*
 import silentorb.imp.parsing.syntax.BurgType
@@ -54,6 +51,22 @@ class ParserTest {
     handleRoot(errored, parseToDungeon(emptyContext, code)) { result ->
       val graph = result.namespace
       assertEquals(-10.3f, graph.values.values.first())
+    }
+  }
+
+  @Test
+  fun canParseStringLiterals() {
+    val helloWorld = "Hello World"
+    val code = """
+let output = "$helloWorld"
+"""
+
+    handleRoot(errored, parseToDungeon(emptyContext, code)) { result ->
+      val graph = result.namespace
+      val literalNode = PathKey("output", "#literal1")
+      assertEquals(2, graph.nodes.size)
+      assertEquals(stringType.hash, graph.nodeTypes[literalNode])
+      assertEquals(helloWorld, graph.values[literalNode])
     }
   }
 

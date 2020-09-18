@@ -14,6 +14,7 @@ enum class Rune {
   keyword,
   literalFloat,
   literalInteger,
+  literalString,
   newline,
   operator,
   parenthesesClose,

@@ -15,14 +15,17 @@ val floatAfterDot = integerAfterStart
 val singleLineWhitespace = patternFromRegex("[ \\t]")
 
 const val dot = '.'
+const val quoteCharacter = '"'
+val newLineCharacters = listOf('\r', '\n')
 
 val newLineStart = patternFromRegex("[\\r\\n]")
 val newLineAfterStart = patternFromRegex("[\\t \\r\\n]")
-val whitespace = patternFromChars(listOf(' ', '\t', '\r', '\n'))
+val whitespace = patternFromChars(listOf(' ', '\t') + newLineCharacters)
 val parentheses = patternFromChars(listOf('(', ')'))
 val commentStartOrHyphen = patternFromChar('-')
 val operatorStart = patternFromRegex("[*+\\/<>%$&@#!=?]")
 val operatorAfterStart = patternFromRegex("[*+\\-/<>%$&@#!=?]")
+val isQuoteCharacter = patternFromChar(quoteCharacter)
 
 val floatingPointSuffix = 'f'
 

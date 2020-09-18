@@ -11,6 +11,7 @@ fun parseExpressionElement(step: ExpressionElementStep): NullableTokenToParsingT
     isIdentifier(token) || isOperator(token) -> step(BurgType.reference, asString)
     isFloat(token) -> step(BurgType.literalFloat, asFloat)
     isInteger(token) -> step(BurgType.literalInteger, asInt)
+    isString(token) -> step(BurgType.literalString, asString)
     else -> null
   }
 }
