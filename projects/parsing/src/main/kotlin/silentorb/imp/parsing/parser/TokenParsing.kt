@@ -53,8 +53,12 @@ fun parseToDungeon(uri: TokenFile, context: Context, code: CodeBuffer): Response
       lexingErrors.plus(parsingErrors)
   )
 }
+
 fun parseToDungeon(context: Context, code: CodeBuffer): Response<Dungeon> =
     parseToDungeon("", context, code)
+
+fun parseToDungeon(namespace: Namespace, code: CodeBuffer): Response<Dungeon> =
+  parseToDungeon("", listOf(namespace), code)
 
 fun parseToDungeon(uri: TokenFile, context: Context): (CodeBuffer) -> Response<Dungeon> = { code ->
   parseToDungeon(uri, context, code)

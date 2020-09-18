@@ -111,7 +111,8 @@ fun executeSteps(steps: List<ExecutionStep>, values: OutputValues): OutputValues
 
 fun prepareExecutionSteps(
     context: Context,
-    resultNodes: Set<PathKey>): List<ExecutionStep> {
+    resultNodes: Set<PathKey>
+): List<ExecutionStep> {
   val connections = getNodeDependencyConnections(context, resultNodes, mapOf())
   val steps = arrangeGraphSequence(context, connections)
   return steps.map { node ->
@@ -160,15 +161,20 @@ fun executeToSingleValue(unit: ExecutionUnit): Any? {
   return values[unit.output]!!
 }
 
-fun mergeImplementationFunctions(context: Context, implementationGraphs: Map<PathKey, Namespace>): FunctionImplementationMap {
+fun mergeImplementationFunctions(
+    context: Context,
+    implementationGraphs: Map<PathKey, Namespace>
+): FunctionImplementationMap {
   var newFunctions: FunctionImplementationMap = mapOf()
   newFunctions = getImplementationFunctions(context, implementationGraphs)
   return newFunctions
 }
 
-fun executeToSingleValue(context: Context, dungeon: Dungeon): Any? {
-  return executeToSingleValue(context, dungeon.namespace)
-}
+fun executeToSingleValue(context: Context, dungeon: Dungeon): Any? =
+    executeToSingleValue(context, dungeon.namespace)
+
+fun executeToSingleValue(namespace: Namespace, dungeon: Dungeon): Any? =
+    executeToSingleValue(listOf(namespace), dungeon.namespace)
 
 fun executeToSingleValue(context: Context, root: PathKey): Any? {
   val values = execute(context, setOf(root))
