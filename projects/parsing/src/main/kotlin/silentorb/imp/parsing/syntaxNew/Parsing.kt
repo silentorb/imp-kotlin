@@ -1,6 +1,7 @@
 package silentorb.imp.parsing.syntaxNew
 
 import silentorb.imp.core.ImpError
+import silentorb.imp.core.ImpErrors
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.syntax.*
@@ -42,7 +43,7 @@ tailrec fun importPath(
 
 val importFirstPathToken: ParsingFunction =
     consumeExpected(::isIdentifier, TextId.expectedIdentifier, consumeToken(BurgType.importPathToken)) +
-    { tokens -> importPath(ImportPathMode.dot, tokens) }
+        { tokens -> importPath(ImportPathMode.dot, tokens) }
 
 val importClause: ParsingFunction = wrap(BurgType.importClause, consume, importFirstPathToken)
 
@@ -67,10 +68,19 @@ val header: ParsingFunction = route { token ->
   when {
     isImport(token) -> importClause
     isLet(token) -> definition
-    isNewline(token) -> addError(TextId.expectedImportOrLetKeywords)
-    isEndOfFile(token) -> throw Error("Not implemented") //goto(ParsingMode.block)
+    isNewline(token) || isEndOfFile(token) -> consume
     else -> addError(TextId.expectedImportOrLetKeywords)
   }
 }
 
-val parseTokens: ParsingFunction = wrap(BurgType.block, header)
+fun headerLoop(tokens: Tokens, burgs: List<NestedBurg> = listOf(), errors: ImpErrors = listOf()): ParsingResponse {
+  val token = tokens.first()
+  return if (isEndOfFile(token))
+    ParsingResponse(tokens, burgs, errors)
+  else {
+    val (nextTokens, newBurgs, newErrors) = header(tokens)
+    headerLoop(nextTokens, burgs + newBurgs, errors + newErrors)
+  }
+}
+
+val parseTokens: ParsingFunction = wrap(BurgType.block, ::headerLoop)

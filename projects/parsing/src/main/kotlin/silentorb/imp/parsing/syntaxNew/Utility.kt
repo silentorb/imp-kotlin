@@ -87,7 +87,7 @@ val consume: ParsingFunction = { tokens ->
 
 fun addError(message: TextId): ParsingFunction {
   return { tokens ->
-    ParsingResponse(tokens, listOf(), listOf(ImpError(message, tokens.firstOrNull()?.fileRange)))
+    ParsingResponse(tokens.drop(1), listOf(), listOf(ImpError(message, tokens.firstOrNull()?.fileRange)))
   }
 }
 
