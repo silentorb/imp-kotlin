@@ -61,7 +61,7 @@ fun checkGroupClosed(contextMode: ContextMode) =
     if (contextMode == ContextMode.group)
       addError(TextId.missingClosingParenthesis)
     else
-      skip
+      skipOld
 
 fun tryCloseGroup(contextMode: ContextMode) =
     if (contextMode == ContextMode.group)

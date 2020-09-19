@@ -14,7 +14,7 @@ val parsePipingRootStart: ContextualTokenToParsingTransition = { token, contextM
       ?: when {
         isParenthesesOpen(token) -> startGroup
         isParenthesesClose(token) -> tryCloseGroup(contextMode)
-        isNewline(token) -> skip
+        isNewline(token) -> skipOld
         isDot(token) -> addError(TextId.missingLefthandExpression)
         else -> addError(TextId.invalidToken)
       }

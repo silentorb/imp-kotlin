@@ -1,10 +1,14 @@
 package silentorb.imp.parsing.syntax
 
 import silentorb.imp.core.*
-import silentorb.imp.core.Response
-import silentorb.imp.parsing.general.*
+import silentorb.imp.parsing.general.TextId
+import silentorb.imp.parsing.general.Token
+import silentorb.imp.parsing.general.Tokens
+import silentorb.imp.parsing.general.newParsingError
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.syntax.traversing.*
+import silentorb.imp.parsing.syntaxNew.NestedBurg
+import silentorb.imp.parsing.syntaxNew.parseTokens
 import silentorb.mythic.debugging.getDebugBoolean
 
 fun getTransition(token: Token, mode: ParsingMode, contextMode: ContextMode): ParsingStep {
@@ -80,7 +84,7 @@ tailrec fun parsingStep(
       parsingStep(file, nextTokens, nextState)
     }
 
-fun parseSyntax(file: TokenFile, tokens: Tokens): Response<Realm> {
+fun parseSyntaxOld(file: TokenFile, tokens: Tokens): Response<Realm> {
   val sanitizedTokens = if (tokens.size == 0 || tokens.last().rune != Rune.newline)
     tokens + Token(Rune.newline, FileRange("", Range(newPosition(), newPosition())), "")
   else
@@ -117,5 +121,49 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): Response<Realm> {
   return Response(
       realm,
       convertedErrors + letErrors
+  )
+}
+
+fun toBurg(nestedBurg: NestedBurg) =
+    Burg(
+        type = nestedBurg.type,
+        children = nestedBurg.children.map { it.hashCode() },
+        file = nestedBurg.file,
+        range = nestedBurg.range,
+        value = nestedBurg.value
+    )
+
+fun flattenNestedBurg(nestedBurg: NestedBurg): Map<BurgId, Burg> {
+  val burg = toBurg(nestedBurg)
+  return mapOf(burg.hashCode() to burg) +
+      nestedBurg.children
+          .map(::flattenNestedBurg)
+          .fold(mapOf()) { a, b -> a + b }
+}
+
+fun parseSyntax(file: TokenFile, tokens: Tokens): Response<Realm> {
+  val sanitizedTokens = if (tokens.size == 0 || tokens.last().rune != Rune.newline)
+    tokens + Token(Rune.newline, FileRange("", Range(newPosition(), newPosition())), "")
+  else
+    tokens
+
+  val closedTokens = sanitizedTokens + Token(Rune.eof, emptyFileRange(), "")
+  val (_, burgs, errors) = parseTokens(closedTokens)
+  assert(burgs.size < 2)
+  val burg = burgs.firstOrNull()
+  val realm = if (burg != null)
+    Realm(toBurg(burg).hashCode(), flattenNestedBurg(burg))
+  else
+    Realm(0, mapOf())
+
+  val letErrors = tokens
+      .filterIndexed { index, token ->
+        isLet(token) && index > 0 && !(isNewline(tokens[index - 1]) || isBraceOpen(tokens[index - 1]))
+      }
+      .map { newParsingError(TextId.expectedNewline, it) }
+
+  return Response(
+      realm,
+      errors + letErrors
   )
 }

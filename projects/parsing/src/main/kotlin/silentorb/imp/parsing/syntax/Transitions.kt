@@ -137,7 +137,7 @@ fun foldToInclusive(burgType: BurgType): ParsingStateTransition = { newBurg, sta
     foldToInclusive(burgType)(newBurg, popChildren(state))
 }
 
-val skip: ParsingStateTransition = { _, state ->
+val skipOld: ParsingStateTransition = { _, state ->
   state
 }
 
