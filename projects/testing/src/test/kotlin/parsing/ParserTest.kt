@@ -538,6 +538,43 @@ let output = simpleFunction a (simpleFunction 3 3)
   }
 
   @Test
+  fun supportsPipingToGroups() {
+    val code = """
+      import silentorb.imp.test.*
+      let output = 1.2 . (simpleFunction2 2)
+    """.trimIndent()
+    handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
+      val graph = result.namespace
+      assertEquals(5, graph.nodes.size)
+    }
+  }
+
+  @Test
+  fun supportsGroupedFirstArguments() {
+    val code = """
+      import silentorb.imp.test.*
+      let output = simpleFunction (simpleFunction2 1.2 2) 1
+    """.trimIndent()
+    handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
+      val graph = result.namespace
+      assertEquals(8, graph.nodes.size)
+      assertEquals(PathKey("output", "simpleFunction1"), graph.connections[Input(PathKey("output", "%application1"), defaultParameter)])
+    }
+  }
+
+  @Test
+  fun supportsPipingAfterGroups() {
+    val code = """
+      import silentorb.imp.test.*
+      let output = (simpleFunction2 1.2 2) . simpleFunction 1
+    """.trimIndent()
+    handleRoot(errored, parseToDungeon(simpleContext, code)) { result ->
+      val graph = result.namespace
+      assertEquals(8, graph.nodes.size)
+    }
+  }
+
+  @Test
   fun preventsDanglingPipeOperators() {
     val code = """
       import silentorb.imp.test.simpleFunction
