@@ -36,11 +36,6 @@ data class PendingParsingError(
     val range: Range
 )
 
-//data class ParsingStep(
-//    val transition: ParsingStateTransition,
-//    val mode: ParsingMode? = null,
-//    val consume: Boolean = true
-//)
 typealias ValueTranslator = (String) -> Any?
 
 typealias NewBurg = (BurgType, ValueTranslator) -> Burg
@@ -48,12 +43,8 @@ typealias ParsingStateTransition = (NewBurg, ParsingState) -> ParsingState
 typealias ParsingStep = ParsingStateTransition
 
 typealias TokenToParsingTransition = (Token) -> ParsingStep
-typealias ContextualTokenToParsingTransition = (Token, ContextMode) -> ParsingStep
 typealias NullableTokenToParsingTransition = (Token) -> ParsingStep?
-typealias NullableContextualTokenToParsingTransition = (Token, ContextMode) -> ParsingStep?
 
 typealias Stack<T> = List<List<T>>
 
 typealias BurgStack = Stack<Burg>
-
-typealias TokenPattern = (Token) -> Boolean

@@ -52,38 +52,33 @@ val parseDefinitionBodyStart: TokenToParsingTransition = { token ->
       ?: parseExpressionStart(token)
 }
 
-val parseExpressionArgumentsCommon: NullableContextualTokenToParsingTransition = { token, contextMode ->
+val parseExpressionArgumentsCommon: NullableTokenToParsingTransition = { token ->
   when {
     isParenthesesOpen(token) -> startGroupArgumentValue
-    isParenthesesClose(token) -> tryCloseGroup(contextMode)
-    isBraceClose(token) -> tryCloseBlock(contextMode)
+    isParenthesesClose(token) -> tryCloseGroup
+    isBraceClose(token) -> tryCloseBlock
     isDot(token) -> startPipingRoot
     else -> null
   }
 }
 
-val parseExpressionArgumentStart: ContextualTokenToParsingTransition = { token, contextMode ->
-  onMatch(isLet(token)) {
-    if (contextMode == ContextMode.group)
-      addError(TextId.missingClosingParenthesis) + nextDefinition
-    else
-      nextDefinition
-  }
+val parseExpressionArgumentStart: TokenToParsingTransition = { token ->
+  onMatch(isLet(token)) { tryNextDefinition }
       ?: parseExpressionCommonArgument(ParsingMode.expressionArgumentFollowing)(token)
-      ?: parseExpressionArgumentsCommon(token, contextMode)
+      ?: parseExpressionArgumentsCommon(token)
       ?: when {
-        isEndOfFile(token) -> checkGroupClosed(contextMode) + fold + goto(ParsingMode.block)
+        isEndOfFile(token) -> checkGroupClosed + fold + goto(ParsingMode.block)
         else -> addError(TextId.invalidToken)
       }
 }
 
-val parseExpressionFollowingArgument: ContextualTokenToParsingTransition = { token, contextMode ->
+val parseExpressionFollowingArgument: TokenToParsingTransition = { token ->
   onMatch(isLet(token)) { nextDefinition }
       ?: onMatch(isAssignment(token)) { closeArgumentName }
       ?: parseExpressionFollowingArgument(ParsingMode.expressionArgumentFollowing)(token)
-      ?: parseExpressionArgumentsCommon(token, contextMode)
+      ?: parseExpressionArgumentsCommon(token)
       ?: when {
-        isEndOfFile(token) -> checkGroupClosed(contextMode) + closeArgumentValue + fold + goto(ParsingMode.block)
+        isEndOfFile(token) -> checkGroupClosed + closeArgumentValue + fold + goto(ParsingMode.block)
         else -> addError(TextId.invalidToken)
       }
 }

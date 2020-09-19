@@ -7,10 +7,10 @@ val startDefinition = pushMarker(BurgType.definition) + goto(ParsingMode.definit
 val startImport = pushMarker(BurgType.importClause) + goto(ParsingMode.importFirstPathToken)
 val startGroup = pushContextMode(ContextMode.group)
 //val closeGroup = foldToInclusive(BurgType.application) + popContextMode + pushContextMode(ContextMode.availableApplication)
-val closeGroup = foldToInclusive(BurgType.application) + popContextMode
+val closeGroup = foldToInclusive(BurgType.application) + tryPopGroupArgument + popContextMode
 
 val startArgument =
-    tryPopAvailableApplication +
+    tryPopArgument +
     foldTo(BurgType.application) +
     pushMarker(BurgType.argument) +
     pushMarker(BurgType.argumentValue) +
@@ -56,7 +56,7 @@ val closeArgumentName =
         goto(ParsingMode.expressionNamedArgumentValue)
 
 fun applyPiping(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
-    tryPopAvailableApplication +
+    tryPopArgument +
     foldTo(BurgType.application) +
         startSimpleApplication(burgType, translator) +
         flipTop +
@@ -64,21 +64,3 @@ fun applyPiping(burgType: BurgType, translator: ValueTranslator): ParsingStateTr
         insertBelow(BurgType.argumentValue, asMarker) +
         foldTo(BurgType.application) +
         pop
-
-fun checkGroupClosed(contextMode: ContextMode) =
-    if (contextMode == ContextMode.group)
-      addError(TextId.missingClosingParenthesis)
-    else
-      skip
-
-fun tryCloseGroup(contextMode: ContextMode) =
-    if (contextMode == ContextMode.group)
-      closeGroup
-    else
-      addError(TextId.missingOpeningParenthesis)
-
-fun tryCloseBlock(contextMode: ContextMode) =
-    if (contextMode == ContextMode.block)
-      closeBlock
-    else
-      addError(TextId.invalidToken)

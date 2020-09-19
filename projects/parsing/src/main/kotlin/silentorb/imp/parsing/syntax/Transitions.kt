@@ -1,6 +1,8 @@
 package silentorb.imp.parsing.syntax
 
 import silentorb.imp.parsing.general.TextId
+import silentorb.imp.parsing.syntax.traversing.closeGroup
+import silentorb.imp.parsing.syntax.traversing.nextDefinition
 
 val asMarker: ValueTranslator = { null }
 val asString: ValueTranslator = { it }
@@ -186,9 +188,46 @@ operator fun ParsingStateTransition.plus(other: TokenToParsingTransition): Token
   this + other(token)
 }
 
-val tryPopAvailableApplication: ParsingStateTransition = { newBurg, state ->
+val tryPopArgument: ParsingStateTransition = { newBurg, state ->
   if (state.contextStack.lastOrNull() == ContextMode.argument)
     (popContextMode + pop)(newBurg, state)
+  else
+    state
+}
+
+val tryCloseGroup: ParsingStateTransition = { newBurg, state ->
+  if (state.contextStack.lastOrNull() == ContextMode.argument && state.contextStack.dropLast(1).lastOrNull() == ContextMode.group)
+    (popContextMode + closeGroup)(newBurg, state)
+  else if (state.contextStack.lastOrNull() == ContextMode.group)
+    closeGroup(newBurg, state)
+  else
+    addError(TextId.missingOpeningParenthesis)(newBurg, state)
+}
+
+val tryCloseBlock: ParsingStateTransition = { newBurg, state ->
+  if (state.contextStack.lastOrNull() == ContextMode.block)
+    closeGroup(newBurg, state)
+  else
+    addError(TextId.invalidToken)(newBurg, state)
+}
+
+val checkGroupClosed: ParsingStateTransition = { newBurg, state ->
+  if (state.contextStack.lastOrNull() == ContextMode.group)
+    addError(TextId.missingClosingParenthesis)(newBurg, state)
+  else
+    skip(newBurg, state)
+}
+
+val tryNextDefinition: ParsingStateTransition = { newBurg, state ->
+  if (state.contextStack.lastOrNull() == ContextMode.group)
+    (addError(TextId.missingClosingParenthesis) + nextDefinition)(newBurg, state)
+  else
+    nextDefinition(newBurg, state)
+}
+
+val tryPopGroupArgument: ParsingStateTransition = { newBurg, state ->
+  if (state.contextStack.lastOrNull() == ContextMode.group && state.contextStack.dropLast(1).lastOrNull() == ContextMode.argument)
+    pop(newBurg, state)
   else
     state
 }

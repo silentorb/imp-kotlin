@@ -7,18 +7,7 @@ import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.syntax.traversing.*
 import silentorb.mythic.debugging.getDebugBoolean
 
-fun getTransition(token: Token, mode: ParsingMode, contextMode: ContextMode): ParsingStep {
-  val contextAction: ContextualTokenToParsingTransition? =
-      when (mode) {
-        ParsingMode.expressionArgumentStart -> parseExpressionArgumentStart
-        ParsingMode.expressionArgumentFollowing -> parseExpressionFollowingArgument
-        ParsingMode.pipingRootStart -> parsePipingRootStart
-        else -> null
-      }
-
-  if (contextAction != null)
-    return contextAction(token, contextMode)
-
+fun getTransition(token: Token, mode: ParsingMode): ParsingStep {
   val simpleAction: TokenToParsingTransition =
       when (mode) {
         ParsingMode.block -> parseBody
@@ -28,13 +17,16 @@ fun getTransition(token: Token, mode: ParsingMode, contextMode: ContextMode): Pa
         ParsingMode.definitionParameterNameOrAssignment -> parseDefinitionParameterNameOrAssignment
         ParsingMode.definitionParameterType -> parseDefinitionParameterType
         ParsingMode.definitionName -> parseDefinitionName
+        ParsingMode.expressionArgumentFollowing -> parseExpressionFollowingArgument
+        ParsingMode.expressionArgumentStart -> parseExpressionArgumentStart
         ParsingMode.expressionNamedArgumentValue -> parseExpressionNamedArgumentValue
         ParsingMode.expressionStart -> parseExpressionStart
         ParsingMode.header -> parseHeader
         ParsingMode.importFirstPathToken -> parseImportFirstPathToken
         ParsingMode.importFollowingPathToken -> parseImportFollowingPathToken
         ParsingMode.importSeparator -> parseImportSeparator
-        else -> throw Error()
+        ParsingMode.pipingRootStart -> parsePipingRootStart
+//        else -> throw Error()
       }
 
   return simpleAction(token)
@@ -60,7 +52,7 @@ fun logTransition(token: Token, previousState: ParsingState, nextState: ParsingS
     token.value
 
   val burgStack = burgStackToString(nextState.burgStack).padEnd(100)
-  println("[$burgStack] ${(value).padStart(12)} ${previousState.mode.name} -> ${nextState.mode.name}")
+  println("[$burgStack] ${(value).padStart(12)} ${previousState.mode.name} -> ${nextState.mode.name} [${nextState.contextStack.joinToString(", ")}]")
 }
 
 tailrec fun parsingStep(
@@ -73,7 +65,7 @@ tailrec fun parsingStep(
     else {
       val token = tokens.first()
       val contextMode = state.contextStack.lastOrNull() ?: ContextMode.root
-      val transition = getTransition(token, state.mode, contextMode)
+      val transition = getTransition(token, state.mode)
       val nextState = transition(newBurg(file, token), state)
       val nextTokens = tokens.drop(1)
 
