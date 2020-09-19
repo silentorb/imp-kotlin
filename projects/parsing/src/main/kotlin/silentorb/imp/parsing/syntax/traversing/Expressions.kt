@@ -40,7 +40,7 @@ val parseExpressionStart: TokenToParsingTransition = { token ->
   onMatch(isLet(token)) { addError(TextId.missingExpression) + nextDefinition }
       ?: parseExpressionCommonStart(goto(ParsingMode.expressionArgumentStart))(token)
       ?: when {
-        isParenthesesOpen(token) ->startGroup
+        isParenthesesOpen(token) -> startGroup
         isParenthesesClose(token) -> addError(TextId.missingOpeningParenthesis)
         isDot(token) -> addError(TextId.missingLefthandExpression)
         else -> addError(TextId.missingExpression)

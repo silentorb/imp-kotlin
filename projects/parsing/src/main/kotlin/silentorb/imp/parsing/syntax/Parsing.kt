@@ -50,13 +50,16 @@ fun newBurg(file: TokenFile, token: Token): NewBurg = { burgType, valueTranslato
   )
 }
 
+fun burgStackToString(burgStack: BurgStack): String =
+    burgStack.map { it.first().type.name }.joinToString(", ")
+
 fun logTransition(token: Token, previousState: ParsingState, nextState: ParsingState) {
   val value = if (token.value.isEmpty())
     token.rune.name
   else
     token.value
 
-  val burgStack = nextState.burgStack.map { it.first().type.name }.joinToString(", ").padEnd(100)
+  val burgStack = burgStackToString(nextState.burgStack).padEnd(100)
   println("[$burgStack] ${(value).padStart(12)} ${previousState.mode.name} -> ${nextState.mode.name}")
 }
 

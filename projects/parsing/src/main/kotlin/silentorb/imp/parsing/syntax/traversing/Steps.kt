@@ -6,9 +6,16 @@ import silentorb.imp.parsing.syntax.*
 val startDefinition = pushMarker(BurgType.definition) + goto(ParsingMode.definitionName)
 val startImport = pushMarker(BurgType.importClause) + goto(ParsingMode.importFirstPathToken)
 val startGroup = pushContextMode(ContextMode.group)
-val closeGroup = foldToInclusive(BurgType.application) + pop + popContextMode
+//val closeGroup = foldToInclusive(BurgType.application) + popContextMode + pushContextMode(ContextMode.availableApplication)
+val closeGroup = foldToInclusive(BurgType.application) + popContextMode
 
-val startArgument = foldTo(BurgType.application) + pushMarker(BurgType.argument) + pushMarker(BurgType.argumentValue)
+val startArgument =
+    tryPopAvailableApplication +
+    foldTo(BurgType.application) +
+    pushMarker(BurgType.argument) +
+    pushMarker(BurgType.argumentValue) +
+    pushContextMode(ContextMode.argument)
+
 val startGroupArgumentValue = startArgument + startGroup + goto(ParsingMode.expressionStart)
 val startBlock = pushContextMode(ContextMode.block) + pushMarker(BurgType.block) + goto(ParsingMode.block)
 val closeBlock = foldToInclusive(BurgType.block) + pop + foldTo(BurgType.block) + popContextMode + goto(ParsingMode.block)
@@ -42,13 +49,14 @@ fun startSimpleApplication(burgType: BurgType, translator: ValueTranslator): Par
         foldTo(BurgType.application)
 
 val closeArgumentValue =
-    foldTo(BurgType.application)
+    tryPopContextMode(ContextMode.argument) + foldTo(BurgType.application)
 
 val closeArgumentName =
     changeType(BurgType.argumentName) + removeParent + pop + pushMarker(BurgType.argumentValue) +
         goto(ParsingMode.expressionNamedArgumentValue)
 
 fun applyPiping(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
+    tryPopAvailableApplication +
     foldTo(BurgType.application) +
         startSimpleApplication(burgType, translator) +
         flipTop +

@@ -54,8 +54,8 @@ fun popChildren(state: ParsingState): ParsingState {
       val k = 0
     }
     return state.copy(
-      accumulator = state.accumulator + children,
-      burgStack = stack.dropLast(2).plusElement(newTop.drop(1) + parent)
+        accumulator = state.accumulator + children,
+        burgStack = stack.dropLast(2).plusElement(newTop.drop(1) + parent)
     )
   }
 }
@@ -73,12 +73,14 @@ val removeParent: ParsingStateTransition = { _, state ->
 
 val flipTop: ParsingStateTransition = { _, state ->
   val stack = state.burgStack
+  println(" * ${burgStackToString(stack)}")
   val next = state.copy(
       burgStack = stack
           .dropLast(2)
           .plusElement(stack.last())
           .plusElement(stack.dropLast(1).last())
   )
+  println(" * ${burgStackToString(stack)}")
   next
 }
 
@@ -159,6 +161,13 @@ val popContextMode: ParsingStateTransition = { _, state ->
   )
 }
 
+fun tryPopContextMode(mode: ContextMode): ParsingStateTransition = { newBurg, state ->
+  if (state.contextStack.lastOrNull() == mode)
+    popContextMode(newBurg, state)
+  else
+    state
+}
+
 fun addError(message: TextId): ParsingStateTransition = { newBurg, state ->
   state.copy(
       errors = state.errors + PendingParsingError(
@@ -175,4 +184,11 @@ operator fun ParsingStateTransition.plus(other: ParsingStateTransition): Parsing
 
 operator fun ParsingStateTransition.plus(other: TokenToParsingTransition): TokenToParsingTransition = { token ->
   this + other(token)
+}
+
+val tryPopAvailableApplication: ParsingStateTransition = { newBurg, state ->
+  if (state.contextStack.lastOrNull() == ContextMode.argument)
+    (popContextMode + pop)(newBurg, state)
+  else
+    state
 }
