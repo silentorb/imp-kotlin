@@ -84,78 +84,47 @@ tailrec fun parsingStep(
       parsingStep(file, nextTokens, nextState)
     }
 
-fun parseSyntaxOld(file: TokenFile, tokens: Tokens): Response<Realm> {
-  val sanitizedTokens = if (tokens.size == 0 || tokens.last().rune != Rune.newline)
-    tokens + Token(Rune.newline, FileRange("", Range(newPosition(), newPosition())), "")
-  else
-    tokens
-  val closedTokens = sanitizedTokens + Token(Rune.eof, emptyFileRange(), "")
-  val state = fold(parsingStep(file, closedTokens, newState(file, ParsingMode.header)))
-
-  assert(state.burgStack.size == 1)
-
-  val root = state.burgStack.first().first()
-  val realm = Realm(
-      root = root.hashCode(),
-      burgs = state.accumulator
-          .plus(root)
-          .associateBy { it.hashCode() }
-  )
-
-  if (getDebugBoolean("IMP_PARSING_LOG_HIERARCHY"))
-    logRealmHierarchy(realm)
-
-  val convertedErrors = state.errors.map { error ->
-    ImpError(
-        message = error.message,
-        fileRange = FileRange(file, error.range)
-    )
-  }
-
-  val letErrors = tokens
-      .filterIndexed { index, token ->
-        isLet(token) && index > 0 && !(isNewline(tokens[index - 1]) || isBraceOpen(tokens[index - 1]))
-      }
-      .map { newParsingError(TextId.expectedNewline, it) }
-
-  return Response(
-      realm,
-      convertedErrors + letErrors
-  )
-}
-
-fun toBurg(file: TokenFile, nestedBurg: NestedBurg) =
+fun toBurg(file: TokenFile, nestedBurg: NestedBurg): Burg =
     Burg(
         type = nestedBurg.type,
-        children = nestedBurg.children.map { it.hashCode() },
+        children = nestedBurg.children.map { toBurg(file, it) }, // Eventually refactor this to use a accumulator and tailrec
         file = file,
         range = nestedBurg.range,
         value = nestedBurg.value
     )
 
-fun flattenNestedBurg(file: TokenFile, nestedBurg: NestedBurg): Map<BurgId, Burg> {
-  val burg = toBurg(file, nestedBurg)
-  return mapOf(burg.hashCode() to burg) +
-      nestedBurg.children
-          .map { flattenNestedBurg(file, it) }
-          .fold(mapOf()) { a, b -> a + b }
-}
+fun flattenNestedBurg(burg: Burg): Set<Burg> =
+    setOf(burg) +
+        burg.children
+            .flatMap(::flattenNestedBurg)
 
-fun parseSyntax(file: TokenFile, tokens: Tokens): Response<Realm> {
+fun parseSyntax(file: TokenFile, tokens: Tokens): Response<Realm?> {
   val sanitizedTokens = if (tokens.size == 0 || tokens.last().rune != Rune.newline)
     tokens + Token(Rune.newline, FileRange("", Range(newPosition(), newPosition())), "")
   else
     tokens
 
   val closedTokens = sanitizedTokens + Token(Rune.eof, emptyFileRange(), "")
-  val (_, burgs, errors) = parseTokens(closedTokens)
-  assert(burgs.size < 2)
-  val burg = burgs.firstOrNull()
-  val realm = if (burg != null) {
-    Realm(toBurg(file, burg).hashCode(), flattenNestedBurg(file, burg))
-  }
-  else
-    Realm(0, mapOf())
+  val (_, nestedBurgs, errors) = parseTokens(closedTokens)
+  assert(nestedBurgs.size < 2)
+  val sourceRoot = nestedBurgs.firstOrNull()
+  val realm = if (sourceRoot != null) {
+    val root = toBurg(file, sourceRoot)
+    val burgs = flattenNestedBurg(root)
+//    val burgs = initialBurgs
+//        .mapValues { (_, burg) -> burg.copy(
+//            children = burg.children.map {initialBurgs[it]!!.hashCode()}
+//        )}
+//        .mapKeys { it.value.hashCode() }
+//    val missingChildren = burgs.values.flatMap { b ->
+//      b.children
+//          .filter { !burgs.keys.contains(it) }
+//          .map {b.hashCode() to it}
+//    }
+//    assert(missingChildren.none())
+    Realm(root, burgs)
+  } else
+    null
 
   val letErrors = tokens
       .filterIndexed { index, token ->

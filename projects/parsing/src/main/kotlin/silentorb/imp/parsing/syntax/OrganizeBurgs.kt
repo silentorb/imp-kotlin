@@ -1,10 +1,6 @@
 package silentorb.imp.parsing.syntax
 
-import silentorb.imp.core.Dependency
-import silentorb.imp.core.DependencyError
-import silentorb.imp.core.TokenFile
-import silentorb.imp.core.arrangeDependencies
-import silentorb.imp.core.Response
+import silentorb.imp.core.*
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.general.newParsingError
@@ -12,41 +8,39 @@ import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.parser.*
 import java.nio.file.Paths
 
-fun arrangeRealm(realm: Realm): Pair<List<BurgId>, List<DependencyError>> {
-  val dependencies = realm.burgs.mapValues { it.value.children }
-      .flatMap { (parent, children) ->
-        children.map { child ->
+fun arrangeRealm(realm: Realm): Pair<List<Burg>, List<DependencyError>> {
+  val dependencies = realm.burgs
+      .flatMap { parent ->
+        parent.children.map { child ->
           Dependency(child, parent)
         }
       }
       .toSet()
 
-  return arrangeDependencies(realm.burgs.keys, dependencies)
+  return arrangeDependencies(realm.burgs, dependencies)
 }
 
 fun withoutComments(tokens: Tokens): Tokens =
     tokens.filter { it.rune != Rune.comment }
 
 fun definitionToTokenGraph(realm: Realm, file: TokenFile): (Burg) -> TokenizedDefinition? = { definition ->
-  val definitionChildren = getExpandedChildren(realm, definition.hashCode())
 
-  val name = definitionChildren.firstOrNull { it.type == BurgType.definitionName }
+  val name = definition.children.firstOrNull { it.type == BurgType.definitionName }
   if (name != null) {
-    val parameters = definitionChildren
+    val parameters = definition.children
         .filter { it.type == BurgType.parameter }
         .mapNotNull { parameter ->
-          val parameterChildren = getExpandedChildren(realm, parameter.hashCode())
-          if (parameterChildren.size == 2)
+          if (parameter.children.size == 2)
             TokenParameter(
-                parameterChildren.first(),
-                parameterChildren.last()
+                parameter.children.first(),
+                parameter.children.last()
             )
           else
             null
         }
-    val blockBurg = definitionChildren.firstOrNull { it.type == BurgType.block }
+    val blockBurg = definition.children.firstOrNull { it.type == BurgType.block }
     if (blockBurg != null) {
-      val definitions = getExpandedChildren(realm, blockBurg.hashCode())
+      val definitions = blockBurg.children
           .mapNotNull(definitionToTokenGraph(realm, file))
       assert(definitions.any())
       TokenizedDefinition(
@@ -56,15 +50,15 @@ fun definitionToTokenGraph(realm: Realm, file: TokenFile): (Burg) -> TokenizedDe
           definitions = definitions
       )
     } else {
-      val expressionBurg = definitionChildren.firstOrNull {
+      val expressionBurg = definition.children.firstOrNull {
         it.type != BurgType.definitionName && it.type != BurgType.parameter
       }
 
       if (expressionBurg != null) {
-        val suburbs = subRealm(realm.roads, expressionBurg.hashCode())
+        val suburbs = subRealm(realm.burgs, expressionBurg)
         val expression = realm.copy(
-            root = expressionBurg.hashCode(),
-            burgs = realm.burgs.filterKeys { suburbs.contains(it) }
+            root = expressionBurg,
+            burgs = realm.burgs.filter { suburbs.contains(it) }.toSet()
         )
         TokenizedDefinition(
             file = Paths.get(file),
@@ -81,31 +75,33 @@ fun definitionToTokenGraph(realm: Realm, file: TokenFile): (Burg) -> TokenizedDe
 
 fun toTokenGraph(file: TokenFile, tokens: Tokens): Response<TokenDungeon> {
   val (realm, syntaxErrors) = parseSyntax(file, tokens)
-  val burgs = realm.burgs
-  val lookUpBurg = { id: BurgId -> burgs[id]!! }
-  val rootChildren = getExpandedChildren(realm, realm.root)
+  return if (realm == null)
+    Response(TokenDungeon(listOf(), listOf()), syntaxErrors)
+  else {
+    val root = realm.root
 
-  val imports = rootChildren
-      .filter { it.type == BurgType.importClause }
-      .map { importBurg ->
-        TokenizedImport(
-            path = importBurg.children.map(lookUpBurg)
-        )
-      }
+    val imports = root.children
+        .filter { it.type == BurgType.importClause }
+        .map { importBurg ->
+          TokenizedImport(
+              path = importBurg.children
+          )
+        }
 
-  val definitions = rootChildren
-      .filter { it.type == BurgType.definition }
-      .mapNotNull(definitionToTokenGraph(realm, file))
+    val definitions = root.children
+        .filter { it.type == BurgType.definition }
+        .mapNotNull(definitionToTokenGraph(realm, file))
 
-  val duplicateSymbolErrors = definitions
-      .groupBy { it.symbol.value }
-      .filter { it.value.size > 1 }
-      .map { newParsingError(TextId.duplicateSymbol, it.value.last().symbol) }
+    val duplicateSymbolErrors = definitions
+        .groupBy { it.symbol.value }
+        .filter { it.value.size > 1 }
+        .map { newParsingError(TextId.duplicateSymbol, it.value.last().symbol) }
 
-  val graph = TokenDungeon(
-      imports = imports,
-      definitions = definitions
-  )
+    val graph = TokenDungeon(
+        imports = imports,
+        definitions = definitions
+    )
 
-  return Response(graph, syntaxErrors + duplicateSymbolErrors)
+    Response(graph, syntaxErrors + duplicateSymbolErrors)
+  }
 }

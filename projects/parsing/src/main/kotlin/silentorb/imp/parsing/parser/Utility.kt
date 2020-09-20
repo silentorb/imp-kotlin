@@ -61,20 +61,19 @@ fun <T> filterIndexes(collection: Collection<T>, predicate: (T) -> Boolean): Lis
         null
     }
 
-fun getChildren(realm: Realm, parent: BurgId): List<BurgId> =
-    (realm.burgs[parent]?.children ?: listOf())
+//fun getChildren(realm: Realm, parent: BurgId): List<BurgId> =
+//    (realm.burgs[parent]?.children ?: listOf())
+//
+//fun getExpandedChildren(realm: Realm, parent: BurgId): List<Burg> =
+//    (realm.burgs[parent]?.children ?: listOf())
+//        .map { realm.burgs[it]!! }
 
-fun getExpandedChildren(realm: Realm, parent: BurgId): List<Burg> =
-    (realm.burgs[parent]?.children ?: listOf())
-        .map { realm.burgs[it]!! }
-
-fun subRealm(roads: Roads, root: BurgId, depth: Int = 1): Set<BurgId> =
+fun subRealm(burgs: Set<Burg>, root: Burg, depth: Int = 1): Set<Burg> =
     if (depth > 100)
       throw Error("Infinite loop while parsing")
     else {
-      val children = roads[root] ?: listOf()
-      children
-          .flatMap { subRealm(roads, it, depth + 1) }
+      root.children
+          .flatMap { subRealm(burgs, it, depth + 1) }
           .plus(root)
           .toSet()
     }

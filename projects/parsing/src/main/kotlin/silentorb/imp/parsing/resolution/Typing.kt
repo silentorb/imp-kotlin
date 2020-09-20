@@ -3,7 +3,6 @@ package silentorb.imp.parsing.resolution
 import silentorb.imp.core.*
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.syntax.Burg
-import silentorb.imp.parsing.syntax.BurgId
 import silentorb.imp.parsing.syntax.BurgType
 
 fun getLiteralRuneType(rune: Rune): TypeHash? =
@@ -21,10 +20,10 @@ fun getLiteralBurgType(type: BurgType): TypeHash? =
       else -> null
     }
 
-fun resolveLiteralTypes(burgs: Map<BurgId, Burg>, tokenNodes: Map<BurgId, PathKey>): Map<PathKey, TypeHash> {
+fun resolveLiteralTypes(tokenNodes: Map<Burg, PathKey>): Map<PathKey, TypeHash> {
   return tokenNodes.entries
       .associate { (token, pathKey) ->
-        val type = getLiteralBurgType(burgs[token]!!.type)!!
+        val type = getLiteralBurgType(token.type)!!
         Pair(pathKey, type)
       }
 }

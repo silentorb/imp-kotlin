@@ -686,13 +686,13 @@ let output = simpleFunction a (simpleFunction 3 3)
     val (realm2, syntaxErrors2) = parseSyntax("", tokens2)
     assert(tokenErrors1.plus(syntaxErrors1).plus(tokenErrors2).plus(syntaxErrors2).none())
 
-    val block1 = realm1.burgs.values.first { it.type == BurgType.block }
-    val block2 = realm2.burgs.values.first { it.type == BurgType.block }
+    val block1 = realm1!!.burgs.first { it.type == BurgType.block }
+    val block2 = realm2!!.burgs.first { it.type == BurgType.block }
     assertEquals(block1.range.end.index, block2.range.end.index)
 
-    val application1 = realm1.burgs.values
+    val application1 = realm1.burgs
         .filter { it.type == BurgType.application }.maxBy { it.range.length }!!
-    val application2 = realm2.burgs.values
+    val application2 = realm2.burgs
         .filter { it.type == BurgType.application }.maxBy { it.range.length }!!
     assertEquals(application1.range.start.index, application2.range.start.index)
     assertEquals(application1.range.end.index, application2.range.end.index)

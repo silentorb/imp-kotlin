@@ -9,7 +9,7 @@ data class Burg(
     val type: BurgType,
     val range: Range,
     val file: TokenFile,
-    val children: List<BurgId>,
+    val children: List<Burg>,
     val value: Any?
 ) {
   val fileRange: FileRange get() = FileRange(file, range)
@@ -25,10 +25,10 @@ typealias BurgId = Int
 typealias Roads = Map<BurgId, List<BurgId>>
 
 data class Realm(
-    val root: BurgId,
-    val burgs: Map<BurgId, Burg>
+    val root: Burg,
+    val burgs: Set<Burg>
 ) {
-  val roads: Roads get() = burgs.mapValues { it.value.children }
+//  val roads: Roads get() = burgs.mapValues { it.value.children }
 }
 
 data class PendingParsingError(
