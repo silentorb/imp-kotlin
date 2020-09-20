@@ -9,6 +9,7 @@ import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.syntax.BurgType
 import silentorb.imp.parsing.syntax.ValueTranslator
 import silentorb.imp.parsing.syntax.asString
+import silentorb.imp.parsing.syntax.isEndOfFile
 
 //operator fun ParsingFunctionTransform.plus(other: ParsingFunction): ParsingFunction =
 //    this(other)
@@ -18,12 +19,8 @@ import silentorb.imp.parsing.syntax.asString
 
 operator fun ParsingFunction.plus(other: ParsingFunction): ParsingFunction = { tokens ->
   val first = this(tokens)
-  val second = other(first.first)
-  ParsingResponse(
-      second.first,
-      first.second + second.second,
-      first.third + second.third
-  )
+  val second = other(first.tokens)
+  first + second
 }
 
 tailrec fun reduceParsers(
@@ -33,7 +30,7 @@ tailrec fun reduceParsers(
     errors: ImpErrors = listOf()
 ): ParsingResponse =
     if (functions.none())
-      Triple(tokens, burgs, errors)
+      ParsingResponse(tokens, burgs, errors)
     else {
       val next = functions.first()
       val step = next(tokens)
@@ -47,12 +44,7 @@ fun wrapResponseList(burgType: BurgType, tokens: Tokens, response: ParsingRespon
   val end = children.maxByOrNull { it.range.end.index }?.range?.end ?: token.range.end
   return ParsingResponse(
       nextTokens,
-      listOf(NestedBurg(
-          type = burgType,
-          file = token.file,
-          children = children,
-          range = Range(token.range.start, end)
-      )),
+      listOf(newNestedBurg(burgType, children)),
       errors
   )
 }
@@ -62,38 +54,23 @@ fun wrap(burgType: BurgType, vararg functions: ParsingFunction): ParsingFunction
   wrapResponseList(burgType, tokens, response)
 }
 
-fun wrap(burgType: BurgType): ParsingFunctionTransform = { function ->
-  { tokens ->
-    val (nextTokens, children, errors) = function(tokens)
-    val token = tokens.first()
-    ParsingResponse(
-        nextTokens,
-        listOf(NestedBurg(
-            type = burgType,
-            file = token.file,
-            children = children,
-            range = Range(token.range.start, children.lastOrNull()?.range?.end ?: token.range.end)
-        )),
-        errors
-    )
-  }
+val consume: ParsingFunction = { tokens ->
+  ParsingResponse(tokens.drop(1))
 }
 
-fun success(tokens: Tokens, burg: NestedBurg?) = ParsingResponse(tokens, listOfNotNull(burg), listOf())
-
-val consume: ParsingFunction = { tokens ->
-  success(tokens.drop(1), null)
+val exitLoop: ParsingFunction = { tokens ->
+  ParsingResponse(tokens, exitLoop = true)
 }
 
 fun addError(message: TextId): ParsingFunction {
   return { tokens ->
-    ParsingResponse(tokens.drop(1), listOf(), listOf(ImpError(message, tokens.firstOrNull()?.fileRange)))
+    ParsingResponse(tokens.drop(1), errors = listOf(ImpError(message, tokens.firstOrNull()?.fileRange)))
   }
 }
 
-fun route(tokens: Tokens, router: (Token) -> ParsingFunction): ParsingResponse =
+fun route(tokens: Tokens, router: Router): ParsingResponse =
     if (tokens.none())
-      ParsingResponse(tokens,  listOf(), listOf(ImpError(TextId.expectedExpression)))
+      ParsingResponse(tokens, listOf(), listOf(ImpError(TextId.expectedExpression)))
     else
       router(tokens.first())(tokens)
 
@@ -103,7 +80,7 @@ fun route(router: (Token) -> ParsingFunction): ParsingFunction = { tokens ->
 
 fun consumeToken(burgType: BurgType, translator: ValueTranslator = asString): ParsingFunction = { tokens ->
   val token = tokens.first()
-  success(tokens.drop(1), newNestedBurg(burgType, token, value = translator(token.value)))
+  ParsingResponse(tokens.drop(1), listOf(newNestedBurg(burgType, token, value = translator(token.value))))
 }
 
 fun consumeExpected(condition: (Token) -> Boolean, errorMessage: TextId, function: ParsingFunction = consume): ParsingFunction = { tokens ->
@@ -111,5 +88,20 @@ fun consumeExpected(condition: (Token) -> Boolean, errorMessage: TextId, functio
   if (condition(token))
     function(tokens)
   else
-    ParsingResponse(tokens,  listOf(), listOf(ImpError(errorMessage, tokens.firstOrNull()?.fileRange)))
+    ParsingResponse(tokens, listOf(), listOf(ImpError(errorMessage, tokens.firstOrNull()?.fileRange)))
 }
+
+fun parsingLoop(
+    function: ParsingFunction,
+    tokens: Tokens,
+    burgs: List<NestedBurg> = listOf(),
+    errors: ImpErrors = listOf()
+): ParsingResponse {
+  val (nextTokens, newBurgs, newErrors, endLoop) = function(tokens)
+  return if (endLoop)
+    ParsingResponse(tokens, burgs, errors)
+  else
+    parsingLoop(function, nextTokens, burgs + newBurgs, errors + newErrors)
+}
+
+fun parsingLoop(function: ParsingFunction): ParsingFunction = { tokens -> parsingLoop(function, tokens) }

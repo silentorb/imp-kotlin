@@ -124,20 +124,20 @@ fun parseSyntaxOld(file: TokenFile, tokens: Tokens): Response<Realm> {
   )
 }
 
-fun toBurg(nestedBurg: NestedBurg) =
+fun toBurg(file: TokenFile, nestedBurg: NestedBurg) =
     Burg(
         type = nestedBurg.type,
         children = nestedBurg.children.map { it.hashCode() },
-        file = nestedBurg.file,
+        file = file,
         range = nestedBurg.range,
         value = nestedBurg.value
     )
 
-fun flattenNestedBurg(nestedBurg: NestedBurg): Map<BurgId, Burg> {
-  val burg = toBurg(nestedBurg)
+fun flattenNestedBurg(file: TokenFile, nestedBurg: NestedBurg): Map<BurgId, Burg> {
+  val burg = toBurg(file, nestedBurg)
   return mapOf(burg.hashCode() to burg) +
       nestedBurg.children
-          .map(::flattenNestedBurg)
+          .map { flattenNestedBurg(file, it) }
           .fold(mapOf()) { a, b -> a + b }
 }
 
@@ -151,8 +151,9 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): Response<Realm> {
   val (_, burgs, errors) = parseTokens(closedTokens)
   assert(burgs.size < 2)
   val burg = burgs.firstOrNull()
-  val realm = if (burg != null)
-    Realm(toBurg(burg).hashCode(), flattenNestedBurg(burg))
+  val realm = if (burg != null) {
+    Realm(toBurg(file, burg).hashCode(), flattenNestedBurg(file, burg))
+  }
   else
     Realm(0, mapOf())
 
