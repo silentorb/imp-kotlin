@@ -34,15 +34,22 @@ tailrec fun importPath(
     }
   }
 
+  val nextTokens = tokens.drop(1)
+  val nextBurgs = burgs + listOfNotNull(burg)
+
   return if (errors.any() || isNewline(token) || isWildcard(token))
-    ParsingResponse(tokens, burgs, errors)
+    ParsingResponse(nextTokens, nextBurgs, errors)
   else
-    importPath(nextMode, tokens.drop(1), burgs + listOfNotNull(burg))
+    importPath(nextMode, nextTokens, nextBurgs)
 }
 
-val importFirstPathToken: ParsingFunction =
-    consumeExpected(::isIdentifier, TextId.missingImportPath, consumeToken(BurgType.importPathToken)) +
-        { tokens -> importPath(ImportPathMode.dot, tokens) }
+val importFirstPathToken: ParsingFunction = route { token ->
+  when {
+    isIdentifier(token) -> consumeToken(BurgType.importPathToken)
+    isNewline(token) || isLet(token) || isImport(token) || isEndOfFile(token) -> addError(TextId.missingImportPath)
+    else -> addError(TextId.expectedIdentifier)
+  }
+} + { tokens -> importPath(ImportPathMode.dot, tokens) }
 
 val importClause: ParsingFunction = wrap(BurgType.importClause, consume, importFirstPathToken)
 
@@ -58,16 +65,14 @@ val expressionCommon: OptionalRouter = { token ->
 }
 
 val expressionFollowing: ParsingFunction =
-    parsingLoop(
-        route { token ->
-          expressionCommon(token) ?: when {
-            isNewline(token) -> consume
-            isLet(token) -> exitLoop
-            isEndOfFile(token) -> exitLoop
-            else -> addError(TextId.missingExpression)
-          }
-        }
-    )
+    route { token ->
+      expressionCommon(token) ?: when {
+        isNewline(token) -> consume
+        isLet(token) -> exitLoop
+        isEndOfFile(token) -> exitLoop
+        else -> addError(TextId.unexpectedCharacter)
+      }
+    }
 
 val expressionStart: ParsingFunction = route { token ->
   expressionCommon(token) ?: when {
@@ -80,12 +85,11 @@ val expressionStartWrapper: ParsingFunction = { tokens ->
   if (start.errors.any())
     start
   else {
-    val nextFunction = expressionCommon(start.tokens.first())
-    if (nextFunction == null)
-      start
+    val next = expressionFollowing(start.tokens)
+    if (next.burgs.none())
+      start.copy(errors = next.errors)
     else {
-      val next = nextFunction(start.tokens)
-      val (furtherTokens, furtherBurgs, furtherErrors) = expressionFollowing(next.tokens)
+      val (furtherTokens, furtherBurgs, furtherErrors) = parsingLoop(expressionFollowing)(next.tokens)
       val arguments = (next.burgs + furtherBurgs)
           .map { burg ->
             newNestedBurg(BurgType.argument, listOf(newNestedBurg(BurgType.argumentValue, listOf(burg))))

@@ -2,20 +2,12 @@ package silentorb.imp.parsing.syntaxNew
 
 import silentorb.imp.core.ImpError
 import silentorb.imp.core.ImpErrors
-import silentorb.imp.core.Range
 import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.general.Token
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.syntax.BurgType
 import silentorb.imp.parsing.syntax.ValueTranslator
 import silentorb.imp.parsing.syntax.asString
-import silentorb.imp.parsing.syntax.isEndOfFile
-
-//operator fun ParsingFunctionTransform.plus(other: ParsingFunction): ParsingFunction =
-//    this(other)
-
-//operator fun ParsingFunction.plus(other: ParsingFunction): ParsingFunction =
-//    this(other)
 
 operator fun ParsingFunction.plus(other: ParsingFunction): ParsingFunction = { tokens ->
   val first = this(tokens)
@@ -98,10 +90,12 @@ fun parsingLoop(
     errors: ImpErrors = listOf()
 ): ParsingResponse {
   val (nextTokens, newBurgs, newErrors, endLoop) = function(tokens)
-  return if (endLoop)
-    ParsingResponse(tokens, burgs, errors)
+  val nextBurgs = burgs + newBurgs
+  val nextErrors = errors + newErrors
+  return if (endLoop || nextTokens.none())
+    ParsingResponse(nextTokens, nextBurgs, nextErrors)
   else
-    parsingLoop(function, nextTokens, burgs + newBurgs, errors + newErrors)
+    parsingLoop(function, nextTokens, nextBurgs, nextErrors)
 }
 
 fun parsingLoop(function: ParsingFunction): ParsingFunction = { tokens -> parsingLoop(function, tokens) }

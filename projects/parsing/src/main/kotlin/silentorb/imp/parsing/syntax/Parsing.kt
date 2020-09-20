@@ -111,17 +111,6 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): Response<Realm?> {
   val realm = if (sourceRoot != null) {
     val root = toBurg(file, sourceRoot)
     val burgs = flattenNestedBurg(root)
-//    val burgs = initialBurgs
-//        .mapValues { (_, burg) -> burg.copy(
-//            children = burg.children.map {initialBurgs[it]!!.hashCode()}
-//        )}
-//        .mapKeys { it.value.hashCode() }
-//    val missingChildren = burgs.values.flatMap { b ->
-//      b.children
-//          .filter { !burgs.keys.contains(it) }
-//          .map {b.hashCode() to it}
-//    }
-//    assert(missingChildren.none())
     Realm(root, burgs)
   } else
     null

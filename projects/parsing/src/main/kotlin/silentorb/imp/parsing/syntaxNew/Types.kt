@@ -1,9 +1,6 @@
 package silentorb.imp.parsing.syntaxNew
 
-import silentorb.imp.core.FileRange
-import silentorb.imp.core.ImpErrors
-import silentorb.imp.core.Range
-import silentorb.imp.core.TokenFile
+import silentorb.imp.core.*
 import silentorb.imp.parsing.general.Token
 import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.syntax.BurgType
@@ -24,15 +21,20 @@ fun newNestedBurg(type: BurgType, token: Token, children: List<NestedBurg> = lis
     )
 
 fun newNestedBurg(type: BurgType, children: List<NestedBurg>): NestedBurg {
-  assert(children.any())
-  return NestedBurg(
-      type = type,
-      range = Range(
-          children.minByOrNull { it.range.start.index }!!.range.start,
-          children.maxByOrNull { it.range.end.index }!!.range.end
-      ),
-      children = children
-  )
+  return if (children.none())
+    NestedBurg(
+        type = type,
+        range = Range(newPosition(), newPosition())
+    )
+  else
+    NestedBurg(
+        type = type,
+        range = Range(
+            children.minByOrNull { it.range.start.index }!!.range.start,
+            children.maxByOrNull { it.range.end.index }!!.range.end
+        ),
+        children = children
+    )
 }
 
 data class ParsingResponse(

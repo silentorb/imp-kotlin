@@ -282,7 +282,30 @@ let intermediate = 10
   }
 
   @Test
-  fun supportsDataStructures() {
+  fun preventsUnexpectedCharactersInExpressions() {
+    val code = """
+      import silentorb.imp.test.*
+      
+      let output = something (
+    """.trimIndent()
+    expectError(TextId.unexpectedCharacter, parseToDungeon(simpleContext, code))
+  }
+
+  @Test
+  fun supportsGroupedLiterals() {
+    val code = "let output = (10)"
+
+    handleRoot(errored, parseToDungeon(emptyContext, code)) { result ->
+      val graph = result.namespace
+      assertEquals(2, graph.nodes.size)
+      assertEquals(1, graph.values.size)
+      assertEquals(1, graph.connections.size)
+      assertEquals(10, graph.values.values.first())
+    }
+  }
+
+  @Test
+  fun supportsGroupedMultiArgumentApplications() {
     val code = """
       import silentorb.imp.test.*
       
@@ -307,19 +330,6 @@ let intermediate = 10
       val graph = result.namespace
       assertEquals(7, graph.nodes.size)
       assertEquals(7, graph.connections.size)
-    }
-  }
-
-  @Test
-  fun canParseParenthesis() {
-    val code = "let output = (10)"
-
-    handleRoot(errored, parseToDungeon(emptyContext, code)) { result ->
-      val graph = result.namespace
-      assertEquals(2, graph.nodes.size)
-      assertEquals(1, graph.values.size)
-      assertEquals(1, graph.connections.size)
-      assertEquals(10, graph.values.values.first())
     }
   }
 
