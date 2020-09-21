@@ -53,6 +53,7 @@ val importFirstPathToken: ParsingFunction = route { token ->
 
 val importClause: ParsingFunction = wrap(BurgType.importClause, consume, importFirstPathToken)
 
+
 val expressionCommon: OptionalRouter = { token ->
   when {
 //    isNewline(token) -> consume
@@ -70,6 +71,7 @@ val expressionFollowing: ParsingFunction =
         isNewline(token) -> consume
         isLet(token) -> exitLoop
         isEndOfFile(token) -> exitLoop
+//        isParenthesesOpen(token) -> groupStart
         else -> addError(TextId.unexpectedCharacter)
       }
     }

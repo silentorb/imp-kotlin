@@ -43,7 +43,7 @@ fun getTransition(token: Token, mode: ParsingMode, contextMode: ContextMode): Pa
   return simpleAction(token)
 }
 
-fun newBurg(file: TokenFile, token: Token): NewBurg = { burgType, valueTranslator ->
+fun newBurg(token: Token): NewBurg = { burgType, valueTranslator ->
   Burg(
       type = burgType,
       range = token.range,
@@ -73,7 +73,7 @@ tailrec fun parsingStep(
       val token = tokens.first()
       val contextMode = state.contextStack.lastOrNull() ?: ContextMode.root
       val transition = getTransition(token, state.mode, contextMode)
-      val nextState = transition(newBurg(file, token), state)
+      val nextState = transition(newBurg(token), state)
       val nextTokens = tokens.drop(1)
 
       if (getDebugBoolean("IMP_PARSING_LOG_TRANSITIONS")) {
