@@ -8,13 +8,13 @@ fun parseExpressionElementsPiping(mode: ParsingMode) =
       applyPiping(burgType, translator) + goto(mode)
     }
 
-val parsePipingRootStart: ContextualTokenToParsingTransition = { token, contextMode ->
+val parsePipingRootStart: TokenToParsingTransition = { token ->
   onMatch(isLet(token)) { addError(TextId.missingRighthandExpression) + nextDefinition }
       ?: parseExpressionElementsPiping(ParsingMode.expressionArgumentStart)(token)
       ?: when {
         isParenthesesOpen(token) -> startGroup
-        isParenthesesClose(token) -> tryCloseGroup(contextMode)
-        isNewline(token) -> skipOld
+        isParenthesesClose(token) -> tryCloseGroup
+        isNewline(token) -> skip
         isDot(token) -> addError(TextId.missingLefthandExpression)
         else -> addError(TextId.invalidToken)
       }

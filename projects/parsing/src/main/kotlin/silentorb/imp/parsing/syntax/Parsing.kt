@@ -11,17 +11,6 @@ import silentorb.imp.parsing.syntaxNew.NestedBurg
 import silentorb.mythic.debugging.getDebugBoolean
 
 fun getTransition(token: Token, mode: ParsingMode, contextMode: ContextMode): ParsingStep {
-  val contextAction: ContextualTokenToParsingTransition? =
-      when (mode) {
-        ParsingMode.expressionArgumentStart -> parseExpressionArgumentStart
-        ParsingMode.expressionArgumentFollowing -> parseExpressionFollowingArgument
-        ParsingMode.pipingRootStart -> parsePipingRootStart
-        else -> null
-      }
-
-  if (contextAction != null)
-    return contextAction(token, contextMode)
-
   val simpleAction: TokenToParsingTransition =
       when (mode) {
         ParsingMode.block -> parseBody
@@ -31,12 +20,15 @@ fun getTransition(token: Token, mode: ParsingMode, contextMode: ContextMode): Pa
         ParsingMode.definitionParameterNameOrAssignment -> parseDefinitionParameterNameOrAssignment
         ParsingMode.definitionParameterType -> parseDefinitionParameterType
         ParsingMode.definitionName -> parseDefinitionName
+        ParsingMode.expressionArgumentFollowing -> parseExpressionFollowingArgument
+        ParsingMode.expressionArgumentStart -> parseExpressionArgumentStart
         ParsingMode.expressionNamedArgumentValue -> parseExpressionNamedArgumentValue
         ParsingMode.expressionStart -> parseExpressionStart
         ParsingMode.header -> parseHeader
         ParsingMode.importFirstPathToken -> parseImportFirstPathToken
         ParsingMode.importFollowingPathToken -> parseImportFollowingPathToken
         ParsingMode.importSeparator -> parseImportSeparator
+        ParsingMode.pipingRootStart -> parsePipingRootStart
         else -> throw Error()
       }
 
