@@ -8,10 +8,10 @@ import silentorb.imp.parsing.general.Token
 data class Burg(
     val type: BurgType,
     val range: Range,
-    val file: TokenFile,
     val children: List<Burg>,
     val value: Any?
 ) {
+  val file: TokenFile get() = range.start.file
   val fileRange: FileRange get() = FileRange(file, range)
   init {
     if (file != range.start.file) {

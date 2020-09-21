@@ -286,7 +286,7 @@ let intermediate = 10
     val code = """
       import silentorb.imp.test.*
       
-      let output = something (
+      let output = something `
     """.trimIndent()
     expectError(TextId.unexpectedCharacter, parseToDungeon(simpleContext, code))
   }

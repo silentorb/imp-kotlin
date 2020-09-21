@@ -9,7 +9,6 @@ import silentorb.imp.parsing.lexer.tokenize
 import silentorb.imp.parsing.resolution.parseDungeon
 import silentorb.imp.parsing.syntax.toTokenGraph
 import silentorb.imp.parsing.syntax.withoutComments
-import java.nio.file.Path
 import java.nio.file.Paths
 
 fun parseTokensToDungeon(filePath: TokenFile, context: Context, tokens: Tokens): Response<Dungeon> {
