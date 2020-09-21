@@ -701,9 +701,9 @@ let output = simpleFunction a (simpleFunction 3 3)
     assertEquals(block1.range.end.index, block2.range.end.index)
 
     val application1 = realm1.burgs
-        .filter { it.type == BurgType.application }.maxBy { it.range.length }!!
+        .filter { it.type == BurgType.application }.maxByOrNull { it.range.length }!!
     val application2 = realm2.burgs
-        .filter { it.type == BurgType.application }.maxBy { it.range.length }!!
+        .filter { it.type == BurgType.application }.maxByOrNull { it.range.length }!!
     assertEquals(application1.range.start.index, application2.range.start.index)
     assertEquals(application1.range.end.index, application2.range.end.index)
   }

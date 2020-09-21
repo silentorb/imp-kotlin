@@ -7,7 +7,6 @@ import silentorb.imp.parsing.general.Tokens
 import silentorb.imp.parsing.general.newParsingError
 import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.syntax.traversing.*
-import silentorb.imp.parsing.syntaxNew.NestedBurg
 import silentorb.mythic.debugging.getDebugBoolean
 
 fun getTransition(token: Token, mode: ParsingMode, contextMode: ContextMode): ParsingStep {
@@ -50,7 +49,9 @@ fun logTransition(token: Token, previousState: ParsingState, nextState: ParsingS
   else
     token.value
 
-  val burgStack = nextState.burgStack.map { it.first().type.name }.joinToString(", ").padEnd(100)
+  val burgStack = nextState.burgStack.map {
+   it.type ?: "-" + (it.burgs.firstOrNull()?.type?.name ?: "")
+  }.joinToString(", ").padEnd(100)
   println("[$burgStack] ${(value).padStart(12)} ${previousState.mode.name} -> ${nextState.mode.name}")
 }
 
@@ -73,14 +74,6 @@ tailrec fun parsingStep(
       }
       parsingStep(file, nextTokens, nextState)
     }
-
-fun toBurg(file: TokenFile, nestedBurg: NestedBurg): Burg =
-    Burg(
-        type = nestedBurg.type,
-        range = nestedBurg.range, // Eventually refactor this to use a accumulator and tailrec
-        children = nestedBurg.children.map { toBurg(file, it) },
-        value = nestedBurg.value
-    )
 
 fun flattenNestedBurg(burg: Burg): Set<Burg> =
     setOf(burg) +
@@ -135,16 +128,22 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): Response<Realm?> {
 
   val closedTokens = sanitizedTokens + Token(Rune.eof, emptyFileRange(), "")
 //  val (_, nestedBurgs, errors) = parseTokens(closedTokens)
-  val state = fold(parsingStep(file, closedTokens, newState(file, ParsingMode.header)))
+  val state = fold(parsingStep(file, closedTokens, newState(ParsingMode.header)))
   val rootLayer = state.burgStack.firstOrNull()
-  val root = rootLayer?.firstOrNull()
+  val root = if (rootLayer != null)
+    newBurg(BurgType.block, rootLayer.burgs)
+  else
+    null
+
   assert(state.burgStack.size < 2)
-  assert(rootLayer == null || rootLayer.size < 2)
   val realm = if (root != null) {
     val burgs = flattenNestedBurg(root)
     Realm(root, burgs)
   } else
     null
+
+  if (realm != null && getDebugBoolean("IMP_PARSING_LOG_HIERARCHY"))
+    logRealmHierarchy(realm)
 
   val errors = state.errors.map { error ->
     ImpError(

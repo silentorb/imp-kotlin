@@ -1,28 +1,26 @@
 package silentorb.imp.parsing.syntax.traversing
 
-import silentorb.imp.parsing.general.TextId
 import silentorb.imp.parsing.syntax.*
 
-val startDefinition = pushMarker(BurgType.definition) + goto(ParsingMode.definitionName)
-val startImport = pushMarker(BurgType.importClause) + goto(ParsingMode.importFirstPathToken)
+val startDefinition = push(BurgType.definition) + goto(ParsingMode.definitionName)
+val startImport = push(BurgType.importClause) + goto(ParsingMode.importFirstPathToken)
 val startGroup = pushContextMode(ContextMode.group)
+
 //val closeGroup = foldToInclusive(BurgType.application) + pop + popContextMode
-val closeGroup = foldToInclusive(BurgType.application) + tryPopGroupArgument + popContextMode
+val closeGroup = foldToInclusive(BurgType.application) + pop + popContextMode
 
 val startArgument =
-    tryPopArgument +
-        foldTo(BurgType.application) +
-        pushMarker(BurgType.argument) +
-        pushMarker(BurgType.argumentValue) +
-        pushContextMode(ContextMode.argument)
+    foldTo(BurgType.application) +
+        push(BurgType.argument) +
+        push(BurgType.argumentValue)
 
 //val startArgument = foldTo(BurgType.application) + pushMarker(BurgType.argument) + pushMarker(BurgType.argumentValue)
 val startGroupArgumentValue = startArgument + startGroup + goto(ParsingMode.expressionStart)
-val startBlock = pushContextMode(ContextMode.block) + pushMarker(BurgType.block) + goto(ParsingMode.block)
+val startBlock = pushContextMode(ContextMode.block) + push(BurgType.block) + goto(ParsingMode.block)
 val closeBlock = foldToInclusive(BurgType.block) + pop + foldTo(BurgType.block) + popContextMode + goto(ParsingMode.block)
 
 val startParameter =
-    pushMarker(BurgType.parameter) +
+    push(BurgType.parameter) +
         push(BurgType.parameterName, asString) +
         pop +
         goto(ParsingMode.definitionParameterColon)
@@ -44,24 +42,22 @@ val startPipingRoot = goto(ParsingMode.pipingRootStart)
 val closeImport = fold + goto(ParsingMode.header)
 
 fun startSimpleApplication(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
-    pushMarker(BurgType.application) +
-        pushMarker(BurgType.appliedFunction) +
+    push(BurgType.application) +
         push(burgType, translator) +
         foldTo(BurgType.application)
 
 val closeArgumentValue =
-    tryPopContextMode(ContextMode.argument) + foldTo(BurgType.application)
+    foldTo(BurgType.application)
 
 val closeArgumentName =
-    changeType(BurgType.argumentName) + removeParent + pop + pushMarker(BurgType.argumentValue) +
+    changeType(BurgType.argumentName) + removeParent + pop + push(BurgType.argumentValue) +
         goto(ParsingMode.expressionNamedArgumentValue)
 
 fun applyPiping(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
-    tryPopArgument +
     foldTo(BurgType.application) +
         startSimpleApplication(burgType, translator) +
         flipTop +
-        insertBelow(BurgType.argument, asMarker) +
-        insertBelow(BurgType.argumentValue, asMarker) +
+        insertBelow(BurgType.argument) { null } +
+        insertBelow(BurgType.argumentValue) { null } +
         foldTo(BurgType.application) +
         pop

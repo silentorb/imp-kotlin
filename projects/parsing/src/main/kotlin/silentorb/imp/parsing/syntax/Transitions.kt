@@ -1,37 +1,35 @@
 package silentorb.imp.parsing.syntax
 
 import silentorb.imp.parsing.general.TextId
+import silentorb.imp.parsing.lexer.parentheses
+import silentorb.imp.parsing.syntax.traversing.closeBlock
 import silentorb.imp.parsing.syntax.traversing.closeGroup
 import silentorb.imp.parsing.syntax.traversing.nextDefinition
 
-val asMarker: ValueTranslator = { null }
 val asString: ValueTranslator = { it }
 val asFloat: ValueTranslator = { it.toFloat() }
 val asInt: ValueTranslator = { it.toInt() }
 
 fun push(burgType: BurgType, valueTranslator: ValueTranslator): ParsingStateTransition = { newBurg, state ->
   state.copy(
-      burgStack = state.burgStack.plusElement(listOf(newBurg(burgType, valueTranslator)))
+      burgStack = state.burgStack + BurgLayer(listOf(newBurg(burgType, valueTranslator)))
+  )
+}
+
+fun push(burgType: BurgType): ParsingStateTransition = { newBurg, state ->
+  state.copy(
+      burgStack = state.burgStack + BurgLayer(type = burgType)
   )
 }
 
 fun changeType(burgType: BurgType): ParsingStateTransition = { newBurg, state ->
   val stack = state.burgStack
-  val previous = stack.last().last()
+  val previous = stack.last().burgs.last()
   val next = previous.copy(
       type = burgType
   )
   state.copy(
-      burgStack = stack.dropLast(1).plusElement(listOf(next))
-  )
-}
-
-fun pushMarker(burgType: BurgType) =
-    push(burgType, asMarker)
-
-val pushEmpty: ParsingStateTransition = { _, state ->
-  state.copy(
-      burgStack = state.burgStack.plusElement(listOf())
+      burgStack = stack.dropLast(1) + BurgLayer(listOf(next))
   )
 }
 
@@ -39,27 +37,6 @@ fun append(burgType: BurgType, valueTranslator: ValueTranslator): ParsingStateTr
   state.copy(
       burgStack = stackAppend(state.burgStack, newBurg(burgType, valueTranslator))
   )
-}
-
-fun popChildren(state: ParsingState): ParsingState {
-  val stack = state.burgStack
-  val shortStack = stack.dropLast(1)
-  val children = stack.last()
-      .filter { it.children.any() || it.value != null } // Empty children are filtered out
-
-  return if (shortStack.none())
-    state // An error occurred.  Should be flagged by other code.
-  else {
-    val newTop = shortStack.last()
-    val parent = adoptChildren(newTop.last(), children)
-    if (parent.type == BurgType.argument) {
-      val k = 0
-    }
-    return state.copy(
-//      accumulator = state.accumulator + children,
-      burgStack = stack.dropLast(2).plusElement(newTop.drop(1) + parent)
-    )
-  }
 }
 
 val pop: ParsingStateTransition = { _, state ->
@@ -84,23 +61,23 @@ val flipTop: ParsingStateTransition = { _, state ->
   next
 }
 
-val popAppend: ParsingStateTransition = { _, state ->
-  val stack = state.burgStack
-  val shortStack = stack.dropLast(1)
-  val children = stack.last()
-  val newTop = shortStack.last()
-  state.copy(
-      burgStack = stack.dropLast(2).plusElement(newTop + children)
-  )
-}
+//val popAppend: ParsingStateTransition = { _, state ->
+//  val stack = state.burgStack
+//  val shortStack = stack.dropLast(1)
+//  val children = stack.last()
+//  val newTop = shortStack.last()
+//  state.copy(
+//      burgStack = stack.dropLast(2)+BurgLayer(newTop + children)
+//  )
+//}
 
 fun insertBelow(burgType: BurgType, valueTranslator: ValueTranslator): ParsingStateTransition = { newBurg, state ->
   val stack = state.burgStack
   state.copy(
       burgStack = stack
           .dropLast(1)
-          .plusElement(listOf(newBurg(burgType, valueTranslator)))
-          .plusElement(stack.last())
+          + BurgLayer(listOf(newBurg(burgType, valueTranslator)))
+          + stack.last()
   )
 }
 
@@ -115,25 +92,25 @@ val fold: ParsingStateTransition = { _, state ->
 }
 
 fun foldTo(burgType: BurgType): ParsingStateTransition = { newBurg, state ->
-  if (state.burgStack.size < 2 || state.burgStack.last().first().type == burgType)
+  if (state.burgStack.size < 2 || state.burgStack.last().type == burgType)
     state
   else
     foldTo(burgType)(newBurg, popChildren(state))
 }
 
 fun foldToInclusive(burgType: BurgType): ParsingStateTransition = { newBurg, state ->
-  if (state.burgStack.size < 2 || state.burgStack.last().first().type == burgType) {
+  if (state.burgStack.size < 2 || state.burgStack.last().burgs.first().type == burgType) {
     val stack = state.burgStack
-    val head = stack.last().last()
+    val head = stack.last().burgs.last()
     val newRange = head.range.copy(
         end = head.range.end.copy(
             index = head.range.end.index + newBurg(BurgType.block, asString).range.length
         )
     )
     val newHead = head.copy(range = newRange)
-    val newTop = stack.last().dropLast(1).plus(newHead)
+    val newTop = stack.last().burgs.dropLast(1).plus(newHead)
     state.copy(
-        burgStack = stack.dropLast(1).plusElement(newTop)
+        burgStack = stack.dropLast(1) + BurgLayer(newTop)
     )
   } else
     foldToInclusive(burgType)(newBurg, popChildren(state))
@@ -161,13 +138,15 @@ val popContextMode: ParsingStateTransition = { _, state ->
   )
 }
 
-fun addError(message: TextId): ParsingStateTransition = { newBurg, state ->
-  state.copy(
-      errors = state.errors + PendingParsingError(
-          message = message,
-          range = newBurg(BurgType.bad, asMarker).range
-      )
-  )
+fun addError(message: TextId): ParsingStateTransition {
+  return { newBurg, state ->
+    state.copy(
+        errors = state.errors + PendingParsingError(
+            message = message,
+            range = newBurg(BurgType.bad) { null }.range
+        )
+    )
+  }
 }
 
 operator fun ParsingStateTransition.plus(other: ParsingStateTransition): ParsingStateTransition = { newBurg, state ->
@@ -179,23 +158,8 @@ operator fun ParsingStateTransition.plus(other: TokenToParsingTransition): Token
   this + other(token)
 }
 
-fun tryPopContextMode(mode: ContextMode): ParsingStateTransition = { newBurg, state ->
-  if (state.contextStack.lastOrNull() == mode)
-    popContextMode(newBurg, state)
-  else
-    state
-}
-val tryPopArgument: ParsingStateTransition = { newBurg, state ->
-  if (state.contextStack.lastOrNull() == ContextMode.argument)
-    (popContextMode + pop)(newBurg, state)
-  else
-    state
-}
-
 val tryCloseGroup: ParsingStateTransition = { newBurg, state ->
-  if (state.contextStack.lastOrNull() == ContextMode.argument && state.contextStack.dropLast(1).lastOrNull() == ContextMode.group)
-    (popContextMode + closeGroup)(newBurg, state)
-  else if (state.contextStack.lastOrNull() == ContextMode.group)
+  if (state.contextStack.lastOrNull() == ContextMode.group)
     closeGroup(newBurg, state)
   else
     addError(TextId.missingOpeningParenthesis)(newBurg, state)
@@ -203,7 +167,7 @@ val tryCloseGroup: ParsingStateTransition = { newBurg, state ->
 
 val tryCloseBlock: ParsingStateTransition = { newBurg, state ->
   if (state.contextStack.lastOrNull() == ContextMode.block)
-    closeGroup(newBurg, state)
+    closeBlock(newBurg, state)
   else
     addError(TextId.invalidToken)(newBurg, state)
 }
@@ -220,11 +184,4 @@ val tryNextDefinition: ParsingStateTransition = { newBurg, state ->
     (addError(TextId.missingClosingParenthesis) + nextDefinition)(newBurg, state)
   else
     nextDefinition(newBurg, state)
-}
-
-val tryPopGroupArgument: ParsingStateTransition = { newBurg, state ->
-  if (state.contextStack.lastOrNull() == ContextMode.group && state.contextStack.dropLast(1).lastOrNull() == ContextMode.argument)
-    pop(newBurg, state)
-  else
-    state
 }

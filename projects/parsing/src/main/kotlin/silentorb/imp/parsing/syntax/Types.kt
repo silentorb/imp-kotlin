@@ -9,10 +9,11 @@ data class Burg(
     val type: BurgType,
     val range: Range,
     val children: List<Burg>,
-    val value: Any?
+    val value: Any? = null
 ) {
   val file: TokenFile get() = range.start.file
   val fileRange: FileRange get() = FileRange(file, range)
+
   init {
     if (file != range.start.file) {
       val k = 0
@@ -54,6 +55,11 @@ typealias NullableContextualTokenToParsingTransition = (Token, ContextMode) -> P
 
 typealias Stack<T> = List<List<T>>
 
-typealias BurgStack = Stack<Burg>
+data class BurgLayer(
+    val burgs: List<Burg> = listOf(),
+    val type: Any? = null
+)
+
+typealias BurgStack = List<BurgLayer>
 
 typealias TokenPattern = (Token) -> Boolean

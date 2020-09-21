@@ -98,7 +98,7 @@ val expressionStartWrapper: ParsingFunction = { tokens ->
           }
       val application = newNestedBurg(
           type = BurgType.application,
-          children = listOf(newNestedBurg(BurgType.appliedFunction, start.burgs)) + arguments
+          children = arguments
       )
       ParsingResponse(furtherTokens, burgs = listOf(application), errors = furtherErrors)
     }

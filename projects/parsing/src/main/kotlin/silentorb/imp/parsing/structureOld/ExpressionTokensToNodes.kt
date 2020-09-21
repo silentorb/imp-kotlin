@@ -55,23 +55,21 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): Response<IntermediateE
       .associateWith { application ->
         val children = application.children
 
-        val appliedFunction = children
-            .first { it.type == BurgType.appliedFunction }
-            .children
-            .first()
+        val appliedFunction = children.first()
 
         val arguments = children
-            .filter { it.type == BurgType.argument }
+            .drop(1)
             .map { argument ->
               val argumentValue = argument.children
                   .firstOrNull {
                     it.type == BurgType.argumentValue
-                  }
-              assert(argumentValue!!.children.any())
-              val item = argumentValue.children.first()
-              item
+                  }?.children?.firstOrNull()
+                  ?: argument
+
+              argumentValue
             }
 
+        assert(arguments.all { burgNodes.containsKey(it) })
         FunctionApplication(
             target = burgNodes[appliedFunction]!!,
             arguments = arguments.map { burgNodes[it]!! }

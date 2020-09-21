@@ -1,10 +1,9 @@
 package silentorb.imp.parsing.syntax
 
 import silentorb.imp.core.Range
-import silentorb.imp.core.TokenFile
 import silentorb.imp.core.newPosition
 
-fun newRootBurg(file: TokenFile): Burg =
+fun newRootBurg(): Burg =
     Burg(
         type = BurgType.block,
         range = Range(
@@ -15,35 +14,8 @@ fun newRootBurg(file: TokenFile): Burg =
         value = null
     )
 
-fun <T> stackAppend(stack: Stack<T>, item: T): Stack<T> =
-    stack.dropLast(1).plusElement(stack.last() + item)
-
-fun adoptChildren(parent: Burg, children: List<Burg>): Burg =
-    if (children.none())
-      parent
-    else {
-      val reduced = children
-          .map { child ->
-            if (child.type == BurgType.application && child.children.size == 1)
-              child.children.first().children.first()
-            else
-              child
-          }
-
-      parent.copy(
-          range = parent.range.copy(
-              start = children.map { it.range.start }.plus(parent.range.start).minBy { it.index }!!,
-              end = children.map { it.range.end }.plus(parent.range.end).maxBy { it.index }!!
-          ),
-          children = parent.children + reduced
-      )
-    }
-
-fun <T> replaceTop(stack: Stack<T>, newTop: List<T>): Stack<T> =
-    stack.dropLast(1).plusElement(newTop)
-
-fun pushMarker(markerType: BurgType, returnMode: ParsingMode) =
-    push(markerType, asMarker) + goto(returnMode)
+fun stackAppend(stack: BurgStack, item: Burg): BurgStack =
+    stack.dropLast(1) + stack.last().copy(burgs = stack.last().burgs + item)
 
 fun logRealmHierarchy(realm: Realm, head: Burg = realm.root, depth: Int = 0) {
   for (i in 0 until depth) {
@@ -61,3 +33,9 @@ fun onMatch(matches: Boolean, getStep: () -> ParsingStep?): ParsingStep? =
       getStep()
     else
       null
+
+fun rangeFromBurgs(children: List<Burg>): Range =
+    Range(
+        start = children.map { it.range.start }.minByOrNull { it.index } ?: newPosition(),
+        end = children.map { it.range.end }.maxByOrNull { it.index } ?: newPosition()
+    )
