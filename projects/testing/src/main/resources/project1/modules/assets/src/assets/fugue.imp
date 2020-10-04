@@ -1,0 +1,3 @@
+import silentorb.imp.testing.library.Character
+
+let fugue = Character "Fugue" 14

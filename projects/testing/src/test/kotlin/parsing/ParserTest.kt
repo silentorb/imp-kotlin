@@ -743,6 +743,7 @@ let output = simpleFunction a (simpleFunction 3 3)
     }
   }
 
+  @Disabled
   @Test
   fun supportsEnums() {
     val code = """

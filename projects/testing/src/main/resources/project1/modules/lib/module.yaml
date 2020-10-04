@@ -1,1 +1,4 @@
-
+javaImports:
+  - packagePath: ../../../../out/production/classes
+    classPath: silentorb.imp.testing.library.LibraryKt
+    method: newTestLibrary

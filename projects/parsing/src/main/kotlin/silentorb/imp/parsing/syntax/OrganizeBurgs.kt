@@ -76,7 +76,7 @@ fun definitionToTokenGraph(realm: Realm, file: TokenFile): (Burg) -> TokenizedDe
 fun toTokenGraph(file: TokenFile, tokens: Tokens): Response<TokenDungeon> {
   val (realm, syntaxErrors) = parseSyntax(file, tokens)
   return if (realm == null)
-    Response(TokenDungeon(listOf(), listOf()), syntaxErrors)
+    Response(TokenDungeon(listOf(), listOf(), listOf()), syntaxErrors)
   else {
     val root = realm.root
 
@@ -99,7 +99,8 @@ fun toTokenGraph(file: TokenFile, tokens: Tokens): Response<TokenDungeon> {
 
     val graph = TokenDungeon(
         imports = imports,
-        definitions = definitions
+        definitions = definitions,
+        enums = listOf()
     )
 
     Response(graph, syntaxErrors + duplicateSymbolErrors)

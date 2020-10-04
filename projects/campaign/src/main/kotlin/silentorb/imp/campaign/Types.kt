@@ -2,7 +2,6 @@ package silentorb.imp.campaign
 
 import silentorb.imp.core.Dependency
 import silentorb.imp.core.Dungeon
-import silentorb.imp.core.ImpErrors
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -18,6 +17,12 @@ typealias ModuleDependency = Dependency<ModuleId>
 
 typealias ModuleMap = Map<ModuleId, Module>
 
+data class JavaImport(
+    val packagePath: String,
+    val classPath: String,
+    val method: String
+)
+
 data class Workspace(
     val path: Path,
     val modules: Map<ModuleId, ModuleInfo>,
@@ -31,11 +36,14 @@ val emptyWorkspace = Workspace(
 )
 
 data class ModuleConfig(
-    val dependencies: List<String> = listOf()
+    val dependencies: List<String> = listOf(),
+    val javaImports: List<JavaImport> = listOf()
 )
 
+typealias PathGlob = String
+
 data class WorkspaceConfig(
-    val modules: List<String> = listOf() // Module directory patterns
+    val modules: List<PathGlob> = listOf()
 )
 
 data class ModuleInfo(
