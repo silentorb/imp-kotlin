@@ -9,7 +9,7 @@ fun parseExpressionElementsPiping(mode: ParsingMode) =
     }
 
 val parsePipingRootStart: TokenToParsingTransition = { token ->
-  onMatch(isLet(token)) { addError(TextId.missingRighthandExpression) + nextDefinition }
+  onMatch(isAnyDefinitionStart(token)) { addError(TextId.missingRighthandExpression) + nextDefinition(token) }
       ?: parseExpressionElementsPiping(ParsingMode.expressionArgumentStart)(token)
       ?: when {
         isParenthesesOpen(token) -> startGroup

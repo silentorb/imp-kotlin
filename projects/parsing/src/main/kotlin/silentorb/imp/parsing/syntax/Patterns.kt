@@ -36,6 +36,12 @@ fun isImport(token: Token) =
 fun isLet(token: Token) =
     token.rune == Rune.identifier && token.value == "let"
 
+fun isEnum(token: Token) =
+    token.rune == Rune.identifier && token.value == "enum"
+
+fun isAnyDefinitionStart(token: Token) =
+    isLet(token) || isEnum(token)
+
 fun isParenthesesClose(token: Token) =
     token.rune == Rune.parenthesesClose
 

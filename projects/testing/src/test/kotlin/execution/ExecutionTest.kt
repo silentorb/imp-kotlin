@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import silentorb.imp.execution.executeToSingleValue
-import silentorb.imp.library.standard.standardLibrary
 import silentorb.imp.parsing.parser.parseToDungeon
 import silentorb.imp.testing.errored
 

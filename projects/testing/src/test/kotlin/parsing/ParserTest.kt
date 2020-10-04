@@ -742,4 +742,14 @@ let output = simpleFunction a (simpleFunction 3 3)
       assertEquals(6, graph.nodes.size)
     }
   }
+
+  @Test
+  fun supportsEnums() {
+    val code = """
+      enum Fruit = apple banana orange
+      let output = Fruit.apple
+    """.trimIndent()
+    val graph = parseWithThrow(simpleContext, code).namespace
+    assertEquals(6, graph.nodes.size)
+  }
 }

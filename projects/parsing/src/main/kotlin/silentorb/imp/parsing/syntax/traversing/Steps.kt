@@ -1,8 +1,22 @@
 package silentorb.imp.parsing.syntax.traversing
 
+import silentorb.imp.parsing.general.Token
 import silentorb.imp.parsing.syntax.*
 
 val startDefinition = push(BurgType.definition) + goto(ParsingMode.definitionName)
+
+fun nextDefinition(token: Token) = foldTo(BurgType.block) + when {
+  isLet(token) -> startDefinition
+  isEnum(token) -> startEnum
+  else -> throw Error("nextDefinition should not be called on a ${token.rune}")
+}
+
+val consumeEnumItem = push(BurgType.enumItem, asString) + pop
+
+val closeDefinition = checkGroupClosed + foldTo(BurgType.block)
+
+val startEnum = push(BurgType.enum) + goto(ParsingMode.enumName)
+
 val startImport = push(BurgType.importClause) + goto(ParsingMode.importFirstPathToken)
 val startGroup = pushGroupStart
 
@@ -21,7 +35,7 @@ val closeBlock = foldTo(BurgType.block) + pop + foldTo(BurgType.block) + popCont
 
 val startParameter =
     push(BurgType.parameter) +
-        push(BurgType.parameterName, asString) +
+        push(BurgType.burgName, asString) +
         pop +
         goto(ParsingMode.definitionParameterColon)
 
@@ -31,8 +45,8 @@ val parameterType =
         pop +
         goto(ParsingMode.definitionParameterNameOrAssignment)
 
-val nextDefinition = foldTo(BurgType.block) + startDefinition
-val definitionName = push(BurgType.definitionName, asString) + pop + goto(ParsingMode.definitionParameterNameOrAssignment)
+val definitionName = push(BurgType.burgName, asString) + pop + goto(ParsingMode.definitionParameterNameOrAssignment)
+val enumName = push(BurgType.burgName, asString) + pop + goto(ParsingMode.definitionParameterNameOrAssignment)
 val firstImportPathToken = push(BurgType.importPathToken, asString) + goto(ParsingMode.importSeparator)
 val followingImportPathToken = append(BurgType.importPathToken, asString) + goto(ParsingMode.importSeparator)
 val importPathWildcard = append(BurgType.importPathWildcard, asString) + fold + goto(ParsingMode.header)
@@ -52,7 +66,7 @@ val closeArgumentValue =
     foldTo(BurgType.application)
 
 val closeArgumentName =
-    changeType(BurgType.argumentName) + removeParent + pop + push(BurgType.argumentValue) +
+    changeType(BurgType.burgName) + removeParent + pop + push(BurgType.argumentValue) +
         goto(ParsingMode.expressionNamedArgumentValue)
 
 fun applyPiping(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =

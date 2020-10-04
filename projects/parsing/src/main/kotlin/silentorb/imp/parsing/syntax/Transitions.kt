@@ -164,12 +164,3 @@ val checkGroupClosed: ParsingStateTransition = { newBurg, state ->
     else -> skip(newBurg, state)
   }
 }
-
-val tryNextDefinition: ParsingStateTransition = { newBurg, state ->
-  when (state.contextStack.lastOrNull()) {
-    ContextMode.group, ContextMode.redundantGroup ->
-      (addError(TextId.missingClosingParenthesis) + nextDefinition)(newBurg, state)
-
-    else -> nextDefinition(newBurg, state)
-  }
-}

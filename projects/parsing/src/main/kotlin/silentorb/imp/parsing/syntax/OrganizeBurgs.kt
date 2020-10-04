@@ -25,7 +25,7 @@ fun withoutComments(tokens: Tokens): Tokens =
 
 fun definitionToTokenGraph(realm: Realm, file: TokenFile): (Burg) -> TokenizedDefinition? = { definition ->
 
-  val name = definition.children.firstOrNull { it.type == BurgType.definitionName }
+  val name = definition.children.firstOrNull { it.type == BurgType.burgName }
   if (name != null) {
     val parameters = definition.children
         .filter { it.type == BurgType.parameter }
@@ -51,7 +51,7 @@ fun definitionToTokenGraph(realm: Realm, file: TokenFile): (Burg) -> TokenizedDe
       )
     } else {
       val expressionBurg = definition.children.firstOrNull {
-        it.type != BurgType.definitionName && it.type != BurgType.parameter
+        it.type != BurgType.burgName && it.type != BurgType.parameter
       }
 
       if (expressionBurg != null) {

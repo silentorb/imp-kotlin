@@ -33,7 +33,8 @@ data class TokenizedDefinition(
 
 data class TokenDungeon(
     val imports: List<TokenizedImport>,
-    val definitions: List<TokenizedDefinition>
+    val definitions: List<TokenizedDefinition>,
+    val enums: List<Burg>
 )
 
 data class DefinitionFirstPass(

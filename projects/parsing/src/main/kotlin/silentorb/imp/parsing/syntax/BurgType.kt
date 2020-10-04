@@ -3,12 +3,13 @@ package silentorb.imp.parsing.syntax
 enum class BurgType {
   application,
   argument,
-  argumentName,
+  burgName,
   argumentValue,
   bad,
   block,
   definition,
-  definitionName,
+  enum,
+  enumItem,
   importClause,
   importPathToken,
   importPathWildcard,
@@ -16,7 +17,6 @@ enum class BurgType {
   literalInteger,
   literalString,
   parameter,
-  parameterName,
   parameterType,
   reference,
 }

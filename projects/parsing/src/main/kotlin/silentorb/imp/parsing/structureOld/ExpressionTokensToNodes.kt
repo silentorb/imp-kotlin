@@ -14,7 +14,7 @@ fun getNamedArguments(realm: Realm): Map<Burg, Burg> =
         .filter { it.type == BurgType.argument }
         .mapNotNull { parameter ->
           val children = parameter.children
-          val argumentName = children.firstOrNull { it.type == BurgType.argumentName }
+          val argumentName = children.firstOrNull { it.type == BurgType.burgName }
 
           val argumentValue = children
               .firstOrNull { it.type == BurgType.argumentValue }

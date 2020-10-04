@@ -7,6 +7,7 @@ val parseHeader: TokenToParsingTransition = { token ->
   when {
     isImport(token) -> startImport
     isLet(token) -> startDefinition
+    isEnum(token) -> startEnum
     isNewline(token) -> closeImport
     isEndOfFile(token) -> goto(ParsingMode.block)
     else -> addError(TextId.expectedImportOrLetKeywords)

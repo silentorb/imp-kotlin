@@ -9,7 +9,7 @@ import silentorb.imp.parsing.lexer.Rune
 import silentorb.imp.parsing.syntax.traversing.*
 import silentorb.mythic.debugging.getDebugBoolean
 
-fun getTransition(token: Token, mode: ParsingMode, contextMode: ContextMode): ParsingStep {
+fun getTransition(token: Token, mode: ParsingMode): ParsingStep {
   val simpleAction: TokenToParsingTransition =
       when (mode) {
         ParsingMode.block -> parseBody
@@ -19,6 +19,10 @@ fun getTransition(token: Token, mode: ParsingMode, contextMode: ContextMode): Pa
         ParsingMode.definitionParameterNameOrAssignment -> parseDefinitionParameterNameOrAssignment
         ParsingMode.definitionParameterType -> parseDefinitionParameterType
         ParsingMode.definitionName -> parseDefinitionName
+        ParsingMode.enumAssignment -> parseEnumAssignment
+        ParsingMode.enumName -> parseEnumName
+        ParsingMode.enumFirstItem -> parseEnumFirstItem
+        ParsingMode.enumFollowingItem -> parseEnumFollowingItem
         ParsingMode.expressionArgumentFollowing -> parseExpressionFollowingArgument
         ParsingMode.expressionArgumentStart -> parseExpressionArgumentStart
         ParsingMode.expressionNamedArgumentValue -> parseExpressionNamedArgumentValue
@@ -28,7 +32,6 @@ fun getTransition(token: Token, mode: ParsingMode, contextMode: ContextMode): Pa
         ParsingMode.importFollowingPathToken -> parseImportFollowingPathToken
         ParsingMode.importSeparator -> parseImportSeparator
         ParsingMode.pipingRootStart -> parsePipingRootStart
-        else -> throw Error()
       }
 
   return simpleAction(token)
@@ -50,7 +53,7 @@ fun logTransition(token: Token, previousState: ParsingState, nextState: ParsingS
     token.value
 
   val burgStack = nextState.burgStack.map {
-   it.type ?: "-" + (it.burgs.firstOrNull()?.type?.name ?: "")
+    it.type ?: "-" + (it.burgs.firstOrNull()?.type?.name ?: "")
   }.joinToString(", ").padEnd(100)
   println("[$burgStack] ${(value).padStart(12)} ${previousState.mode.name} -> ${nextState.mode.name}")
 }
@@ -65,7 +68,7 @@ tailrec fun parsingStep(
     else {
       val token = tokens.first()
       val contextMode = state.contextStack.lastOrNull() ?: ContextMode.root
-      val transition = getTransition(token, state.mode, contextMode)
+      val transition = getTransition(token, state.mode)
       val nextState = transition(newBurg(token), state)
       val nextTokens = tokens.drop(1)
 
@@ -80,46 +83,6 @@ fun flattenNestedBurg(burg: Burg): Set<Burg> =
         burg.children
             .flatMap(::flattenNestedBurg)
 
-//fun parseSyntaxOld(file: TokenFile, tokens: Tokens): Response<Realm> {
-//  val sanitizedTokens = if (tokens.size == 0 || tokens.last().rune != Rune.newline)
-//    tokens + Token(Rune.newline, FileRange("", Range(newPosition(), newPosition())), "")
-//  else
-//    tokens
-//  val closedTokens = sanitizedTokens + Token(Rune.eof, emptyFileRange(), "")
-//  val state = fold(parsingStep(file, closedTokens, newState(file, ParsingMode.header)))
-//
-//  assert(state.burgStack.size == 1)
-//
-//  val root = state.burgStack.first().first()
-//  val realm = Realm(
-//      root = root.hashCode(),
-//      burgs = state.accumulator
-//          .plus(root)
-//          .associateBy { it.hashCode() }
-//  )
-//
-//  if (getDebugBoolean("IMP_PARSING_LOG_HIERARCHY"))
-//    logRealmHierarchy(realm)
-//
-//  val convertedErrors = state.errors.map { error ->
-//    ImpError(
-//        message = error.message,
-//        fileRange = FileRange(file, error.range)
-//    )
-//  }
-//
-//  val letErrors = tokens
-//      .filterIndexed { index, token ->
-//        isLet(token) && index > 0 && !(isNewline(tokens[index - 1]) || isBraceOpen(tokens[index - 1]))
-//      }
-//      .map { newParsingError(TextId.expectedNewline, it) }
-//
-//  return Response(
-//      realm,
-//      convertedErrors + letErrors
-//  )
-//}
-
 fun parseSyntax(file: TokenFile, tokens: Tokens): Response<Realm?> {
   val sanitizedTokens = if (tokens.size == 0 || tokens.last().rune != Rune.newline)
     tokens + Token(Rune.newline, FileRange("", Range(newPosition(), newPosition())), "")
@@ -127,7 +90,6 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): Response<Realm?> {
     tokens
 
   val closedTokens = sanitizedTokens + Token(Rune.eof, emptyFileRange(), "")
-//  val (_, nestedBurgs, errors) = parseTokens(closedTokens)
   val state = fold(parsingStep(file, closedTokens, newState(ParsingMode.header)))
   val rootLayer = state.burgStack.firstOrNull()
   val root = if (rootLayer != null)
@@ -151,14 +113,14 @@ fun parseSyntax(file: TokenFile, tokens: Tokens): Response<Realm?> {
         fileRange = FileRange(file, error.range)
     )
   }
-  val letErrors = tokens
+  val definitionStartErrors = tokens
       .filterIndexed { index, token ->
-        isLet(token) && index > 0 && !(isNewline(tokens[index - 1]) || isBraceOpen(tokens[index - 1]))
+        isAnyDefinitionStart(token) && index > 0 && !(isNewline(tokens[index - 1]) || isBraceOpen(tokens[index - 1]))
       }
       .map { newParsingError(TextId.expectedNewline, it) }
 
   return Response(
       realm,
-      errors + letErrors
+      errors + definitionStartErrors
   )
 }

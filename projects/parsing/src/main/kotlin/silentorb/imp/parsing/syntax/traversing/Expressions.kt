@@ -37,7 +37,7 @@ fun parseExpressionCommonNamedArgumentValue(mode: ParsingMode) =
     }
 
 val parseExpressionStart: TokenToParsingTransition = { token ->
-  onMatch(isLet(token)) { addError(TextId.missingExpression) + nextDefinition }
+  onMatch(isAnyDefinitionStart(token)) { addError(TextId.missingExpression) + nextDefinition(token) }
       ?: parseExpressionCommonStart(goto(ParsingMode.expressionArgumentStart))(token)
       ?: when {
         isParenthesesOpen(token) -> startGroup
@@ -63,7 +63,7 @@ val parseExpressionArgumentsCommon: NullableTokenToParsingTransition = { token -
 }
 
 val parseExpressionArgumentStart: TokenToParsingTransition = { token ->
-  onMatch(isLet(token)) { tryNextDefinition }
+  onMatch(isLet(token)) { closeDefinition + startDefinition }
       ?: parseExpressionCommonArgument(ParsingMode.expressionArgumentFollowing)(token)
       ?: parseExpressionArgumentsCommon(token)
       ?: when {
@@ -73,7 +73,7 @@ val parseExpressionArgumentStart: TokenToParsingTransition = { token ->
 }
 
 val parseExpressionFollowingArgument: TokenToParsingTransition = { token ->
-  onMatch(isLet(token)) { nextDefinition }
+  onMatch(isLet(token)) { closeDefinition + startDefinition }
       ?: onMatch(isAssignment(token)) { closeArgumentName }
       ?: parseExpressionFollowingArgument(ParsingMode.expressionArgumentFollowing)(token)
       ?: parseExpressionArgumentsCommon(token)
@@ -84,7 +84,7 @@ val parseExpressionFollowingArgument: TokenToParsingTransition = { token ->
 }
 
 val parseExpressionNamedArgumentValue: TokenToParsingTransition = { token ->
-  onMatch(isLet(token)) { addError(TextId.missingExpression) + nextDefinition }
+  onMatch(isAnyDefinitionStart(token)) { addError(TextId.missingExpression) + nextDefinition(token) }
       ?: parseExpressionCommonNamedArgumentValue(ParsingMode.expressionArgumentStart)(token)
       ?: when {
         isParenthesesOpen(token) -> startGroup + startSimpleApplication
