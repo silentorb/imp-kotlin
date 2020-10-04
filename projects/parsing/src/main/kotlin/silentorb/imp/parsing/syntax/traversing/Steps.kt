@@ -4,20 +4,20 @@ import silentorb.imp.parsing.syntax.*
 
 val startDefinition = push(BurgType.definition) + goto(ParsingMode.definitionName)
 val startImport = push(BurgType.importClause) + goto(ParsingMode.importFirstPathToken)
-val startGroup = pushContextMode(ContextMode.group)
+val startGroup = pushGroupStart
 
-//val closeGroup = foldToInclusive(BurgType.application) + pop + popContextMode
-val closeGroup = foldToInclusive(BurgType.application) + pop + popContextMode
+val closeGroup = foldTo(BurgType.application) + pop + popContextMode
+
+val closeRedundantGroup = popContextMode
 
 val startArgument =
     foldTo(BurgType.application) +
         push(BurgType.argument) +
         push(BurgType.argumentValue)
 
-//val startArgument = foldTo(BurgType.application) + pushMarker(BurgType.argument) + pushMarker(BurgType.argumentValue)
 val startGroupArgumentValue = startArgument + startGroup + goto(ParsingMode.expressionStart)
 val startBlock = pushContextMode(ContextMode.block) + push(BurgType.block) + goto(ParsingMode.block)
-val closeBlock = foldToInclusive(BurgType.block) + pop + foldTo(BurgType.block) + popContextMode + goto(ParsingMode.block)
+val closeBlock = foldTo(BurgType.block) + pop + foldTo(BurgType.block) + popContextMode + goto(ParsingMode.block)
 
 val startParameter =
     push(BurgType.parameter) +
@@ -41,7 +41,9 @@ val startPipingRoot = goto(ParsingMode.pipingRootStart)
 
 val closeImport = fold + goto(ParsingMode.header)
 
-fun startSimpleApplication(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
+val startSimpleApplication = push(BurgType.application)
+
+fun startApplication(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
     push(BurgType.application) +
         push(burgType, translator) +
         foldTo(BurgType.application)
@@ -55,7 +57,7 @@ val closeArgumentName =
 
 fun applyPiping(burgType: BurgType, translator: ValueTranslator): ParsingStateTransition =
     foldTo(BurgType.application) +
-        startSimpleApplication(burgType, translator) +
+        startApplication(burgType, translator) +
         flipTop +
         insertBelow(BurgType.argument) { null } +
         insertBelow(BurgType.argumentValue) { null } +

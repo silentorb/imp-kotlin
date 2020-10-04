@@ -56,8 +56,8 @@ typealias NullableContextualTokenToParsingTransition = (Token, ContextMode) -> P
 typealias Stack<T> = List<List<T>>
 
 data class BurgLayer(
-    val burgs: List<Burg> = listOf(),
-    val type: Any? = null
+    val type: Any? = null,
+    val burgs: List<Burg> = listOf()
 )
 
 typealias BurgStack = List<BurgLayer>

@@ -18,7 +18,7 @@ fun parseExpressionElement(step: ExpressionElementStep): NullableTokenToParsingT
 
 fun parseExpressionCommonStart(transition: ParsingStep) =
     parseExpressionElement { burgType, translator ->
-      startSimpleApplication(burgType, translator) + transition
+      startApplication(burgType, translator) + transition
     }
 
 fun parseExpressionCommonArgument(mode: ParsingMode) =
@@ -87,7 +87,7 @@ val parseExpressionNamedArgumentValue: TokenToParsingTransition = { token ->
   onMatch(isLet(token)) { addError(TextId.missingExpression) + nextDefinition }
       ?: parseExpressionCommonNamedArgumentValue(ParsingMode.expressionArgumentStart)(token)
       ?: when {
-        isParenthesesOpen(token) -> startGroup
+        isParenthesesOpen(token) -> startGroup + startSimpleApplication
         isNewline(token) -> skip
         isEndOfFile(token) -> addError(TextId.missingExpression)
         else -> addError(TextId.invalidToken)

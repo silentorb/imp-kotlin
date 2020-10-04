@@ -32,7 +32,7 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): Response<IntermediateE
   val path = pathKeyToString(root)
   val namedArguments = getNamedArguments(realm)
   val burgs = realm.burgs
-  val applicationsKeys = burgs
+  val applicationKeys = burgs
       .filter { it.type == BurgType.application }
       .mapIndexed { index, id -> Pair(id, PathKey(path, "%application${index}")) }
       .associate { it }
@@ -48,7 +48,7 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): Response<IntermediateE
       }
       .associate { it }
       .plus(literalTokenKeys)
-      .plus(applicationsKeys)
+      .plus(applicationKeys)
 
   val applications = burgs
       .filter { it.type == BurgType.application }
@@ -64,7 +64,10 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): Response<IntermediateE
                   .firstOrNull {
                     it.type == BurgType.argumentValue
                   }?.children?.firstOrNull()
-                  ?: argument
+                  ?: if (argument.type == BurgType.argument)
+                    argument.children.first()
+                  else
+                    argument
 
               argumentValue
             }
@@ -75,7 +78,7 @@ fun expressionTokensToNodes(root: PathKey, realm: Realm): Response<IntermediateE
             arguments = arguments.map { burgNodes[it]!! }
         )
       }
-      .mapKeys { applicationsKeys[it.key]!! }
+      .mapKeys { applicationKeys[it.key]!! }
 
   val parents = applications
       .mapValues { it.value.arguments }
