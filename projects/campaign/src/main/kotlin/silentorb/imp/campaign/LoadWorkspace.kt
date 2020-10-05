@@ -178,8 +178,15 @@ fun loadContainingWorkspace(getCode: GetCode, context: Context, root: Path): Res
 }
 
 fun getModulesContext(modules: Map<ModuleId, Module>): Context {
-  val dungeons = modules.map { it.value.dungeons }.reduce { a, b -> a + b }
-  return dungeons.values.map { it.namespace }
+  return if (modules.none())
+    listOf()
+  else {
+    modules
+        .map { it.value.dungeons }
+        .reduce { a, b -> a + b }
+        .values
+        .map { it.namespace }
+  }
 }
 
 fun getModulesExecutionArtifacts(baseContext: Context, modules: Map<ModuleId, Module>): Context =
